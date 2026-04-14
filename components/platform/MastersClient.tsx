@@ -1,0 +1,183 @@
+"use client";
+
+import { useState } from "react";
+import { createMasterRecord, deleteMasterRecord, toggleMasterRecord } from "@/app/(platform)/platform/masters/actions";
+
+const MASTER_TYPES = [
+  { key: "business_type", label: "Business Types" },
+  { key: "proceeding_type", label: "Proceeding Types" },
+  { key: "act_regulation", label: "Act / Regulation" },
+  { key: "assessment_year", label: "Assessment Years" },
+];
+
+interface MasterRecord {
+  id: string;
+  name: string;
+  type: string;
+  is_active: boolean;
+  sort_order: number;
+}
+
+interface Props {
+  records: MasterRecord[];
+  isSuperAdmin: boolean;
+}
+
+export default function MastersClient({ records, isSuperAdmin }: Props) {
+  const [activeTab, setActiveTab] = useState("business_type");
+  const [newName, setNewName] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [toggling, setToggling] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
+
+  const filtered = records.filter((r) => r.type === activeTab);
+
+  async function handleAdd(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newName.trim()) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await createMasterRecord(newName.trim(), activeTab);
+      setNewName("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to add record.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleToggle(id: string, isActive: boolean) {
+    setToggling(id);
+    try {
+      await toggleMasterRecord(id, !isActive);
+    } finally {
+      setToggling(null);
+    }
+  }
+
+  async function handleDelete() {
+    if (!confirmDelete) return;
+    setDeleting(confirmDelete.id);
+    try {
+      await deleteMasterRecord(confirmDelete.id);
+    } finally {
+      setDeleting(null);
+      setConfirmDelete(null);
+    }
+  }
+
+  return (
+    <div>
+      {/* Tabs */}
+      <div className="flex gap-1 mb-4 bg-white border border-[#E5E7EB] rounded-xl p-1 w-fit shadow-sm">
+        {MASTER_TYPES.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => { setActiveTab(t.key); setNewName(""); setError(null); }}
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition ${
+              activeTab === t.key
+                ? "bg-[#1E3A5F] text-white"
+                : "text-[#6B7280] hover:text-[#1A1A2E] hover:bg-[#F8F9FA]"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
+        {/* Add new record */}
+        <div className="p-4 border-b border-[#E5E7EB]">
+          <form onSubmit={handleAdd} className="flex gap-2">
+            <input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder={`Add new ${MASTER_TYPES.find((t) => t.key === activeTab)?.label.slice(0, -1).toLowerCase() ?? "record"}…`}
+              className="flex-1 px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]"
+            />
+            <button
+              type="submit"
+              disabled={saving || !newName.trim()}
+              className="px-4 py-2 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-50"
+            >
+              {saving ? "Adding…" : "Add"}
+            </button>
+          </form>
+          {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
+        </div>
+
+        {/* Records list */}
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-[#F8F9FA] border-b border-[#E5E7EB]">
+              <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Name</th>
+              <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Status</th>
+              <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[#E5E7EB]">
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={3} className="px-4 py-10 text-center text-[#6B7280] text-sm">
+                  No records yet. Add one above.
+                </td>
+              </tr>
+            ) : (
+              filtered.map((record, i) => (
+                <tr key={record.id} className={`hover:bg-[#F8F9FA] transition-colors ${i % 2 === 1 ? "bg-[#FAFAFA]" : ""}`}>
+                  <td className="px-4 py-3 text-[#1A1A2E]">{record.name}</td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${record.is_active ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                      {record.is_active ? "Active" : "Inactive"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => handleToggle(record.id, record.is_active)}
+                        disabled={toggling === record.id}
+                        className={`text-xs font-medium disabled:opacity-50 ${record.is_active ? "text-amber-600 hover:text-amber-800" : "text-green-600 hover:text-green-800"}`}
+                      >
+                        {record.is_active ? "Disable" : "Enable"}
+                      </button>
+                      {isSuperAdmin && (
+                        <button
+                          onClick={() => setConfirmDelete({ id: record.id, name: record.name })}
+                          disabled={deleting === record.id}
+                          className="text-xs font-medium text-red-500 hover:text-red-700 disabled:opacity-50"
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Confirm delete */}
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl border border-[#E5E7EB] p-6 w-full max-w-sm mx-4">
+            <h3 className="text-base font-semibold text-[#1A1A2E] mb-2">Delete Record?</h3>
+            <p className="text-sm text-[#6B7280] mb-5">
+              Deleting <strong>"{confirmDelete.name}"</strong> is permanent and cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmDelete(null)} className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">Cancel</button>
+              <button onClick={handleDelete} disabled={!!deleting} className="flex-1 px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition disabled:opacity-60">
+                {deleting ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
