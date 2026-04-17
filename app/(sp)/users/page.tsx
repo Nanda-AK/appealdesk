@@ -33,6 +33,13 @@ export default async function UsersPage() {
     .in("org_id", orgIdsToFetch)
     .order("first_name");
 
+  // Supabase returns FK joins as arrays; normalize to objects for the client component
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const normalizedUsers = (users ?? []).map((u: any) => ({
+    ...u,
+    organization: Array.isArray(u.organization) ? (u.organization[0] ?? null) : u.organization,
+  }));
+
   return (
     <div className="p-8">
       <div className="mb-6">
@@ -40,7 +47,7 @@ export default async function UsersPage() {
         <p className="text-[#6B7280] text-sm mt-0.5">{users?.length ?? 0} users in your workspace</p>
       </div>
       <UsersClient
-        users={users ?? []}
+        users={normalizedUsers}
         clientOrgs={clientOrgs ?? []}
         currentUserId={user!.id}
         isAdmin={user!.role === "sp_admin"}
