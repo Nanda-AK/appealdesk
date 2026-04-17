@@ -67,11 +67,16 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         {/* Brand */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-[#1E3A5F] mb-4">
-            <span className="text-white font-bold text-xl">A</span>
+          <div className="inline-flex items-center gap-2.5 mb-3">
+            <div className="w-10 h-10 rounded-xl bg-[#1E3A5F] flex items-center justify-center flex-shrink-0">
+              <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 12h6M9 16h4M7 4H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V8l-5-4H7z" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M14 4v4h4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <span className="text-2xl font-bold text-[#1A1A2E] tracking-tight">AppealDesk</span>
           </div>
-          <h1 className="text-2xl font-semibold text-[#1A1A2E]">AppealDesk</h1>
-          <p className="text-[#6B7280] text-sm mt-1">Appeal Management Platform</p>
+          <p className="text-[#6B7280] text-sm">Appeal Management Platform</p>
         </div>
 
         {/* Card */}
