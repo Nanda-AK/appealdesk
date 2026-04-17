@@ -11,10 +11,27 @@ export interface UserInput {
   email: string;
   password: string;
   role: "sp_admin" | "sp_staff" | "client";
-  client_org_id?: string; // required when role = client
-  designation?: string;
-  department?: string;
+  client_org_id?: string;
+  // Contact
+  mobile_country_code?: string;
   mobile_number?: string;
+  date_of_birth?: string;
+  // SP staff/admin only
+  department?: string;
+  designation?: string;
+  date_of_joining?: string;
+  date_of_leaving?: string;
+  // Address
+  address_line1?: string;
+  address_line2?: string;
+  city?: string;
+  pin_code?: string;
+  location?: string;
+  // Identity
+  pan_number?: string;
+  pan_attachment?: string;
+  aadhar_number?: string;
+  aadhar_attachment?: string;
 }
 
 export async function createUser(input: UserInput) {
@@ -37,6 +54,8 @@ export async function createUser(input: UserInput) {
     ? input.client_org_id
     : currentUser.org_id;
 
+  const isSpUser = input.role !== "client";
+
   // Insert public user profile
   const { error: profileError } = await supabase.from("users").insert({
     id: created.user.id,
@@ -46,9 +65,22 @@ export async function createUser(input: UserInput) {
     email: input.email,
     role: input.role,
     org_id: orgId,
-    designation: input.designation || null,
-    department: input.department || null,
+    mobile_country_code: input.mobile_country_code || "+91",
     mobile_number: input.mobile_number || null,
+    date_of_birth: input.date_of_birth || null,
+    designation: isSpUser ? (input.designation || null) : null,
+    department: isSpUser ? (input.department || null) : null,
+    date_of_joining: isSpUser ? (input.date_of_joining || null) : null,
+    date_of_leaving: isSpUser ? (input.date_of_leaving || null) : null,
+    address_line1: isSpUser ? (input.address_line1 || null) : null,
+    address_line2: isSpUser ? (input.address_line2 || null) : null,
+    city: isSpUser ? (input.city || null) : null,
+    pin_code: isSpUser ? (input.pin_code || null) : null,
+    location: isSpUser ? (input.location || null) : null,
+    pan_number: isSpUser ? (input.pan_number || null) : null,
+    pan_attachment: isSpUser ? (input.pan_attachment || null) : null,
+    aadhar_number: isSpUser ? (input.aadhar_number || null) : null,
+    aadhar_attachment: isSpUser ? (input.aadhar_attachment || null) : null,
     is_active: true,
   });
 

@@ -231,20 +231,34 @@ export async function deleteAppeal(appealId: string): Promise<void> {
   const spId = user.service_provider_id ?? user.org_id;
   const supabase = await createServiceClient();
 
-  // Delete in order: events → proceedings → appeal
-  const { data: proceedings } = await supabase
+  // 1. Get all proceeding IDs for this appeal
+  const { data: proceedings, error: procFetchErr } = await supabase
     .from("proceedings")
     .select("id")
     .eq("appeal_id", appealId);
 
+  if (procFetchErr) throw new Error(procFetchErr.message);
+
   if (proceedings?.length) {
     const procIds = proceedings.map((p) => p.id);
-    await supabase.from("events").delete().in("proceeding_id", procIds);
-    await supabase.from("proceedings").delete().in("id", procIds);
+
+    // 2. Delete events
+    const { error: evErr } = await supabase.from("events").delete().in("proceeding_id", procIds);
+    if (evErr) throw new Error("Failed to delete events: " + evErr.message);
+
+    // 3. Delete proceedings
+    const { error: prErr } = await supabase.from("proceedings").delete().in("id", procIds);
+    if (prErr) throw new Error("Failed to delete proceedings: " + prErr.message);
   }
 
+  // 4. Delete documents (ignore error if table doesn't exist yet)
+  await supabase.from("appeal_documents").delete().eq("appeal_id", appealId);
+
+  // 5. Delete the appeal
   const { error } = await supabase.from("appeals").delete().eq("id", appealId);
-  if (error) throw new Error(error.message);
+  if (error) throw new Error("Failed to delete appeal: " + error.message);
+
   await logAction(supabase, { actorId: user.id, spId: spId!, action: "delete", entityType: "appeal", entityLabel: appealId });
   revalidatePath("/appeals");
+  revalidatePath(`/appeals/${appealId}`);
 }

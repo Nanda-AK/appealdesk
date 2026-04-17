@@ -530,13 +530,16 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
   // ── Delete Appeal ──
   const [confirmDeleteAppeal, setConfirmDeleteAppeal] = useState(false);
   const [deletingAppeal, setDeletingAppeal] = useState(false);
+  const [deleteAppealError, setDeleteAppealError] = useState<string | null>(null);
 
   async function handleDeleteAppeal() {
     setDeletingAppeal(true);
+    setDeleteAppealError(null);
     try {
       await deleteAppeal(appeal.id);
-      router.push("/appeals");
-    } catch {
+      window.location.href = "/appeals";
+    } catch (err) {
+      setDeleteAppealError(err instanceof Error ? err.message : "Failed to delete appeal.");
       setDeletingAppeal(false);
     }
   }
@@ -1237,10 +1240,15 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
             <p className="text-sm text-[#6B7280] mb-1">
               This will permanently delete this appeal along with all its proceedings and events.
             </p>
-            <p className="text-sm font-medium text-red-600 mb-5">This action cannot be undone.</p>
+            <p className="text-sm font-medium text-red-600 mb-4">This action cannot be undone.</p>
+            {deleteAppealError && (
+              <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
+                {deleteAppealError}
+              </div>
+            )}
             <div className="flex gap-3">
               <button
-                onClick={() => setConfirmDeleteAppeal(false)}
+                onClick={() => { setConfirmDeleteAppeal(false); setDeleteAppealError(null); }}
                 disabled={deletingAppeal}
                 className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition"
               >
