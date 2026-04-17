@@ -1,0 +1,1262 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import {
+  updateAppeal, updateProceeding, addProceeding, addEvent, updateEvent,
+  deleteEvent, deleteAppeal,
+  AppealInput, ProceedingInput, EventInput,
+} from "@/app/(sp)/appeals/actions";
+import { addDocument, deleteDocument } from "@/app/(sp)/documents/actions";
+
+// ─── Types ───────────────────────────────────────────────────────
+interface AppDocument {
+  id: string;
+  file_name: string;
+  file_url: string;
+  file_size: number | null;
+  created_at: string;
+  uploaded_by_user: { first_name: string; last_name: string } | null;
+}
+
+interface AppEvent {
+  id: string;
+  category: string;
+  event_date: string | null;
+  description: string | null;
+  details: Record<string, string> | null;
+  created_at: string;
+}
+
+interface Proceeding {
+  id: string;
+  proceeding_type: string | null;
+  authority_type: string | null;
+  authority_name: string | null;
+  jurisdiction: string | null;
+  jurisdiction_city: string | null;
+  importance: string | null;
+  mode: string | null;
+  initiated_on: string | null;
+  to_be_completed_by: string | null;
+  assigned_to: string | null;
+  client_staff_id: string | null;
+  possible_outcome: string | null;
+  is_active: boolean;
+  created_at: string;
+  assigned_user: { first_name: string; last_name: string } | null;
+  client_staff: { first_name: string; last_name: string } | null;
+  events: AppEvent[];
+}
+
+interface Appeal {
+  id: string;
+  act_regulation: string | null;
+  financial_year: string | null;
+  assessment_year: string | null;
+  client_org: { id: string; name: string } | null;
+  proceedings: Proceeding[];
+  documents: AppDocument[];
+}
+
+interface Props {
+  appeal: Appeal;
+  clients: { id: string; name: string }[];
+  teamMembers: { id: string; first_name: string; last_name: string }[];
+  clientUsers: { id: string; first_name: string; last_name: string }[];
+  mastersByType: Record<string, string[]>;
+  canEdit: boolean;
+}
+
+// ─── Event Category Field Config ─────────────────────────────────
+type FieldType = "datetime" | "text" | "select" | "file";
+
+interface FieldDef {
+  key: string;
+  label: string;
+  type: FieldType;
+  options?: { value: string; label: string }[];
+  fullWidth?: boolean;
+}
+
+const NOTICE_STATUS_OPTS = [
+  { value: "open", label: "Open" },
+  { value: "in_progress", label: "In Progress" },
+  { value: "closed", label: "Closed" },
+];
+const YES_NO_OPTS = [
+  { value: "yes", label: "Yes" },
+  { value: "no", label: "No" },
+];
+
+const CATEGORY_FIELDS: Record<string, FieldDef[]> = {
+  notice_from_authority: [
+    { key: "date_of_notice", label: "Date of Notice", type: "datetime" },
+    { key: "notice_served_on", label: "Notice Served On", type: "datetime" },
+    { key: "due_date", label: "Due Date", type: "datetime" },
+    { key: "personal_hearing_date", label: "Personal Hearing Date", type: "datetime" },
+    { key: "target_date", label: "Target Date", type: "datetime" },
+    { key: "notice_status", label: "Notice Status", type: "select", options: NOTICE_STATUS_OPTS, fullWidth: true },
+    { key: "attachment", label: "Attachment", type: "file", fullWidth: true },
+  ],
+  response_to_notice: [
+    { key: "response_against_notice_dated", label: "Response Against Notice Dated", type: "datetime" },
+    { key: "response_submitted_on", label: "Response Submitted On", type: "datetime" },
+    { key: "revised_due_date", label: "Revised Due Date (if any)", type: "datetime" },
+  ],
+  adjournment_request: [
+    { key: "against_notice_date", label: "Against Notice Date", type: "datetime" },
+    { key: "adjourned_to", label: "Adjourned To", type: "datetime" },
+  ],
+  personal_hearing: [
+    { key: "against_notice_dated", label: "Against Notice Dated", type: "datetime" },
+    { key: "hearing_date", label: "Hearing Date", type: "datetime" },
+    { key: "team_present", label: "Team Present", type: "text" },
+    { key: "officers_present", label: "Officers Present", type: "text" },
+  ],
+  virtual_hearing: [
+    { key: "against_notice_dated", label: "Against Notice Dated", type: "datetime" },
+    { key: "hearing_date", label: "Hearing Date", type: "datetime" },
+    { key: "team_present", label: "Team Present", type: "text" },
+    { key: "officers_present", label: "Officers Present", type: "text" },
+  ],
+  personal_follow_up: [
+    { key: "against_notice_dated", label: "Against Notice Dated", type: "datetime" },
+    { key: "follow_up_with", label: "Follow Up With", type: "text" },
+    { key: "follow_up_by", label: "Follow Up By", type: "text" },
+  ],
+  assessment_order: [
+    { key: "date_of_order", label: "Date of Order", type: "datetime" },
+    { key: "order_received_on", label: "Order Received On", type: "datetime" },
+    { key: "order_received_by", label: "Order Received By", type: "text" },
+    { key: "mode_of_receipt", label: "Mode of Receipt of Order", type: "text" },
+    { key: "appeal_to_be_filed", label: "Appeal to be Filed", type: "select", options: YES_NO_OPTS },
+    { key: "appeal_to_be_filed_by", label: "Appeal to be Filed By", type: "datetime" },
+    { key: "appellate_authority", label: "Appellate Authority", type: "text" },
+    { key: "appellate_authority_jurisdiction", label: "Appellate Authority Jurisdiction", type: "text" },
+  ],
+  notice_of_penalty: [
+    { key: "date_of_notice", label: "Date of Notice", type: "datetime" },
+    { key: "notice_served_on", label: "Notice Served On", type: "datetime" },
+    { key: "due_date", label: "Due Date", type: "datetime" },
+    { key: "personal_hearing_date", label: "Personal Hearing Date", type: "datetime" },
+    { key: "target_date", label: "Target Date", type: "datetime" },
+    { key: "notice_status", label: "Notice Status", type: "select", options: NOTICE_STATUS_OPTS, fullWidth: true },
+  ],
+  penalty_order: [
+    { key: "date_of_order", label: "Date of Order", type: "datetime" },
+    { key: "order_received_on", label: "Order Received On", type: "datetime" },
+    { key: "order_received_by", label: "Order Received By", type: "text" },
+    { key: "mode_of_receipt", label: "Mode of Receipt of Order", type: "text" },
+    { key: "appeal_to_be_filed", label: "Appeal to be Filed", type: "select", options: YES_NO_OPTS },
+    { key: "appeal_to_be_filed_by", label: "Appeal to be Filed By", type: "datetime" },
+    { key: "appellate_authority", label: "Appellate Authority", type: "text" },
+    { key: "appellate_authority_jurisdiction", label: "Appellate Authority Jurisdiction", type: "text" },
+  ],
+};
+
+// Primary date field per category (used as event_date for sorting)
+const PRIMARY_DATE: Record<string, string> = {
+  notice_from_authority: "date_of_notice",
+  response_to_notice: "response_submitted_on",
+  adjournment_request: "adjourned_to",
+  personal_hearing: "hearing_date",
+  virtual_hearing: "hearing_date",
+  personal_follow_up: "against_notice_dated",
+  assessment_order: "date_of_order",
+  notice_of_penalty: "date_of_notice",
+  penalty_order: "date_of_order",
+};
+
+// ─── Other Constants ──────────────────────────────────────────────
+const IMPORTANCE: Record<string, { label: string; cls: string }> = {
+  critical: { label: "Critical", cls: "bg-red-100 text-red-700" },
+  high: { label: "High", cls: "bg-orange-100 text-orange-700" },
+  medium: { label: "Medium", cls: "bg-yellow-100 text-yellow-700" },
+  low: { label: "Low", cls: "bg-green-100 text-green-700" },
+};
+const OUTCOME: Record<string, { label: string; cls: string }> = {
+  favourable: { label: "Favourable", cls: "bg-green-100 text-green-700" },
+  doubtful: { label: "Doubtful", cls: "bg-yellow-100 text-yellow-700" },
+  unfavourable: { label: "Unfavourable", cls: "bg-red-100 text-red-700" },
+};
+const EVENT_LABELS: Record<string, string> = {
+  notice_from_authority: "Notice from Authority",
+  response_to_notice: "Response to Notice",
+  adjournment_request: "Adjournment Request",
+  personal_hearing: "Personal Hearing",
+  virtual_hearing: "Virtual Hearing",
+  personal_follow_up: "Personal Follow-up",
+  assessment_order: "Assessment Order",
+  notice_of_penalty: "Notice of Penalty",
+  penalty_order: "Penalty Order",
+};
+const NOTICE_STATUS_LABEL: Record<string, string> = {
+  open: "Open", in_progress: "In Progress", closed: "Closed",
+};
+
+// ─── Helpers ─────────────────────────────────────────────────────
+function fmtDate(d: string | null) {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function fmtDateTime(d: string | null) {
+  if (!d) return "—";
+  const dt = new Date(d);
+  return dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) +
+    " " + dt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
+}
+
+function getEventSummary(category: string, details: Record<string, string> | null): string {
+  if (!details) return "";
+  const parts: string[] = [];
+  switch (category) {
+    case "notice_from_authority":
+    case "notice_of_penalty":
+      if (details.date_of_notice) parts.push(`Notice: ${fmtDateTime(details.date_of_notice)}`);
+      if (details.due_date) parts.push(`Due: ${fmtDateTime(details.due_date)}`);
+      if (details.notice_status) parts.push(`Status: ${NOTICE_STATUS_LABEL[details.notice_status] ?? details.notice_status}`);
+      break;
+    case "response_to_notice":
+      if (details.response_submitted_on) parts.push(`Submitted: ${fmtDateTime(details.response_submitted_on)}`);
+      if (details.revised_due_date) parts.push(`Revised Due: ${fmtDateTime(details.revised_due_date)}`);
+      break;
+    case "adjournment_request":
+      if (details.against_notice_date) parts.push(`Against Notice: ${fmtDateTime(details.against_notice_date)}`);
+      if (details.adjourned_to) parts.push(`Adjourned To: ${fmtDateTime(details.adjourned_to)}`);
+      break;
+    case "personal_hearing":
+    case "virtual_hearing":
+      if (details.hearing_date) parts.push(`Hearing: ${fmtDateTime(details.hearing_date)}`);
+      if (details.team_present) parts.push(`Team: ${details.team_present}`);
+      if (details.officers_present) parts.push(`Officers: ${details.officers_present}`);
+      break;
+    case "personal_follow_up":
+      if (details.follow_up_with) parts.push(`With: ${details.follow_up_with}`);
+      if (details.follow_up_by) parts.push(`By: ${details.follow_up_by}`);
+      break;
+    case "assessment_order":
+    case "penalty_order":
+      if (details.date_of_order) parts.push(`Order: ${fmtDateTime(details.date_of_order)}`);
+      if (details.order_received_by) parts.push(`Received by: ${details.order_received_by}`);
+      if (details.appeal_to_be_filed) parts.push(`Appeal: ${details.appeal_to_be_filed === "yes" ? "Yes" : "No"}`);
+      if (details.appeal_to_be_filed === "yes" && details.appeal_to_be_filed_by)
+        parts.push(`File by: ${fmtDateTime(details.appeal_to_be_filed_by)}`);
+      break;
+  }
+  return parts.join("  ·  ");
+}
+
+const inp = "w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]";
+
+function Field({ label, children, fullWidth }: { label: string; children: React.ReactNode; fullWidth?: boolean }) {
+  return (
+    <div className={fullWidth ? "col-span-2" : ""}>
+      <label className="block text-xs font-medium text-[#6B7280] mb-1.5">{label}</label>
+      {children}
+    </div>
+  );
+}
+function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div>
+      <p className="text-xs text-[#9CA3AF] mb-0.5">{label}</p>
+      <p className="text-sm text-[#1A1A2E]">{value || "—"}</p>
+    </div>
+  );
+}
+
+// ─── Proceeding Form Fields ────────────────────────────────────────
+function ProceedingFormFields({
+  values, onChange, mastersByType, teamMembers, clientUsers,
+}: {
+  values: ProceedingInput;
+  onChange: (field: keyof ProceedingInput, value: string) => void;
+  mastersByType: Record<string, string[]>;
+  teamMembers: { id: string; first_name: string; last_name: string }[];
+  clientUsers: { id: string; first_name: string; last_name: string }[];
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-4">
+      <Field label="Forum">
+        <select value={values.proceeding_type ?? ""} onChange={(e) => onChange("proceeding_type", e.target.value)} className={inp}>
+          <option value="">Select…</option>
+          {(mastersByType["proceeding_type"] ?? []).map((v) => <option key={v} value={v}>{v}</option>)}
+        </select>
+      </Field>
+      <Field label="Authority Type">
+        <select value={values.authority_type ?? ""} onChange={(e) => onChange("authority_type", e.target.value)} className={inp}>
+          <option value="">Select…</option>
+          <option value="assessing">Assessing</option>
+          <option value="appellate">Appellate</option>
+        </select>
+      </Field>
+      <Field label="Authority Name">
+        <input value={values.authority_name ?? ""} onChange={(e) => onChange("authority_name", e.target.value)} placeholder="e.g. ACIT, Circle 1(1)" className={inp} />
+      </Field>
+      <Field label="Jurisdiction City">
+        <input value={values.jurisdiction_city ?? ""} onChange={(e) => onChange("jurisdiction_city", e.target.value)} placeholder="e.g. Chennai" className={inp} />
+      </Field>
+      <Field label="Jurisdiction / Address" fullWidth>
+        <input value={values.jurisdiction ?? ""} onChange={(e) => onChange("jurisdiction", e.target.value)} placeholder="Full jurisdiction or address" className={inp} />
+      </Field>
+      <Field label="Importance">
+        <select value={values.importance ?? ""} onChange={(e) => onChange("importance", e.target.value)} className={inp}>
+          <option value="">Select…</option>
+          <option value="critical">Critical</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+      </Field>
+      <Field label="Mode">
+        <select value={values.mode ?? ""} onChange={(e) => onChange("mode", e.target.value)} className={inp}>
+          <option value="">Select…</option>
+          <option value="online">Online</option>
+          <option value="offline">Offline / Physical</option>
+        </select>
+      </Field>
+      <Field label="Initiated On">
+        <input type="date" value={values.initiated_on ?? ""} onChange={(e) => onChange("initiated_on", e.target.value)} className={inp} />
+      </Field>
+      <Field label="To Be Completed By">
+        <input type="date" value={values.to_be_completed_by ?? ""} onChange={(e) => onChange("to_be_completed_by", e.target.value)} className={inp} />
+      </Field>
+      <Field label="Assigned To">
+        <select value={values.assigned_to ?? ""} onChange={(e) => onChange("assigned_to", e.target.value)} className={inp}>
+          <option value="">Unassigned</option>
+          {teamMembers.map((m) => <option key={m.id} value={m.id}>{m.first_name} {m.last_name}</option>)}
+        </select>
+      </Field>
+      <Field label="Client Staff">
+        <select value={values.client_staff_id ?? ""} onChange={(e) => onChange("client_staff_id", e.target.value)} className={inp}>
+          <option value="">None</option>
+          {clientUsers.map((u) => <option key={u.id} value={u.id}>{u.first_name} {u.last_name}</option>)}
+        </select>
+      </Field>
+      <Field label="Possible Outcome">
+        <select value={values.possible_outcome ?? ""} onChange={(e) => onChange("possible_outcome", e.target.value)} className={inp}>
+          <option value="">Select…</option>
+          <option value="favourable">Favourable</option>
+          <option value="doubtful">Doubtful</option>
+          <option value="unfavourable">Unfavourable</option>
+        </select>
+      </Field>
+    </div>
+  );
+}
+
+// ─── Modal wrapper ─────────────────────────────────────────────────
+function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-xl border border-[#E5E7EB] w-full max-w-2xl max-h-[90vh] flex flex-col">
+        <div className="px-6 py-4 border-b border-[#E5E7EB] flex items-center justify-between flex-shrink-0">
+          <h3 className="text-base font-semibold text-[#1A1A2E]">{title}</h3>
+          <button onClick={onClose} className="text-[#9CA3AF] hover:text-[#6B7280]">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div className="p-6 overflow-y-auto flex-1">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────
+export default function AppealDetailClient({ appeal, clients, teamMembers, clientUsers, mastersByType, canEdit }: Props) {
+  const router = useRouter();
+  const clientOrg = appeal.client_org ?? null;
+
+  // ── Edit Appeal ──
+  const [showEditAppeal, setShowEditAppeal] = useState(false);
+  const [editClientId, setEditClientId] = useState(clientOrg?.id ?? "");
+  const [editFY, setEditFY] = useState(appeal.financial_year ?? "");
+  const [editAY, setEditAY] = useState(appeal.assessment_year ?? "");
+  const [editAct, setEditAct] = useState(appeal.act_regulation ?? "");
+  const [appealSaving, setAppealSaving] = useState(false);
+  const [appealError, setAppealError] = useState<string | null>(null);
+
+  async function handleSaveAppeal(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editClientId) { setAppealError("Client is required."); return; }
+    setAppealSaving(true); setAppealError(null);
+    try {
+      await updateAppeal(appeal.id, { client_org_id: editClientId, financial_year: editFY, assessment_year: editAY, act_regulation: editAct });
+      setShowEditAppeal(false);
+      router.refresh();
+    } catch (err) {
+      setAppealError(err instanceof Error ? err.message : "Failed to save.");
+    } finally { setAppealSaving(false); }
+  }
+
+  // ── Edit Proceeding ──
+  const [editProc, setEditProc] = useState<Proceeding | null>(null);
+  const [editProcValues, setEditProcValues] = useState<ProceedingInput>({});
+  const [editProcSaving, setEditProcSaving] = useState(false);
+  const [editProcError, setEditProcError] = useState<string | null>(null);
+
+  function openEditProc(proc: Proceeding) {
+    setEditProc(proc);
+    setEditProcValues({
+      proceeding_type: proc.proceeding_type ?? "",
+      authority_type: proc.authority_type ?? "",
+      authority_name: proc.authority_name ?? "",
+      jurisdiction: proc.jurisdiction ?? "",
+      jurisdiction_city: proc.jurisdiction_city ?? "",
+      importance: proc.importance ?? "",
+      mode: proc.mode ?? "",
+      initiated_on: proc.initiated_on ?? "",
+      to_be_completed_by: proc.to_be_completed_by ?? "",
+      assigned_to: proc.assigned_to ?? "",
+      client_staff_id: proc.client_staff_id ?? "",
+      possible_outcome: proc.possible_outcome ?? "",
+    });
+    setEditProcError(null);
+  }
+
+  async function handleSaveProc(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editProc) return;
+    setEditProcSaving(true); setEditProcError(null);
+    try {
+      await updateProceeding(editProc.id, editProcValues);
+      setEditProc(null); router.refresh();
+    } catch (err) {
+      setEditProcError(err instanceof Error ? err.message : "Failed to save.");
+    } finally { setEditProcSaving(false); }
+  }
+
+  // ── Add Proceeding ──
+  const [showAddProc, setShowAddProc] = useState(false);
+  const [addProcValues, setAddProcValues] = useState<ProceedingInput>({});
+  const [addProcSaving, setAddProcSaving] = useState(false);
+  const [addProcError, setAddProcError] = useState<string | null>(null);
+
+  async function handleAddProc(e: React.FormEvent) {
+    e.preventDefault();
+    setAddProcSaving(true); setAddProcError(null);
+    try {
+      await addProceeding(appeal.id, addProcValues);
+      setShowAddProc(false); setAddProcValues({}); router.refresh();
+    } catch (err) {
+      setAddProcError(err instanceof Error ? err.message : "Failed to add proceeding.");
+    } finally { setAddProcSaving(false); }
+  }
+
+  // ── Add Event ──
+  const [addEventProcId, setAddEventProcId] = useState<string | null>(null);
+  const [eventCategory, setEventCategory] = useState("");
+  const [eventDetails, setEventDetails] = useState<Record<string, string>>({});
+  const [eventDescription, setEventDescription] = useState("");
+  const [eventSaving, setEventSaving] = useState(false);
+  const [eventError, setEventError] = useState<string | null>(null);
+  const [attachmentUploading, setAttachmentUploading] = useState(false);
+
+  // ── View Event ──
+  const [viewEvent, setViewEvent] = useState<AppEvent | null>(null);
+
+  // ── Edit Event ──
+  const [editEvent, setEditEvent] = useState<AppEvent | null>(null);
+  const [editEventCategory, setEditEventCategory] = useState("");
+  const [editEventDetails, setEditEventDetails] = useState<Record<string, string>>({});
+  const [editEventDescription, setEditEventDescription] = useState("");
+  const [editEventSaving, setEditEventSaving] = useState(false);
+  const [editEventError, setEditEventError] = useState<string | null>(null);
+  const [editAttachmentUploading, setEditAttachmentUploading] = useState(false);
+
+  function openEditEvent(ev: AppEvent) {
+    setEditEvent(ev);
+    setEditEventCategory(ev.category);
+    setEditEventDetails(ev.details ? { ...ev.details } : {});
+    setEditEventDescription(ev.description ?? "");
+    setEditEventError(null);
+  }
+
+  function setEditDetail(key: string, value: string) {
+    setEditEventDetails((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function handleEditAttachmentUpload(file: File) {
+    setEditAttachmentUploading(true);
+    const supabase = createClient();
+    const path = `events/${Date.now()}-${file.name}`;
+    const { data, error } = await supabase.storage.from("org-files").upload(path, file, { upsert: true });
+    if (!error && data) {
+      const { data: urlData } = supabase.storage.from("org-files").getPublicUrl(data.path);
+      setEditDetail("attachment", urlData.publicUrl);
+    }
+    setEditAttachmentUploading(false);
+  }
+
+  async function handleSaveEvent(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editEvent || !editEventCategory) { setEditEventError("Category is required."); return; }
+    setEditEventSaving(true); setEditEventError(null);
+    try {
+      await updateEvent(editEvent.id, {
+        proceeding_id: "", // not used in update
+        category: editEventCategory,
+        description: editEventDescription || undefined,
+        details: editEventDetails,
+      });
+      setEditEvent(null);
+      router.refresh();
+    } catch (err) {
+      setEditEventError(err instanceof Error ? err.message : "Failed to save event.");
+    } finally { setEditEventSaving(false); }
+  }
+
+  // ── Delete Event ──
+  const [confirmDeleteEvent, setConfirmDeleteEvent] = useState<AppEvent | null>(null);
+  const [deletingEvent, setDeletingEvent] = useState(false);
+
+  async function handleDeleteEvent() {
+    if (!confirmDeleteEvent) return;
+    setDeletingEvent(true);
+    try {
+      await deleteEvent(confirmDeleteEvent.id);
+      setConfirmDeleteEvent(null);
+      router.refresh();
+    } catch {
+      // swallow — rare; could add error state if needed
+    } finally { setDeletingEvent(false); }
+  }
+
+  // ── Delete Appeal ──
+  const [confirmDeleteAppeal, setConfirmDeleteAppeal] = useState(false);
+  const [deletingAppeal, setDeletingAppeal] = useState(false);
+
+  async function handleDeleteAppeal() {
+    setDeletingAppeal(true);
+    try {
+      await deleteAppeal(appeal.id);
+      router.push("/appeals");
+    } catch {
+      setDeletingAppeal(false);
+    }
+  }
+
+  function openAddEvent(procId: string) {
+    setAddEventProcId(procId);
+    setEventCategory(""); setEventDetails({}); setEventDescription(""); setEventError(null);
+  }
+
+  function handleEventCategoryChange(cat: string) {
+    setEventCategory(cat);
+    setEventDetails({}); // Reset all fields when category changes
+  }
+
+  function setDetail(key: string, value: string) {
+    setEventDetails((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function handleAttachmentUpload(file: File) {
+    setAttachmentUploading(true);
+    const supabase = createClient();
+    const path = `events/${Date.now()}-${file.name}`;
+    const { data, error } = await supabase.storage.from("org-files").upload(path, file, { upsert: true });
+    if (!error && data) {
+      const { data: urlData } = supabase.storage.from("org-files").getPublicUrl(data.path);
+      setDetail("attachment", urlData.publicUrl);
+    }
+    setAttachmentUploading(false);
+  }
+
+  async function handleAddEvent(e: React.FormEvent) {
+    e.preventDefault();
+    if (!addEventProcId || !eventCategory) { setEventError("Category is required."); return; }
+    setEventSaving(true); setEventError(null);
+    try {
+      // Derive primary event_date from category-specific fields
+      const primaryKey = PRIMARY_DATE[eventCategory];
+      const primaryDate = primaryKey && eventDetails[primaryKey]
+        ? new Date(eventDetails[primaryKey]).toISOString()
+        : undefined;
+
+      const input: EventInput = {
+        proceeding_id: addEventProcId,
+        category: eventCategory,
+        event_date: primaryDate,
+        description: eventDescription || undefined,
+        details: eventDetails,
+      };
+      await addEvent(input);
+      setAddEventProcId(null);
+      router.refresh();
+    } catch (err) {
+      setEventError(err instanceof Error ? err.message : "Failed to add event.");
+    } finally { setEventSaving(false); }
+  }
+
+  // ── Documents ──
+  const [docUploading, setDocUploading] = useState(false);
+  const [docError, setDocError] = useState<string | null>(null);
+  const [confirmDeleteDoc, setConfirmDeleteDoc] = useState<AppDocument | null>(null);
+  const [deletingDoc, setDeletingDoc] = useState(false);
+
+  async function handleDocUpload(file: File) {
+    setDocUploading(true); setDocError(null);
+    const supabase = createClient();
+    const path = `appeal-docs/${appeal.id}/${Date.now()}-${file.name}`;
+    const { data, error } = await supabase.storage.from("org-files").upload(path, file, { upsert: true });
+    if (error || !data) { setDocError("Upload failed. Please try again."); setDocUploading(false); return; }
+    const { data: urlData } = supabase.storage.from("org-files").getPublicUrl(data.path);
+    try {
+      await addDocument(appeal.id, file.name, urlData.publicUrl, file.size);
+      router.refresh();
+    } catch (err) {
+      setDocError(err instanceof Error ? err.message : "Failed to save document.");
+    } finally { setDocUploading(false); }
+  }
+
+  async function handleDeleteDoc() {
+    if (!confirmDeleteDoc) return;
+    setDeletingDoc(true);
+    try {
+      await deleteDocument(confirmDeleteDoc.id, appeal.id);
+      setConfirmDeleteDoc(null);
+      router.refresh();
+    } catch { /* swallow */ } finally { setDeletingDoc(false); }
+  }
+
+  const proceedingFormChange = (setter: React.Dispatch<React.SetStateAction<ProceedingInput>>) =>
+    (field: keyof ProceedingInput, value: string) => setter((prev) => ({ ...prev, [field]: value }));
+
+  const sortedProceedings = [...(appeal.proceedings ?? [])].sort(
+    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  );
+
+  // ── Render ──
+  return (
+    <div className="space-y-4 max-w-4xl">
+
+      {/* Appeal Header */}
+      <div className="bg-white border border-[#E5E7EB] rounded-xl p-5 shadow-sm flex items-start justify-between gap-4">
+        <div className="grid grid-cols-4 gap-6 flex-1">
+          <DetailRow label="Client" value={<span className="font-medium">{clientOrg?.name}</span>} />
+          <DetailRow label="Financial Year" value={appeal.financial_year} />
+          <DetailRow label="Assessment Year" value={appeal.assessment_year} />
+          <DetailRow label="Act / Regulation" value={appeal.act_regulation} />
+        </div>
+        {canEdit && (
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={() => { setEditClientId(clientOrg?.id ?? ""); setEditFY(appeal.financial_year ?? ""); setEditAY(appeal.assessment_year ?? ""); setEditAct(appeal.act_regulation ?? ""); setAppealError(null); setShowEditAppeal(true); }}
+              className="px-3 py-1.5 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:text-[#1A1A2E] hover:bg-[#F8F9FA] transition"
+            >
+              Edit Appeal
+            </button>
+            <button
+              onClick={() => setConfirmDeleteAppeal(true)}
+              className="px-3 py-1.5 text-xs border border-red-200 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50 transition"
+            >
+              Delete Appeal
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Proceedings */}
+      {sortedProceedings.length === 0 ? (
+        <div className="bg-white border border-[#E5E7EB] rounded-xl p-8 text-center text-[#6B7280] text-sm">No proceedings yet.</div>
+      ) : (
+        sortedProceedings.map((proc, idx) => {
+          const impCfg = proc.importance ? IMPORTANCE[proc.importance] : null;
+          const outCfg = proc.possible_outcome ? OUTCOME[proc.possible_outcome] : null;
+          const au = proc.assigned_user ?? null;
+          const cs = proc.client_staff ?? null;
+          const sortedEvents = [...(proc.events ?? [])].sort(
+            (a, b) => (b.event_date ?? b.created_at).localeCompare(a.event_date ?? a.created_at)
+          );
+
+          return (
+            <div key={proc.id} className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
+              {/* Proceeding header */}
+              <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center gap-3">
+                <span className="text-xs text-[#9CA3AF] font-medium bg-[#F8F9FA] px-2 py-0.5 rounded">Proceeding {idx + 1}</span>
+                <span className="font-semibold text-[#1A1A2E] text-sm">{proc.proceeding_type ?? "—"}</span>
+                {impCfg && <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${impCfg.cls}`}>{impCfg.label}</span>}
+                {proc.mode && <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-[#F3F4F6] text-[#6B7280] capitalize">{proc.mode}</span>}
+                {canEdit && (
+                  <button onClick={() => openEditProc(proc)}
+                    className="ml-auto px-3 py-1.5 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:text-[#1A1A2E] hover:bg-[#F8F9FA] transition">
+                    Edit
+                  </button>
+                )}
+              </div>
+
+              {/* Proceeding details */}
+              <div className="px-5 py-4 grid grid-cols-3 gap-x-6 gap-y-4 border-b border-[#E5E7EB]">
+                <DetailRow label="Authority" value={[proc.authority_type, proc.authority_name].filter(Boolean).join(" · ")} />
+                <DetailRow label="Jurisdiction" value={[proc.jurisdiction_city, proc.jurisdiction].filter(Boolean).join(", ")} />
+                <DetailRow label="Assigned To" value={au ? `${au.first_name} ${au.last_name}` : null} />
+                <DetailRow label="Client Staff" value={cs ? `${cs.first_name} ${cs.last_name}` : null} />
+                <DetailRow label="Initiated On" value={fmtDate(proc.initiated_on)} />
+                <DetailRow label="Deadline" value={fmtDate(proc.to_be_completed_by)} />
+                <DetailRow label="Possible Outcome" value={outCfg ? (
+                  <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${outCfg.cls}`}>{outCfg.label}</span>
+                ) : null} />
+              </div>
+
+              {/* Events */}
+              <div className="px-5 py-4">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Events ({sortedEvents.length})</p>
+                  {canEdit && (
+                    <button onClick={() => openAddEvent(proc.id)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg transition">
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                      </svg>
+                      Add Event
+                    </button>
+                  )}
+                </div>
+                {sortedEvents.length === 0 ? (
+                  <p className="text-xs text-[#9CA3AF]">No events recorded yet.</p>
+                ) : (
+                  <div className="space-y-0">
+                    {sortedEvents.map((ev) => {
+                      const summary = getEventSummary(ev.category, ev.details);
+                      const attachmentUrl = ev.details?.attachment;
+                      return (
+                        <div key={ev.id} className="py-2.5 border-b border-[#F3F4F6] last:border-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-start gap-2 flex-1 min-w-0">
+                              <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-[#EEF2FF] text-[#4A6FA5] whitespace-nowrap flex-shrink-0">
+                                {EVENT_LABELS[ev.category] ?? ev.category}
+                              </span>
+                              {attachmentUrl && (
+                                <a href={attachmentUrl} target="_blank" rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-xs text-[#4A6FA5] hover:underline flex-shrink-0">
+                                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                  </svg>
+                                  Attachment
+                                </a>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-3 flex-shrink-0">
+                              <button
+                                onClick={() => setViewEvent(ev)}
+                                className="text-xs text-[#4A6FA5] hover:text-[#1E3A5F] font-medium"
+                              >
+                                Quick View
+                              </button>
+                              {canEdit && (
+                                <>
+                                  <button
+                                    onClick={() => openEditEvent(ev)}
+                                    className="text-xs text-[#6B7280] hover:text-[#1A1A2E] font-medium"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() => setConfirmDeleteEvent(ev)}
+                                    className="text-xs text-red-400 hover:text-red-600 font-medium"
+                                  >
+                                    Delete
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          {summary && <p className="text-xs text-[#6B7280] mt-1">{summary}</p>}
+                          {ev.description && <p className="text-xs text-[#9CA3AF] mt-0.5 italic">{ev.description}</p>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })
+      )}
+
+      {/* Documents Section */}
+      <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-[#1A1A2E]">Documents ({appeal.documents?.length ?? 0})</p>
+            <p className="text-xs text-[#6B7280] mt-0.5">Files attached to this appeal</p>
+          </div>
+          {canEdit && (
+            <label className={`cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F8F9FA] transition ${docUploading ? "opacity-50 pointer-events-none" : ""}`}>
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              {docUploading ? "Uploading…" : "Upload File"}
+              <input type="file" className="hidden" disabled={docUploading}
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleDocUpload(f); }} />
+            </label>
+          )}
+        </div>
+        {docError && <div className="px-5 py-2 bg-red-50 border-b border-red-100 text-xs text-red-600">{docError}</div>}
+        {(appeal.documents?.length ?? 0) === 0 ? (
+          <div className="px-5 py-8 text-center text-sm text-[#9CA3AF]">
+            No documents attached.{canEdit ? " Upload files using the button above." : ""}
+          </div>
+        ) : (
+          <div className="divide-y divide-[#F3F4F6]">
+            {appeal.documents.map((doc) => (
+              <div key={doc.id} className="px-5 py-3 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2 min-w-0">
+                  <svg className="w-4 h-4 text-[#4A6FA5] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-[#1A1A2E] truncate">{doc.file_name}</p>
+                    <p className="text-xs text-[#9CA3AF]">
+                      {doc.uploaded_by_user ? `${doc.uploaded_by_user.first_name} ${doc.uploaded_by_user.last_name} · ` : ""}
+                      {new Date(doc.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <a href={doc.file_url} target="_blank" rel="noopener noreferrer"
+                    className="text-xs font-medium text-[#4A6FA5] hover:text-[#1E3A5F]">View</a>
+                  {canEdit && (
+                    <button onClick={() => setConfirmDeleteDoc(doc)}
+                      className="text-xs font-medium text-red-400 hover:text-red-600">Delete</button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Add Proceeding */}
+      {canEdit && (
+        <button onClick={() => { setAddProcValues({}); setAddProcError(null); setShowAddProc(true); }}
+          className="w-full py-3 border-2 border-dashed border-[#E5E7EB] rounded-xl text-sm text-[#6B7280] hover:border-[#1E3A5F] hover:text-[#1E3A5F] transition flex items-center justify-center gap-2">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+          Add Proceeding
+        </button>
+      )}
+
+      {/* ── Edit Appeal Modal ── */}
+      {showEditAppeal && (
+        <Modal title="Edit Appeal" onClose={() => setShowEditAppeal(false)}>
+          <form onSubmit={handleSaveAppeal} className="space-y-4">
+            <Field label="Client Organisation">
+              <select value={editClientId} onChange={(e) => setEditClientId(e.target.value)} className={inp}>
+                <option value="">Select client…</option>
+                {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </Field>
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Financial Year / Tax Year">
+                <select value={editFY} onChange={(e) => setEditFY(e.target.value)} className={inp}>
+                  <option value="">Select…</option>
+                  {(mastersByType["financial_year"] ?? []).map((v) => <option key={v} value={v}>{v}</option>)}
+                </select>
+              </Field>
+              <Field label="Assessment Year">
+                <select value={editAY} onChange={(e) => setEditAY(e.target.value)} className={inp}>
+                  <option value="">Select…</option>
+                  {(mastersByType["assessment_year"] ?? []).map((v) => <option key={v} value={v}>{v}</option>)}
+                </select>
+              </Field>
+              <Field label="Act / Regulation" fullWidth>
+                <select value={editAct} onChange={(e) => setEditAct(e.target.value)} className={inp}>
+                  <option value="">Select…</option>
+                  {(mastersByType["act_regulation"] ?? []).map((v) => <option key={v} value={v}>{v}</option>)}
+                </select>
+              </Field>
+            </div>
+            {appealError && <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">{appealError}</div>}
+            <div className="flex gap-3 justify-end pt-2">
+              <button type="button" onClick={() => setShowEditAppeal(false)} className="px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">Cancel</button>
+              <button type="submit" disabled={appealSaving} className="px-4 py-2 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60">
+                {appealSaving ? "Saving…" : "Save"}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* ── Edit Proceeding Modal ── */}
+      {editProc && (
+        <Modal title="Edit Proceeding" onClose={() => setEditProc(null)}>
+          <form onSubmit={handleSaveProc} className="space-y-4">
+            <ProceedingFormFields values={editProcValues} onChange={proceedingFormChange(setEditProcValues)} mastersByType={mastersByType} teamMembers={teamMembers} clientUsers={clientUsers} />
+            {editProcError && <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">{editProcError}</div>}
+            <div className="flex gap-3 justify-end pt-2">
+              <button type="button" onClick={() => setEditProc(null)} className="px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">Cancel</button>
+              <button type="submit" disabled={editProcSaving} className="px-4 py-2 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60">
+                {editProcSaving ? "Saving…" : "Save Changes"}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* ── Add Proceeding Modal ── */}
+      {showAddProc && (
+        <Modal title="Add Proceeding" onClose={() => setShowAddProc(false)}>
+          <form onSubmit={handleAddProc} className="space-y-4">
+            <ProceedingFormFields values={addProcValues} onChange={proceedingFormChange(setAddProcValues)} mastersByType={mastersByType} teamMembers={teamMembers} clientUsers={clientUsers} />
+            {addProcError && <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">{addProcError}</div>}
+            <div className="flex gap-3 justify-end pt-2">
+              <button type="button" onClick={() => setShowAddProc(false)} className="px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">Cancel</button>
+              <button type="submit" disabled={addProcSaving} className="px-4 py-2 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60">
+                {addProcSaving ? "Adding…" : "Add Proceeding"}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* ── Quick View Event Modal ── */}
+      {viewEvent && (
+        <Modal title={EVENT_LABELS[viewEvent.category] ?? viewEvent.category} onClose={() => setViewEvent(null)}>
+          <div className="space-y-5">
+            {/* Category-specific fields */}
+            {CATEGORY_FIELDS[viewEvent.category] && (
+              <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                {CATEGORY_FIELDS[viewEvent.category].map((field) => {
+                  const rawVal = viewEvent.details?.[field.key];
+                  let display: React.ReactNode = <span className="text-[#9CA3AF]">—</span>;
+                  if (rawVal) {
+                    if (field.type === "datetime") {
+                      display = fmtDateTime(rawVal);
+                    } else if (field.type === "select") {
+                      const opt = field.options?.find((o) => o.value === rawVal);
+                      display = opt?.label ?? rawVal;
+                    } else if (field.type === "file") {
+                      display = (
+                        <a href={rawVal} target="_blank" rel="noopener noreferrer"
+                          className="text-[#4A6FA5] hover:underline text-sm">
+                          View File
+                        </a>
+                      );
+                    } else {
+                      display = rawVal;
+                    }
+                  }
+                  return (
+                    <div key={field.key} className={field.fullWidth ? "col-span-2" : ""}>
+                      <p className="text-xs text-[#9CA3AF] mb-0.5">{field.label}</p>
+                      <p className="text-sm text-[#1A1A2E]">{display}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {/* Notes */}
+            {viewEvent.description && (
+              <div className="pt-3 border-t border-[#F3F4F6]">
+                <p className="text-xs text-[#9CA3AF] mb-0.5">Notes</p>
+                <p className="text-sm text-[#1A1A2E] italic">{viewEvent.description}</p>
+              </div>
+            )}
+            <div className="flex justify-end gap-3 pt-2">
+              {canEdit && (
+                <button
+                  onClick={() => { setViewEvent(null); openEditEvent(viewEvent); }}
+                  className="px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition"
+                >
+                  Edit
+                </button>
+              )}
+              <button onClick={() => setViewEvent(null)}
+                className="px-4 py-2 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition">
+                Close
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Edit Event Modal ── */}
+      {editEvent && (
+        <Modal title={`Edit — ${EVENT_LABELS[editEventCategory] ?? editEventCategory}`} onClose={() => setEditEvent(null)}>
+          <form onSubmit={handleSaveEvent} className="space-y-5">
+            {/* Category (read-only display, can't change category as it would break field semantics) */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-[#6B7280] font-medium">Category:</span>
+              <span className="px-2 py-0.5 rounded text-xs font-medium bg-[#EEF2FF] text-[#4A6FA5]">
+                {EVENT_LABELS[editEventCategory] ?? editEventCategory}
+              </span>
+            </div>
+
+            {/* Dynamic category fields */}
+            {editEventCategory && CATEGORY_FIELDS[editEventCategory] && (
+              <div className="grid grid-cols-2 gap-4 pt-1 border-t border-[#F3F4F6]">
+                {CATEGORY_FIELDS[editEventCategory].map((field) => (
+                  <Field key={field.key} label={field.label} fullWidth={field.fullWidth}>
+                    {field.type === "datetime" && (
+                      <input
+                        type="datetime-local"
+                        value={editEventDetails[field.key] ?? ""}
+                        onChange={(e) => setEditDetail(field.key, e.target.value)}
+                        className={inp}
+                      />
+                    )}
+                    {field.type === "text" && (
+                      <input
+                        type="text"
+                        value={editEventDetails[field.key] ?? ""}
+                        onChange={(e) => setEditDetail(field.key, e.target.value)}
+                        className={inp}
+                      />
+                    )}
+                    {field.type === "select" && (
+                      <select
+                        value={editEventDetails[field.key] ?? ""}
+                        onChange={(e) => setEditDetail(field.key, e.target.value)}
+                        className={inp}
+                      >
+                        <option value="">Select…</option>
+                        {field.options?.map((o) => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
+                      </select>
+                    )}
+                    {field.type === "file" && (
+                      <div className="flex items-center gap-3">
+                        {editEventDetails[field.key] ? (
+                          <>
+                            <a href={editEventDetails[field.key]} target="_blank" rel="noopener noreferrer"
+                              className="text-xs text-[#4A6FA5] hover:underline truncate max-w-[200px]">
+                              View uploaded file
+                            </a>
+                            <button type="button" onClick={() => setEditDetail(field.key, "")}
+                              className="text-xs text-red-500 hover:text-red-700">Remove</button>
+                          </>
+                        ) : (
+                          <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F8F9FA] transition">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                            </svg>
+                            {editAttachmentUploading ? "Uploading…" : "Upload File"}
+                            <input type="file" className="hidden" disabled={editAttachmentUploading}
+                              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleEditAttachmentUpload(f); }} />
+                          </label>
+                        )}
+                      </div>
+                    )}
+                  </Field>
+                ))}
+              </div>
+            )}
+
+            {/* Notes */}
+            <Field label="Notes (optional)">
+              <textarea
+                value={editEventDescription}
+                onChange={(e) => setEditEventDescription(e.target.value)}
+                rows={2}
+                placeholder="Any additional notes…"
+                className={`${inp} resize-none`}
+              />
+            </Field>
+
+            {editEventError && <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">{editEventError}</div>}
+
+            <div className="flex gap-3 justify-end pt-2">
+              <button type="button" onClick={() => setEditEvent(null)}
+                className="px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">
+                Cancel
+              </button>
+              <button type="submit" disabled={editEventSaving || editAttachmentUploading}
+                className="px-4 py-2 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60">
+                {editEventSaving ? "Saving…" : "Save Changes"}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* ── Add Event Modal ── */}
+      {addEventProcId && (
+        <Modal title="Add Event" onClose={() => setAddEventProcId(null)}>
+          <form onSubmit={handleAddEvent} className="space-y-5">
+            {/* Category selector */}
+            <Field label="Category *">
+              <select value={eventCategory} onChange={(e) => handleEventCategoryChange(e.target.value)} className={inp}>
+                <option value="">Select category…</option>
+                {Object.entries(EVENT_LABELS).map(([key, label]) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
+              </select>
+            </Field>
+
+            {/* Dynamic category fields */}
+            {eventCategory && CATEGORY_FIELDS[eventCategory] && (
+              <div className="grid grid-cols-2 gap-4 pt-1 border-t border-[#F3F4F6]">
+                {CATEGORY_FIELDS[eventCategory].map((field) => (
+                  <Field key={field.key} label={field.label} fullWidth={field.fullWidth}>
+                    {field.type === "datetime" && (
+                      <input
+                        type="datetime-local"
+                        value={eventDetails[field.key] ?? ""}
+                        onChange={(e) => setDetail(field.key, e.target.value)}
+                        className={inp}
+                      />
+                    )}
+                    {field.type === "text" && (
+                      <input
+                        type="text"
+                        value={eventDetails[field.key] ?? ""}
+                        onChange={(e) => setDetail(field.key, e.target.value)}
+                        className={inp}
+                      />
+                    )}
+                    {field.type === "select" && (
+                      <select
+                        value={eventDetails[field.key] ?? ""}
+                        onChange={(e) => setDetail(field.key, e.target.value)}
+                        className={inp}
+                      >
+                        <option value="">Select…</option>
+                        {field.options?.map((o) => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
+                      </select>
+                    )}
+                    {field.type === "file" && (
+                      <div className="flex items-center gap-3">
+                        {eventDetails[field.key] ? (
+                          <>
+                            <a href={eventDetails[field.key]} target="_blank" rel="noopener noreferrer"
+                              className="text-xs text-[#4A6FA5] hover:underline truncate max-w-[200px]">
+                              View uploaded file
+                            </a>
+                            <button type="button" onClick={() => setDetail(field.key, "")}
+                              className="text-xs text-red-500 hover:text-red-700">Remove</button>
+                          </>
+                        ) : (
+                          <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F8F9FA] transition">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                            </svg>
+                            {attachmentUploading ? "Uploading…" : "Upload File"}
+                            <input type="file" className="hidden" disabled={attachmentUploading}
+                              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleAttachmentUpload(f); }} />
+                          </label>
+                        )}
+                      </div>
+                    )}
+                  </Field>
+                ))}
+              </div>
+            )}
+
+            {/* Notes */}
+            <Field label="Notes (optional)">
+              <textarea
+                value={eventDescription}
+                onChange={(e) => setEventDescription(e.target.value)}
+                rows={2}
+                placeholder="Any additional notes…"
+                className={`${inp} resize-none`}
+              />
+            </Field>
+
+            {eventError && <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">{eventError}</div>}
+
+            <div className="flex gap-3 justify-end pt-2">
+              <button type="button" onClick={() => setAddEventProcId(null)}
+                className="px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">
+                Cancel
+              </button>
+              <button type="submit" disabled={eventSaving || attachmentUploading}
+                className="px-4 py-2 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60">
+                {eventSaving ? "Adding…" : "Add Event"}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* ── Confirm Delete Event ── */}
+      {confirmDeleteEvent && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl border border-[#E5E7EB] w-full max-w-sm p-6">
+            <h3 className="text-base font-semibold text-[#1A1A2E] mb-2">Delete Event?</h3>
+            <p className="text-sm text-[#6B7280] mb-5">
+              Delete <strong>{EVENT_LABELS[confirmDeleteEvent.category] ?? confirmDeleteEvent.category}</strong>? This cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmDeleteEvent(null)}
+                disabled={deletingEvent}
+                className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteEvent}
+                disabled={deletingEvent}
+                className="flex-1 px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition disabled:opacity-60"
+              >
+                {deletingEvent ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Confirm Delete Document ── */}
+      {confirmDeleteDoc && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl border border-[#E5E7EB] w-full max-w-sm p-6">
+            <h3 className="text-base font-semibold text-[#1A1A2E] mb-2">Delete Document?</h3>
+            <p className="text-sm text-[#6B7280] mb-5">
+              Delete <strong>"{confirmDeleteDoc.file_name}"</strong>? This cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmDeleteDoc(null)} disabled={deletingDoc}
+                className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">
+                Cancel
+              </button>
+              <button onClick={handleDeleteDoc} disabled={deletingDoc}
+                className="flex-1 px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition disabled:opacity-60">
+                {deletingDoc ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Confirm Delete Appeal ── */}
+      {confirmDeleteAppeal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl border border-[#E5E7EB] w-full max-w-sm p-6">
+            <h3 className="text-base font-semibold text-[#1A1A2E] mb-2">Delete Appeal?</h3>
+            <p className="text-sm text-[#6B7280] mb-1">
+              This will permanently delete this appeal along with all its proceedings and events.
+            </p>
+            <p className="text-sm font-medium text-red-600 mb-5">This action cannot be undone.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmDeleteAppeal(false)}
+                disabled={deletingAppeal}
+                className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAppeal}
+                disabled={deletingAppeal}
+                className="flex-1 px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition disabled:opacity-60"
+              >
+                {deletingAppeal ? "Deleting…" : "Delete Appeal"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

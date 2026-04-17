@@ -1,0 +1,295 @@
+"use client";
+
+import { useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { updateSpProfile } from "@/app/(sp)/settings/actions";
+
+const BUSINESS_TYPES = ["Company", "Trust", "Partnership", "LLP", "Sole Proprietorship", "OPC", "HUF", "Individual", "Custom"];
+const COMPLIANCE_TYPES = [
+  { key: "pan", label: "PAN" },
+  { key: "aadhaar", label: "Aadhaar" },
+  { key: "tan", label: "TAN" },
+  { key: "gst", label: "GST" },
+] as const;
+
+interface ComplianceRow {
+  type: string;
+  number?: string | null;
+  login_id?: string | null;
+  credential?: string | null;
+  attachment_url?: string | null;
+}
+
+interface Props {
+  org: Record<string, string | null> | null;
+  compliance: ComplianceRow[];
+  isAdmin: boolean;
+}
+
+interface ComplianceState {
+  number: string;
+  login_id: string;
+  credential: string;
+  attachment_url: string;
+  showCredential: boolean;
+  uploading: boolean;
+}
+
+function EyeIcon({ visible }: { visible: boolean }) {
+  return (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      {visible ? (
+        <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+      ) : (
+        <>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        </>
+      )}
+    </svg>
+  );
+}
+
+export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
+  const ro = !isAdmin; // read-only for non-admins
+  const fieldClass = `w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] ${ro ? "bg-[#F8F9FA] text-[#6B7280] cursor-not-allowed" : ""}`;
+
+  // Profile state
+  const [name, setName] = useState(org?.name ?? "");
+  const [businessType, setBusinessType] = useState(org?.business_type ?? "");
+  const [dateOfIncorporation, setDateOfIncorporation] = useState(org?.date_of_incorporation ?? "");
+  const [logoUrl, setLogoUrl] = useState(org?.logo_url ?? "");
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [address1, setAddress1] = useState(org?.address_line1 ?? "");
+  const [address2, setAddress2] = useState(org?.address_line2 ?? "");
+  const [city, setCity] = useState(org?.city ?? "");
+  const [pinCode, setPinCode] = useState(org?.pin_code ?? "");
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [profileSuccess, setProfileSuccess] = useState(false);
+
+  // Compliance state
+  const [complianceState, setComplianceState] = useState<Record<string, ComplianceState>>(() => {
+    const init: Record<string, ComplianceState> = {};
+    COMPLIANCE_TYPES.forEach(({ key }) => {
+      const existing = compliance.find((c) => c.type === key);
+      init[key] = {
+        number: existing?.number ?? "",
+        login_id: existing?.login_id ?? "",
+        credential: existing?.credential ?? "",
+        attachment_url: existing?.attachment_url ?? "",
+        showCredential: false,
+        uploading: false,
+      };
+    });
+    return init;
+  });
+
+  function updateCompliance(type: string, field: keyof ComplianceState, value: string | boolean) {
+    setComplianceState((prev) => ({ ...prev, [type]: { ...prev[type], [field]: value } }));
+  }
+
+  async function uploadFile(file: File, path: string): Promise<string | null> {
+    const supabase = createClient();
+    const { data, error } = await supabase.storage.from("org-files").upload(path, file, { upsert: true });
+    if (error) return null;
+    const { data: urlData } = supabase.storage.from("org-files").getPublicUrl(data.path);
+    return urlData.publicUrl;
+  }
+
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoUploading(true);
+    const url = await uploadFile(file, `logos/${Date.now()}-${file.name}`);
+    if (url) setLogoUrl(url);
+    setLogoUploading(false);
+  }
+
+  async function handleAttachmentUpload(type: string, e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    updateCompliance(type, "uploading", true);
+    const url = await uploadFile(file, `compliance/${type}/${Date.now()}-${file.name}`);
+    if (url) updateCompliance(type, "attachment_url", url);
+    updateCompliance(type, "uploading", false);
+  }
+
+  async function handleSaveProfile(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) { setProfileError("Organisation name is required."); return; }
+    setProfileSaving(true);
+    setProfileError(null);
+    setProfileSuccess(false);
+    try {
+      await updateSpProfile({
+        name,
+        business_type: businessType || undefined,
+        date_of_incorporation: dateOfIncorporation || undefined,
+        logo_url: logoUrl || undefined,
+        address_line1: address1 || undefined,
+        address_line2: address2 || undefined,
+        city: city || undefined,
+        pin_code: pinCode || undefined,
+      });
+      setProfileSuccess(true);
+      setTimeout(() => setProfileSuccess(false), 3000);
+    } catch (err) {
+      setProfileError(err instanceof Error ? err.message : "Failed to save.");
+    } finally {
+      setProfileSaving(false);
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+
+      {/* ── Organisation Profile ── */}
+      <section className="bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-sm">
+        <h2 className="text-sm font-semibold text-[#1A1A2E] pb-3 border-b border-[#E5E7EB] mb-4 flex items-center justify-between">
+          Organisation Profile
+          {ro && <span className="text-xs font-normal text-[#9CA3AF]">Read-only</span>}
+        </h2>
+
+        <form onSubmit={handleSaveProfile} className="space-y-4">
+          {/* Logo */}
+          <div>
+            <label className="block text-xs font-medium text-[#6B7280] mb-2">Logo <span className="text-[#9CA3AF]">(JPG/PNG, max 2MB)</span></label>
+            <div className="flex items-center gap-4">
+              {logoUrl ? (
+                <img src={logoUrl} alt="Logo" className="w-14 h-14 rounded-xl object-cover border border-[#E5E7EB]" />
+              ) : (
+                <div className="w-14 h-14 rounded-xl bg-[#1E3A5F] flex items-center justify-center flex-shrink-0">
+                  <span className="text-white font-bold text-xl">{name.charAt(0).toUpperCase() || "S"}</span>
+                </div>
+              )}
+              {!ro && (
+                <div className="space-y-1">
+                  <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F8F9FA] transition">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    {logoUploading ? "Uploading…" : logoUrl ? "Change Logo" : "Upload Logo"}
+                    <input type="file" accept="image/jpeg,image/png" className="hidden" onChange={handleLogoUpload} disabled={logoUploading} />
+                  </label>
+                  {logoUrl && (
+                    <button type="button" onClick={() => setLogoUrl("")} className="text-xs text-red-500 hover:text-red-700 pl-1">Remove</button>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Name + Business Type */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Organisation Name <span className="text-red-500">*</span></label>
+              <input value={name} onChange={(e) => setName(e.target.value)} disabled={ro} className={fieldClass} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Business Type</label>
+              <select value={businessType} onChange={(e) => setBusinessType(e.target.value)} disabled={ro} className={fieldClass}>
+                <option value="">Select type</option>
+                {BUSINESS_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Date of Incorporation</label>
+              <input type="date" value={dateOfIncorporation} onChange={(e) => setDateOfIncorporation(e.target.value)} disabled={ro} className={fieldClass} />
+            </div>
+          </div>
+
+          {/* Address */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Address Line 1</label>
+              <input value={address1} onChange={(e) => setAddress1(e.target.value)} disabled={ro} className={fieldClass} />
+            </div>
+            <div className="col-span-2">
+              <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Address Line 2</label>
+              <input value={address2} onChange={(e) => setAddress2(e.target.value)} disabled={ro} className={fieldClass} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-[#6B7280] mb-1.5">City</label>
+              <input value={city} onChange={(e) => setCity(e.target.value)} disabled={ro} className={fieldClass} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-[#6B7280] mb-1.5">PIN Code</label>
+              <input value={pinCode} onChange={(e) => setPinCode(e.target.value)} maxLength={6} disabled={ro} className={fieldClass} />
+            </div>
+          </div>
+
+          {/* Compliance accordion */}
+          <div>
+            <p className="text-xs font-medium text-[#6B7280] mb-2">Compliance Details</p>
+            <div className="space-y-2">
+              {COMPLIANCE_TYPES.map(({ key, label }) => (
+                <details key={key} className="border border-[#E5E7EB] rounded-lg">
+                  <summary className="px-4 py-3 text-sm font-medium text-[#1A1A2E] cursor-pointer select-none flex items-center justify-between">
+                    <span>{label}</span>
+                    {complianceState[key].number && (
+                      <span className="text-xs text-[#6B7280] font-normal">{complianceState[key].number}</span>
+                    )}
+                  </summary>
+                  <div className="px-4 pb-4 grid grid-cols-2 gap-3 border-t border-[#E5E7EB] pt-4">
+                    <div>
+                      <label className="block text-xs font-medium text-[#6B7280] mb-1">{label} Number</label>
+                      <input value={complianceState[key].number} onChange={(e) => updateCompliance(key, "number", e.target.value)} disabled={ro} className={fieldClass} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-[#6B7280] mb-1">Login ID</label>
+                      <input value={complianceState[key].login_id} onChange={(e) => updateCompliance(key, "login_id", e.target.value)} disabled={ro} className={fieldClass} />
+                    </div>
+                    {!ro && (
+                      <div>
+                        <label className="block text-xs font-medium text-[#6B7280] mb-1">Password</label>
+                        <div className="relative">
+                          <input
+                            type={complianceState[key].showCredential ? "text" : "password"}
+                            value={complianceState[key].credential}
+                            onChange={(e) => updateCompliance(key, "credential", e.target.value)}
+                            className="w-full px-3 py-2 pr-9 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]"
+                          />
+                          <button type="button" onClick={() => updateCompliance(key, "showCredential", !complianceState[key].showCredential)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#6B7280]">
+                            <EyeIcon visible={complianceState[key].showCredential} />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    <div>
+                      <label className="block text-xs font-medium text-[#6B7280] mb-1">Attachment</label>
+                      <div className="flex items-center gap-2">
+                        {complianceState[key].attachment_url && (
+                          <a href={complianceState[key].attachment_url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#4A6FA5] hover:underline truncate max-w-[100px]">View file</a>
+                        )}
+                        {!ro && (
+                          <label className="cursor-pointer inline-flex items-center gap-1 px-2 py-1.5 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F8F9FA] transition">
+                            {complianceState[key].uploading ? "Uploading…" : complianceState[key].attachment_url ? "Change" : "Upload"}
+                            <input type="file" accept=".pdf,image/jpeg,image/png" className="hidden" onChange={(e) => handleAttachmentUpload(key, e)} disabled={complianceState[key].uploading} />
+                          </label>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </details>
+              ))}
+            </div>
+          </div>
+
+          {!ro && (
+            <>
+              {profileError && <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{profileError}</div>}
+              {profileSuccess && <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">Profile saved successfully.</div>}
+              <div className="flex justify-end">
+                <button type="submit" disabled={profileSaving} className="px-5 py-2.5 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60">
+                  {profileSaving ? "Saving…" : "Save Profile"}
+                </button>
+              </div>
+            </>
+          )}
+        </form>
+      </section>
+
+    </div>
+  );
+}

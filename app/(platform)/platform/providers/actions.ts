@@ -104,6 +104,75 @@ export async function updateProvider(id: string, input: ProviderInput) {
   revalidatePath(`/platform/providers/${id}`);
 }
 
+export interface SpAdminInput {
+  first_name: string;
+  middle_name?: string;
+  last_name: string;
+  email: string;
+  password: string;
+  designation?: string;
+}
+
+export async function createSpAdmin(spId: string, input: SpAdminInput) {
+  const user = await getCurrentUser();
+  if (!user || !isPlatformRole(user.role)) throw new Error("Unauthorized");
+
+  const supabase = await createServiceClient();
+
+  // Verify the SP exists
+  const { data: sp } = await supabase
+    .from("organizations")
+    .select("id")
+    .eq("id", spId)
+    .eq("type", "service_provider")
+    .single();
+
+  if (!sp) throw new Error("Service provider not found");
+
+  // Create user directly with password — no email invite needed
+  const { data: created, error: createError } = await supabase.auth.admin.createUser({
+    email: input.email,
+    password: input.password,
+    email_confirm: true, // Mark email as confirmed, skip verification
+  });
+
+  if (createError) throw new Error(createError.message);
+
+  const { error: profileError } = await supabase.from("users").insert({
+    id: created.user.id,
+    first_name: input.first_name,
+    middle_name: input.middle_name || null,
+    last_name: input.last_name,
+    email: input.email,
+    role: "sp_admin",
+    org_id: spId,
+    designation: input.designation || null,
+    is_active: true,
+  });
+
+  if (profileError) {
+    await supabase.auth.admin.deleteUser(created.user.id);
+    throw new Error(profileError.message);
+  }
+
+  revalidatePath("/platform/providers");
+}
+
+export async function deleteSpAdmin(userId: string, spId: string) {
+  const user = await getCurrentUser();
+  if (!user || !isPlatformRole(user.role)) throw new Error("Unauthorized");
+
+  const supabase = await createServiceClient();
+
+  // Delete from public users table first
+  await supabase.from("users").delete().eq("id", userId).eq("org_id", spId).eq("role", "sp_admin");
+
+  // Delete from Supabase Auth
+  await supabase.auth.admin.deleteUser(userId);
+
+  revalidatePath("/platform/providers");
+}
+
 export async function toggleProviderStatus(id: string, isActive: boolean) {
   const user = await getCurrentUser();
   if (!user || !isPlatformRole(user.role)) throw new Error("Unauthorized");
