@@ -11,6 +11,27 @@ export interface AdminInput {
   email: string;
   password: string;
   role: "super_admin" | "platform_admin";
+  // Contact
+  mobile_country_code?: string;
+  mobile_number?: string;
+  date_of_birth?: string;
+  // Employment
+  department?: string;
+  designation?: string;
+  date_of_joining?: string;
+  date_of_leaving?: string;
+  // Address
+  address_line1?: string;
+  address_line2?: string;
+  city?: string;
+  pin_code?: string;
+  location?: string;
+  // Identity
+  pan_number?: string;
+  pan_attachment?: string;
+  aadhar_number?: string;
+  aadhar_attachment?: string;
+  // Avatar
   avatar_url?: string;
 }
 
@@ -38,6 +59,22 @@ export async function createPlatformAdmin(input: AdminInput) {
     email: input.email,
     role: input.role,
     org_id: "00000000-0000-0000-0000-000000000001", // Platform org
+    mobile_country_code: input.mobile_country_code || "+91",
+    mobile_number: input.mobile_number || null,
+    date_of_birth: input.date_of_birth || null,
+    department: input.department || null,
+    designation: input.designation || null,
+    date_of_joining: input.date_of_joining || null,
+    date_of_leaving: input.date_of_leaving || null,
+    address_line1: input.address_line1 || null,
+    address_line2: input.address_line2 || null,
+    city: input.city || null,
+    pin_code: input.pin_code || null,
+    location: input.location || null,
+    pan_number: input.pan_number || null,
+    pan_attachment: input.pan_attachment || null,
+    aadhar_number: input.aadhar_number || null,
+    aadhar_attachment: input.aadhar_attachment || null,
     avatar_url: input.avatar_url || null,
     is_active: true,
   });
