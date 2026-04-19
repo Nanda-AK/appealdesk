@@ -257,7 +257,7 @@ export default function PlatformAdminForm() {
             <input value={form.department ?? ""} onChange={(e) => set("department")(e.target.value)} placeholder="e.g. Operations, Tech" className={inp} />
           </Field>
           <Field label="Designation">
-            <input value={form.designation ?? ""} onChange={(e) => set("designation")(e.target.value)} placeholder="e.g. Manager, Admin" className={inp} />
+            <input value={form.designation ?? ""} onChange={(e) => set("designation")(e.target.value)} placeholder="e.g. Manager, Admin, Director" className={inp} />
           </Field>
           <Field label="Date of Joining">
             <input type="date" value={form.date_of_joining ?? ""} onChange={(e) => set("date_of_joining")(e.target.value)} className={inp} />
