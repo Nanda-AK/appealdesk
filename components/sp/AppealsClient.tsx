@@ -8,6 +8,7 @@ interface Proceeding {
   proceeding_type: string | null;
   authority_name: string | null;
   importance: string | null;
+  status: string | null;
   to_be_completed_by: string | null;
   assigned_to: string | null;
   possible_outcome: string | null;
@@ -20,6 +21,7 @@ interface Appeal {
   act_regulation: string | null;
   financial_year: string | null;
   assessment_year: string | null;
+  status: string | null;
   created_at: string;
   client_org: { id: string; name: string } | null;
   proceedings: Proceeding[];
@@ -45,6 +47,12 @@ const OUTCOME: Record<string, { label: string; cls: string }> = {
   unfavourable: { label: "Unfavourable", cls: "bg-red-100 text-red-700" },
 };
 
+const STATUS: Record<string, { label: string; cls: string }> = {
+  open: { label: "Open", cls: "bg-blue-50 text-blue-700" },
+  "in-progress": { label: "In Progress", cls: "bg-amber-50 text-amber-700" },
+  closed: { label: "Closed", cls: "bg-gray-100 text-gray-500" },
+};
+
 function activeProceeding(proceedings: Proceeding[]): Proceeding | null {
   if (!proceedings?.length) return null;
   return proceedings.find((p) => p.is_active) ?? proceedings[proceedings.length - 1];
@@ -61,6 +69,7 @@ export default function AppealsClient({ appeals, clients, teamMembers, canEdit }
   const [filterAY, setFilterAY] = useState("");
   const [filterImportance, setFilterImportance] = useState("");
   const [filterAssigned, setFilterAssigned] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
 
   const assessmentYears = useMemo(() => {
     const s = new Set(appeals.map((a) => a.assessment_year).filter(Boolean) as string[]);
@@ -76,11 +85,12 @@ export default function AppealsClient({ appeals, clients, teamMembers, canEdit }
       if (filterAY && a.assessment_year !== filterAY) return false;
       if (filterImportance && proc?.importance !== filterImportance) return false;
       if (filterAssigned && proc?.assigned_to !== filterAssigned) return false;
+      if (filterStatus && (a.status ?? "open") !== filterStatus) return false;
       return true;
     });
-  }, [appeals, search, filterClient, filterAY, filterImportance, filterAssigned]);
+  }, [appeals, search, filterClient, filterAY, filterImportance, filterAssigned, filterStatus]);
 
-  const hasFilters = search || filterClient || filterAY || filterImportance || filterAssigned;
+  const hasFilters = search || filterClient || filterAY || filterImportance || filterAssigned || filterStatus;
   const selCls = "px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]";
 
   return (
@@ -136,9 +146,15 @@ export default function AppealsClient({ appeals, clients, teamMembers, canEdit }
             <option key={m.id} value={m.id}>{m.first_name} {m.last_name}</option>
           ))}
         </select>
+        <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className={selCls}>
+          <option value="">All Statuses</option>
+          <option value="open">Open</option>
+          <option value="in-progress">In Progress</option>
+          <option value="closed">Closed</option>
+        </select>
         {hasFilters && (
           <button
-            onClick={() => { setSearch(""); setFilterClient(""); setFilterAY(""); setFilterImportance(""); setFilterAssigned(""); }}
+            onClick={() => { setSearch(""); setFilterClient(""); setFilterAY(""); setFilterImportance(""); setFilterAssigned(""); setFilterStatus(""); }}
             className="px-3 py-2 text-sm text-[#6B7280] hover:text-[#1A1A2E] border border-[#E5E7EB] rounded-lg transition"
           >
             Clear
@@ -161,13 +177,14 @@ export default function AppealsClient({ appeals, clients, teamMembers, canEdit }
                 <th className="text-left px-4 py-3 font-medium text-[#6B7280] whitespace-nowrap">Assigned To</th>
                 <th className="text-left px-4 py-3 font-medium text-[#6B7280] whitespace-nowrap">Deadline</th>
                 <th className="text-left px-4 py-3 font-medium text-[#6B7280] whitespace-nowrap">Outcome</th>
+                <th className="text-left px-4 py-3 font-medium text-[#6B7280] whitespace-nowrap">Status</th>
                 <th className="px-4 py-3 w-16"></th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-4 py-16 text-center text-[#6B7280]">
+                  <td colSpan={11} className="px-4 py-16 text-center text-[#6B7280]">
                     {hasFilters
                       ? "No appeals match your filters."
                       : canEdit
@@ -216,6 +233,9 @@ export default function AppealsClient({ appeals, clients, teamMembers, canEdit }
                             {outCfg.label}
                           </span>
                         ) : <span className="text-[#9CA3AF]">—</span>}
+                      </td>
+                      <td className="px-4 py-3">
+                        {(() => { const s = STATUS[appeal.status ?? "open"]; return s ? <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${s.cls}`}>{s.label}</span> : <span className="text-[#9CA3AF]">—</span>; })()}
                       </td>
                       <td className="px-4 py-3">
                         <Link

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { createUser, UserInput } from "@/app/(sp)/users/actions";
+import { updateUser, UserEditInput } from "@/app/(sp)/users/actions";
 
 const COUNTRY_CODES = [
   { code: "+91", label: "🇮🇳 +91" },
@@ -16,14 +16,6 @@ const COUNTRY_CODES = [
 
 const inp = "w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]";
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="col-span-2 border-t border-[#F3F4F6] pt-4 mt-1">
-      <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">{children}</p>
-    </div>
-  );
-}
-
 function Field({ label, required, children, full }: { label: string; required?: boolean; children: React.ReactNode; full?: boolean }) {
   return (
     <div className={full ? "col-span-2" : ""}>
@@ -31,47 +23,6 @@ function Field({ label, required, children, full }: { label: string; required?: 
         {label} {required && <span className="text-red-500">*</span>}
       </label>
       {children}
-    </div>
-  );
-}
-
-function FileUploadField({ label, value, onChange }: { label: string; value: string; onChange: (url: string) => void }) {
-  const [uploading, setUploading] = useState(false);
-
-  async function handleFile(file: File) {
-    setUploading(true);
-    const supabase = createClient();
-    const path = `user-docs/${Date.now()}-${file.name}`;
-    const { data, error } = await supabase.storage.from("org-files").upload(path, file, { upsert: true });
-    if (!error && data) {
-      const { data: urlData } = supabase.storage.from("org-files").getPublicUrl(data.path);
-      onChange(urlData.publicUrl);
-    }
-    setUploading(false);
-  }
-
-  return (
-    <div>
-      <label className="block text-xs font-medium text-[#6B7280] mb-1.5">{label} (Attachment)</label>
-      {value ? (
-        <div className="flex items-center gap-2">
-          <a href={value} target="_blank" rel="noopener noreferrer"
-            className="text-xs text-[#4A6FA5] hover:underline truncate max-w-[200px]">
-            View uploaded file
-          </a>
-          <button type="button" onClick={() => onChange("")}
-            className="text-xs text-red-500 hover:text-red-700">Remove</button>
-        </div>
-      ) : (
-        <label className={`cursor-pointer inline-flex items-center gap-2 px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F8F9FA] transition ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-          </svg>
-          {uploading ? "Uploading…" : "Upload File"}
-          <input type="file" className="hidden" disabled={uploading}
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
-        </label>
-      )}
     </div>
   );
 }
@@ -93,7 +44,7 @@ function AvatarUpload({ value, onChange }: { value: string; onChange: (url: stri
 
   return (
     <div className="col-span-2 flex items-center gap-4 pb-4 border-b border-[#F3F4F6] mb-2">
-      <div className="relative flex-shrink-0">
+      <div className="flex-shrink-0">
         {value ? (
           <img src={value} alt="Avatar" className="w-16 h-16 rounded-full object-cover border-2 border-[#E5E7EB]" />
         ) : (
@@ -124,46 +75,61 @@ function AvatarUpload({ value, onChange }: { value: string; onChange: (url: stri
   );
 }
 
-const BLANK: UserInput = {
-  first_name: "", middle_name: "", last_name: "",
-  email: "", password: "",
-  role: "sp_staff",
-  mobile_country_code: "+91", mobile_number: "",
-  date_of_birth: "",
-  department: "", designation: "",
-  date_of_joining: "", date_of_leaving: "",
-  address_line1: "", address_line2: "", city: "", pin_code: "", location: "",
-  pan_number: "", pan_attachment: "",
-  aadhar_number: "", aadhar_attachment: "",
-  avatar_url: "",
-};
+interface UserData {
+  id: string;
+  first_name: string;
+  middle_name: string | null;
+  last_name: string;
+  email: string;
+  org_id: string;
+  mobile_country_code: string | null;
+  mobile_number: string | null;
+  date_of_birth: string | null;
+  avatar_url: string | null;
+}
 
-export default function SpUserForm() {
-  const [form, setForm] = useState<UserInput>(BLANK);
-  const [showPassword, setShowPassword] = useState(false);
+interface Props {
+  user: UserData;
+  clientOrgs: { id: string; name: string }[];
+}
+
+export default function EditClientUserForm({ user, clientOrgs }: Props) {
+  const [form, setForm] = useState<UserEditInput>({
+    first_name: user.first_name,
+    middle_name: user.middle_name ?? "",
+    last_name: user.last_name,
+    role: "client",
+    client_org_id: user.org_id,
+    mobile_country_code: user.mobile_country_code ?? "+91",
+    mobile_number: user.mobile_number ?? "",
+    date_of_birth: user.date_of_birth ?? "",
+    avatar_url: user.avatar_url ?? "",
+    new_password: "",
+  });
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const set = (field: keyof UserInput) => (val: string) =>
+  const set = (field: keyof UserEditInput) => (val: string) =>
     setForm((prev) => ({ ...prev, [field]: val }));
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.first_name.trim()) { setError("First name is required."); return; }
     if (!form.last_name.trim()) { setError("Last name is required."); return; }
-    if (!form.email.trim()) { setError("Email is required."); return; }
-    if (form.password.length < 8) { setError("Password must be at least 8 characters."); return; }
-    if (form.password !== confirmPassword) { setError("Passwords do not match."); return; }
+    if (!form.client_org_id) { setError("Please select a client organisation."); return; }
+    if (form.new_password && form.new_password.length < 8) { setError("New password must be at least 8 characters."); return; }
+    if (form.new_password && form.new_password !== confirmPassword) { setError("Passwords do not match."); return; }
 
     setSaving(true);
     setError(null);
     try {
-      await createUser(form);
-      window.location.href = "/users";
+      await updateUser(user.id, form);
+      window.location.href = "/users?tab=clients";
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create user.");
+      setError(err instanceof Error ? err.message : "Failed to update user.");
       setSaving(false);
     }
   }
@@ -174,9 +140,8 @@ export default function SpUserForm() {
         <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>
       )}
 
-      {/* Basic Information */}
       <section className="bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-sm">
-        <h2 className="text-sm font-semibold text-[#1A1A2E] mb-4 pb-3 border-b border-[#E5E7EB]">Basic Information</h2>
+        <h2 className="text-sm font-semibold text-[#1A1A2E] mb-4 pb-3 border-b border-[#E5E7EB]">User Details</h2>
         <div className="grid grid-cols-2 gap-4">
 
           <AvatarUpload value={form.avatar_url ?? ""} onChange={set("avatar_url")} />
@@ -193,6 +158,12 @@ export default function SpUserForm() {
             </Field>
           </div>
 
+          <Field label="Email" full>
+            <input type="email" value={user.email} disabled
+              className="w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg bg-[#F8F9FA] text-[#9CA3AF] cursor-not-allowed" />
+            <p className="text-xs text-[#9CA3AF] mt-1">Email cannot be changed.</p>
+          </Field>
+
           <Field label="Mobile">
             <div className="flex gap-2">
               <select value={form.mobile_country_code ?? "+91"} onChange={(e) => set("mobile_country_code")(e.target.value)}
@@ -204,18 +175,14 @@ export default function SpUserForm() {
             </div>
           </Field>
 
-          <Field label="Email" required>
-            <input type="email" value={form.email} onChange={(e) => set("email")(e.target.value)} className={inp} />
-          </Field>
-
           <Field label="Date of Birth">
             <input type="date" value={form.date_of_birth ?? ""} onChange={(e) => set("date_of_birth")(e.target.value)} className={inp} />
           </Field>
 
-          <Field label="Password" required>
+          <Field label="New Password">
             <div className="relative">
-              <input type={showPassword ? "text" : "password"} value={form.password}
-                onChange={(e) => set("password")(e.target.value)} placeholder="Min. 8 characters"
+              <input type={showPassword ? "text" : "password"} value={form.new_password ?? ""}
+                onChange={(e) => set("new_password")(e.target.value)} placeholder="Leave blank to keep current"
                 className="w-full px-3 py-2 pr-9 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]" />
               <button type="button" onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#6B7280]">
@@ -227,21 +194,13 @@ export default function SpUserForm() {
                 </svg>
               </button>
             </div>
-            <p className="text-xs text-[#9CA3AF] mt-1">Share with user so they can log in immediately.</p>
           </Field>
 
-          <Field label="Role" required>
-            <select value={form.role} onChange={(e) => set("role")(e.target.value as UserInput["role"])} className={inp}>
-              <option value="sp_admin">SP Admin</option>
-              <option value="sp_staff">SP Staff</option>
-            </select>
-          </Field>
-
-          <Field label="Confirm Password" required>
+          <Field label="Confirm New Password">
             <div className="relative">
               <input type={showConfirm ? "text" : "password"} value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Re-enter password"
-                className={`w-full px-3 py-2 pr-9 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] ${confirmPassword && confirmPassword !== form.password ? "border-red-400" : "border-[#E5E7EB]"}`} />
+                onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Repeat new password"
+                className={`w-full px-3 py-2 pr-9 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] ${confirmPassword && confirmPassword !== form.new_password ? "border-red-400" : "border-[#E5E7EB]"}`} />
               <button type="button" onClick={() => setShowConfirm(!showConfirm)}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#6B7280]">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -252,81 +211,29 @@ export default function SpUserForm() {
                 </svg>
               </button>
             </div>
-            {confirmPassword && confirmPassword !== form.password && (
+            {confirmPassword && confirmPassword !== form.new_password && (
               <p className="text-xs text-red-500 mt-1">Passwords do not match.</p>
             )}
           </Field>
 
+          <Field label="Client Organisation" required full>
+            <select value={form.client_org_id ?? ""} onChange={(e) => set("client_org_id")(e.target.value)} className={inp}>
+              <option value="">Select organisation…</option>
+              {clientOrgs.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+            </select>
+          </Field>
+
         </div>
       </section>
 
-      {/* Employment Details */}
-      <section className="bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-sm">
-        <h2 className="text-sm font-semibold text-[#1A1A2E] mb-4 pb-3 border-b border-[#E5E7EB]">Employment Details</h2>
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Department">
-            <input value={form.department ?? ""} onChange={(e) => set("department")(e.target.value)} placeholder="e.g. Tax, Audit" className={inp} />
-          </Field>
-          <Field label="Designation">
-            <input value={form.designation ?? ""} onChange={(e) => set("designation")(e.target.value)} placeholder="e.g. CA, Manager" className={inp} />
-          </Field>
-          <Field label="Date of Joining">
-            <input type="date" value={form.date_of_joining ?? ""} onChange={(e) => set("date_of_joining")(e.target.value)} className={inp} />
-          </Field>
-          <Field label="Date of Leaving">
-            <input type="date" value={form.date_of_leaving ?? ""} onChange={(e) => set("date_of_leaving")(e.target.value)} className={inp} />
-          </Field>
-        </div>
-      </section>
-
-      {/* Address */}
-      <section className="bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-sm">
-        <h2 className="text-sm font-semibold text-[#1A1A2E] mb-4 pb-3 border-b border-[#E5E7EB]">Address</h2>
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Address Line 1" full>
-            <input value={form.address_line1 ?? ""} onChange={(e) => set("address_line1")(e.target.value)} placeholder="Street / Building" className={inp} />
-          </Field>
-          <Field label="Address Line 2" full>
-            <input value={form.address_line2 ?? ""} onChange={(e) => set("address_line2")(e.target.value)} placeholder="Area / Landmark" className={inp} />
-          </Field>
-          <Field label="City">
-            <input value={form.city ?? ""} onChange={(e) => set("city")(e.target.value)} className={inp} />
-          </Field>
-          <Field label="PIN Code">
-            <input value={form.pin_code ?? ""} onChange={(e) => set("pin_code")(e.target.value)} maxLength={10} className={inp} />
-          </Field>
-          <Field label="Location / State" full>
-            <input value={form.location ?? ""} onChange={(e) => set("location")(e.target.value)} placeholder="e.g. Tamil Nadu" className={inp} />
-          </Field>
-        </div>
-      </section>
-
-      {/* Identity Documents */}
-      <section className="bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-sm">
-        <h2 className="text-sm font-semibold text-[#1A1A2E] mb-4 pb-3 border-b border-[#E5E7EB]">Identity Documents</h2>
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="PAN Number">
-            <input value={form.pan_number ?? ""} onChange={(e) => set("pan_number")(e.target.value.toUpperCase())}
-              placeholder="ABCDE1234F" maxLength={10} className={inp} />
-          </Field>
-          <FileUploadField label="PAN" value={form.pan_attachment ?? ""} onChange={set("pan_attachment")} />
-          <Field label="Aadhar Number">
-            <input value={form.aadhar_number ?? ""} onChange={(e) => set("aadhar_number")(e.target.value)}
-              placeholder="XXXX XXXX XXXX" maxLength={14} className={inp} />
-          </Field>
-          <FileUploadField label="Aadhar" value={form.aadhar_attachment ?? ""} onChange={set("aadhar_attachment")} />
-        </div>
-      </section>
-
-      {/* Actions */}
       <div className="flex gap-3">
-        <button type="button" onClick={() => window.location.href = "/users"}
+        <button type="button" onClick={() => window.location.href = "/users?tab=clients"}
           className="px-5 py-2.5 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">
           Cancel
         </button>
         <button type="submit" disabled={saving}
           className="px-5 py-2.5 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60">
-          {saving ? "Creating…" : "Create SP User"}
+          {saving ? "Saving…" : "Save Changes"}
         </button>
       </div>
     </form>

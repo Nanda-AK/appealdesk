@@ -13,11 +13,11 @@ export default async function AppealDetailPage({ params }: { params: Promise<{ i
   const { data: appeal } = await supabase
     .from("appeals")
     .select(`
-      id, act_regulation, financial_year, assessment_year, client_org_id, created_at,
+      id, act_regulation, financial_year, assessment_year, status, client_org_id, created_at,
       client_org:organizations!client_org_id(id, name),
       proceedings(
         id, proceeding_type, authority_type, authority_name,
-        jurisdiction, jurisdiction_city, importance, mode,
+        jurisdiction, jurisdiction_city, importance, mode, status,
         initiated_on, to_be_completed_by, assigned_to, client_staff_id,
         possible_outcome, is_active, created_at,
         assigned_user:users!assigned_to(first_name, last_name),

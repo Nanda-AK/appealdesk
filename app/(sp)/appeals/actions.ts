@@ -10,6 +10,7 @@ export interface AppealInput {
   financial_year?: string;
   assessment_year?: string;
   act_regulation?: string;
+  status?: string;
 }
 
 export interface ProceedingInput {
@@ -25,6 +26,7 @@ export interface ProceedingInput {
   assigned_to?: string;
   client_staff_id?: string;
   possible_outcome?: string;
+  status?: string;
 }
 
 export interface EventInput {
@@ -53,6 +55,7 @@ function cleanProceeding(proc: ProceedingInput) {
     assigned_to: proc.assigned_to || null,
     client_staff_id: proc.client_staff_id || null,
     possible_outcome: (proc.possible_outcome as "favourable" | "doubtful" | "unfavourable") || null,
+    status: proc.status || "open",
   };
 }
 
@@ -71,6 +74,7 @@ export async function createAppeal(appeal: AppealInput, proceeding: ProceedingIn
       financial_year: appeal.financial_year || null,
       assessment_year: appeal.assessment_year || null,
       act_regulation: appeal.act_regulation || null,
+      status: appeal.status || "open",
       created_by: user.id,
     })
     .select("id")
@@ -106,6 +110,7 @@ export async function updateAppeal(appealId: string, appeal: AppealInput): Promi
       financial_year: appeal.financial_year || null,
       assessment_year: appeal.assessment_year || null,
       act_regulation: appeal.act_regulation || null,
+      status: appeal.status || "open",
       updated_at: new Date().toISOString(),
     })
     .eq("id", appealId);

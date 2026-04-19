@@ -43,6 +43,7 @@ interface Proceeding {
   assigned_to: string | null;
   client_staff_id: string | null;
   possible_outcome: string | null;
+  status: string | null;
   is_active: boolean;
   created_at: string;
   assigned_user: { first_name: string; last_name: string } | null;
@@ -55,6 +56,7 @@ interface Appeal {
   act_regulation: string | null;
   financial_year: string | null;
   assessment_year: string | null;
+  status: string | null;
   client_org: { id: string; name: string } | null;
   proceedings: Proceeding[];
   documents: AppDocument[];
@@ -181,6 +183,11 @@ const OUTCOME: Record<string, { label: string; cls: string }> = {
   doubtful: { label: "Doubtful", cls: "bg-yellow-100 text-yellow-700" },
   unfavourable: { label: "Unfavourable", cls: "bg-red-100 text-red-700" },
 };
+const STATUS_CFG: Record<string, { label: string; cls: string }> = {
+  open: { label: "Open", cls: "bg-blue-50 text-blue-700" },
+  "in-progress": { label: "In Progress", cls: "bg-amber-50 text-amber-700" },
+  closed: { label: "Closed", cls: "bg-gray-100 text-gray-500" },
+};
 const EVENT_LABELS: Record<string, string> = {
   notice_from_authority: "Notice from Authority",
   response_to_notice: "Response to Notice",
@@ -204,9 +211,13 @@ function fmtDate(d: string | null) {
 
 function fmtDateTime(d: string | null) {
   if (!d) return "—";
-  const dt = new Date(d);
-  return dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) +
-    " " + dt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
+  const hasTime = d.includes("T");
+  // Date-only strings (YYYY-MM-DD) are parsed as UTC by JS, causing off-by-one day
+  // in non-UTC timezones. Appending T00:00 forces local-time parsing.
+  const dt = new Date(hasTime ? d : d + "T00:00");
+  const datePart = dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  if (!hasTime) return datePart;
+  return datePart + " " + dt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
 }
 
 function getEventSummary(category: string, details: Record<string, string> | null): string {
@@ -259,6 +270,42 @@ function Field({ label, children, fullWidth }: { label: string; children: React.
     </div>
   );
 }
+// Splits a combined datetime string into separate date+time inputs so the
+// time portion never auto-fills with the current time (browser datetime-local quirk).
+function DateTimeField({ value, onChange, className }: { value: string; onChange: (v: string) => void; className?: string }) {
+  const datePart = value ? value.slice(0, 10) : "";          // "YYYY-MM-DD"
+  const timePart = value && value.includes("T") ? value.slice(11, 16) : ""; // "HH:MM"
+
+  function handleDateChange(newDate: string) {
+    if (!newDate) { onChange(""); return; }
+    // Keep existing time if set; otherwise store date only (no defaulting to 00:00)
+    onChange(timePart ? `${newDate}T${timePart}` : newDate);
+  }
+
+  function handleTimeChange(newTime: string) {
+    if (!datePart) return; // require date before time
+    // Clearing the time reverts to date-only storage
+    onChange(newTime ? `${datePart}T${newTime}` : datePart);
+  }
+
+  return (
+    <div className="flex gap-2">
+      <input
+        type="date"
+        value={datePart}
+        onChange={(e) => handleDateChange(e.target.value)}
+        className={className ?? inp}
+      />
+      <input
+        type="time"
+        value={timePart}
+        onChange={(e) => handleTimeChange(e.target.value)}
+        className="px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] w-32 flex-shrink-0"
+      />
+    </div>
+  );
+}
+
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
@@ -344,6 +391,13 @@ function ProceedingFormFields({
           <option value="unfavourable">Unfavourable</option>
         </select>
       </Field>
+      <Field label="Status">
+        <select value={values.status ?? "open"} onChange={(e) => onChange("status", e.target.value)} className={inp}>
+          <option value="open">Open</option>
+          <option value="in-progress">In Progress</option>
+          <option value="closed">Closed</option>
+        </select>
+      </Field>
     </div>
   );
 }
@@ -378,6 +432,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
   const [editFY, setEditFY] = useState(appeal.financial_year ?? "");
   const [editAY, setEditAY] = useState(appeal.assessment_year ?? "");
   const [editAct, setEditAct] = useState(appeal.act_regulation ?? "");
+  const [editAppealStatus, setEditAppealStatus] = useState(appeal.status ?? "open");
   const [appealSaving, setAppealSaving] = useState(false);
   const [appealError, setAppealError] = useState<string | null>(null);
 
@@ -386,7 +441,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
     if (!editClientId) { setAppealError("Client is required."); return; }
     setAppealSaving(true); setAppealError(null);
     try {
-      await updateAppeal(appeal.id, { client_org_id: editClientId, financial_year: editFY, assessment_year: editAY, act_regulation: editAct });
+      await updateAppeal(appeal.id, { client_org_id: editClientId, financial_year: editFY, assessment_year: editAY, act_regulation: editAct, status: editAppealStatus });
       setShowEditAppeal(false);
       router.refresh();
     } catch (err) {
@@ -415,6 +470,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
       assigned_to: proc.assigned_to ?? "",
       client_staff_id: proc.client_staff_id ?? "",
       possible_outcome: proc.possible_outcome ?? "",
+      status: proc.status ?? "open",
     });
     setEditProcError(null);
   }
@@ -634,22 +690,43 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
     (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
   );
 
+  // Track which proceedings are expanded (collapsed by default)
+  const [expandedProcs, setExpandedProcs] = useState<Set<string>>(new Set());
+  function toggleProc(id: string) {
+    setExpandedProcs((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  // Track which events are expanded (collapsed by default)
+  const [expandedEvents, setExpandedEvents] = useState<Set<string>>(new Set());
+  function toggleEvent(id: string) {
+    setExpandedEvents((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
   // ── Render ──
   return (
     <div className="space-y-4 max-w-4xl">
 
       {/* Appeal Header */}
       <div className="bg-white border border-[#E5E7EB] rounded-xl p-5 shadow-sm flex items-start justify-between gap-4">
-        <div className="grid grid-cols-4 gap-6 flex-1">
+        <div className="grid grid-cols-5 gap-6 flex-1">
           <DetailRow label="Client" value={<span className="font-medium">{clientOrg?.name}</span>} />
           <DetailRow label="Financial Year" value={appeal.financial_year} />
           <DetailRow label="Assessment Year" value={appeal.assessment_year} />
           <DetailRow label="Act / Regulation" value={appeal.act_regulation} />
+          <DetailRow label="Status" value={(() => { const s = STATUS_CFG[appeal.status ?? "open"]; return s ? <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${s.cls}`}>{s.label}</span> : null; })()} />
         </div>
         {canEdit && (
           <div className="flex items-center gap-2 flex-shrink-0">
             <button
-              onClick={() => { setEditClientId(clientOrg?.id ?? ""); setEditFY(appeal.financial_year ?? ""); setEditAY(appeal.assessment_year ?? ""); setEditAct(appeal.act_regulation ?? ""); setAppealError(null); setShowEditAppeal(true); }}
+              onClick={() => { setEditClientId(clientOrg?.id ?? ""); setEditFY(appeal.financial_year ?? ""); setEditAY(appeal.assessment_year ?? ""); setEditAct(appeal.act_regulation ?? ""); setEditAppealStatus(appeal.status ?? "open"); setAppealError(null); setShowEditAppeal(true); }}
               className="px-3 py-1.5 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:text-[#1A1A2E] hover:bg-[#F8F9FA] transition"
             >
               Edit Appeal
@@ -668,118 +745,211 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
       {sortedProceedings.length === 0 ? (
         <div className="bg-white border border-[#E5E7EB] rounded-xl p-8 text-center text-[#6B7280] text-sm">No proceedings yet.</div>
       ) : (
-        sortedProceedings.map((proc, idx) => {
-          const impCfg = proc.importance ? IMPORTANCE[proc.importance] : null;
-          const outCfg = proc.possible_outcome ? OUTCOME[proc.possible_outcome] : null;
-          const au = proc.assigned_user ?? null;
-          const cs = proc.client_staff ?? null;
-          const sortedEvents = [...(proc.events ?? [])].sort(
-            (a, b) => (b.event_date ?? b.created_at).localeCompare(a.event_date ?? a.created_at)
-          );
+        <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
+          {sortedProceedings.map((proc, idx) => {
+            const impCfg = proc.importance ? IMPORTANCE[proc.importance] : null;
+            const outCfg = proc.possible_outcome ? OUTCOME[proc.possible_outcome] : null;
+            const au = proc.assigned_user ?? null;
+            const cs = proc.client_staff ?? null;
+            const sortedEvents = [...(proc.events ?? [])].sort(
+              (a, b) => (b.event_date ?? b.created_at).localeCompare(a.event_date ?? a.created_at)
+            );
+            const procStatusCfg = STATUS_CFG[proc.status ?? "open"];
+            const isExpanded = expandedProcs.has(proc.id);
 
-          return (
-            <div key={proc.id} className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
-              {/* Proceeding header */}
-              <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center gap-3">
-                <span className="text-xs text-[#9CA3AF] font-medium bg-[#F8F9FA] px-2 py-0.5 rounded">Proceeding {idx + 1}</span>
-                <span className="font-semibold text-[#1A1A2E] text-sm">{proc.proceeding_type ?? "—"}</span>
-                {impCfg && <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${impCfg.cls}`}>{impCfg.label}</span>}
-                {proc.mode && <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-[#F3F4F6] text-[#6B7280] capitalize">{proc.mode}</span>}
-                {canEdit && (
-                  <button onClick={() => openEditProc(proc)}
-                    className="ml-auto px-3 py-1.5 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:text-[#1A1A2E] hover:bg-[#F8F9FA] transition">
-                    Edit
-                  </button>
-                )}
-              </div>
+            return (
+              <div key={proc.id} className={`${idx > 0 ? "border-t border-[#E5E7EB]" : ""}`}>
 
-              {/* Proceeding details */}
-              <div className="px-5 py-4 grid grid-cols-3 gap-x-6 gap-y-4 border-b border-[#E5E7EB]">
-                <DetailRow label="Authority" value={[proc.authority_type, proc.authority_name].filter(Boolean).join(" · ")} />
-                <DetailRow label="Jurisdiction" value={[proc.jurisdiction_city, proc.jurisdiction].filter(Boolean).join(", ")} />
-                <DetailRow label="Assigned To" value={au ? `${au.first_name} ${au.last_name}` : null} />
-                <DetailRow label="Client Staff" value={cs ? `${cs.first_name} ${cs.last_name}` : null} />
-                <DetailRow label="Initiated On" value={fmtDate(proc.initiated_on)} />
-                <DetailRow label="Deadline" value={fmtDate(proc.to_be_completed_by)} />
-                <DetailRow label="Possible Outcome" value={outCfg ? (
-                  <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${outCfg.cls}`}>{outCfg.label}</span>
-                ) : null} />
-              </div>
+                {/* ── Collapsed summary row (always visible) ── */}
+                <div
+                  className="px-5 py-3.5 flex items-center gap-3 cursor-pointer hover:bg-[#F8F9FA] transition-colors select-none"
+                  onClick={() => toggleProc(proc.id)}
+                >
+                  {/* Chevron */}
+                  <svg
+                    className={`w-4 h-4 flex-shrink-0 text-[#9CA3AF] transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`}
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
 
-              {/* Events */}
-              <div className="px-5 py-4">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Events ({sortedEvents.length})</p>
-                  {canEdit && (
-                    <button onClick={() => openAddEvent(proc.id)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg transition">
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                      </svg>
-                      Add Event
-                    </button>
+                  {/* Number */}
+                  <span className="text-xs text-[#9CA3AF] font-medium bg-[#F3F4F6] px-2 py-0.5 rounded flex-shrink-0">
+                    #{idx + 1}
+                  </span>
+
+                  {/* Forum / type */}
+                  <span className="font-semibold text-[#1A1A2E] text-sm truncate">
+                    {proc.proceeding_type ?? "—"}
+                  </span>
+
+                  {/* Authority */}
+                  {proc.authority_name && (
+                    <span className="text-xs text-[#6B7280] truncate hidden sm:block">
+                      {[proc.authority_type, proc.authority_name].filter(Boolean).join(" · ")}
+                    </span>
                   )}
+
+                  {/* Badges */}
+                  <div className="ml-auto flex items-center gap-2 flex-shrink-0">
+                    {impCfg && <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${impCfg.cls}`}>{impCfg.label}</span>}
+                    {proc.mode && <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-[#F3F4F6] text-[#6B7280] capitalize hidden md:inline-flex">{proc.mode}</span>}
+                    {procStatusCfg && <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${procStatusCfg.cls}`}>{procStatusCfg.label}</span>}
+                    <span className="text-xs text-[#9CA3AF]">{sortedEvents.length} event{sortedEvents.length !== 1 ? "s" : ""}</span>
+                    {au && <span className="text-xs text-[#6B7280] hidden lg:block">{au.first_name} {au.last_name}</span>}
+                    {proc.to_be_completed_by && (
+                      <span className="text-xs text-[#6B7280] hidden lg:block">Due {fmtDate(proc.to_be_completed_by)}</span>
+                    )}
+                  </div>
                 </div>
-                {sortedEvents.length === 0 ? (
-                  <p className="text-xs text-[#9CA3AF]">No events recorded yet.</p>
-                ) : (
-                  <div className="space-y-0">
-                    {sortedEvents.map((ev) => {
-                      const summary = getEventSummary(ev.category, ev.details);
-                      const attachmentUrl = ev.details?.attachment;
-                      return (
-                        <div key={ev.id} className="py-2.5 border-b border-[#F3F4F6] last:border-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex items-start gap-2 flex-1 min-w-0">
-                              <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-[#EEF2FF] text-[#4A6FA5] whitespace-nowrap flex-shrink-0">
-                                {EVENT_LABELS[ev.category] ?? ev.category}
-                              </span>
-                              {attachmentUrl && (
-                                <a href={attachmentUrl} target="_blank" rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 text-xs text-[#4A6FA5] hover:underline flex-shrink-0">
-                                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                                  </svg>
-                                  Attachment
-                                </a>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-3 flex-shrink-0">
-                              <button
-                                onClick={() => setViewEvent(ev)}
-                                className="text-xs text-[#4A6FA5] hover:text-[#1E3A5F] font-medium"
-                              >
-                                Quick View
-                              </button>
-                              {canEdit && (
-                                <>
-                                  <button
-                                    onClick={() => openEditEvent(ev)}
-                                    className="text-xs text-[#6B7280] hover:text-[#1A1A2E] font-medium"
-                                  >
-                                    Edit
-                                  </button>
-                                  <button
-                                    onClick={() => setConfirmDeleteEvent(ev)}
-                                    className="text-xs text-red-400 hover:text-red-600 font-medium"
-                                  >
-                                    Delete
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                          {summary && <p className="text-xs text-[#6B7280] mt-1">{summary}</p>}
-                          {ev.description && <p className="text-xs text-[#9CA3AF] mt-0.5 italic">{ev.description}</p>}
+
+                {/* ── Expanded content ── */}
+                {isExpanded && (
+                  <div className="border-t border-[#F3F4F6]">
+                    {/* Proceeding details */}
+                    <div className="px-5 py-4 grid grid-cols-3 gap-x-6 gap-y-4 border-b border-[#F3F4F6] bg-[#FAFAFA]">
+                      <DetailRow label="Authority" value={[proc.authority_type, proc.authority_name].filter(Boolean).join(" · ")} />
+                      <DetailRow label="Jurisdiction" value={[proc.jurisdiction_city, proc.jurisdiction].filter(Boolean).join(", ")} />
+                      <DetailRow label="Assigned To" value={au ? `${au.first_name} ${au.last_name}` : null} />
+                      <DetailRow label="Client Staff" value={cs ? `${cs.first_name} ${cs.last_name}` : null} />
+                      <DetailRow label="Initiated On" value={fmtDate(proc.initiated_on)} />
+                      <DetailRow label="Deadline" value={fmtDate(proc.to_be_completed_by)} />
+                      <DetailRow label="Possible Outcome" value={outCfg ? (
+                        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${outCfg.cls}`}>{outCfg.label}</span>
+                      ) : null} />
+                      {canEdit && (
+                        <div className="col-span-3 flex justify-end pt-1">
+                          <button onClick={(e) => { e.stopPropagation(); openEditProc(proc); }}
+                            className="px-3 py-1.5 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:text-[#1A1A2E] hover:bg-white transition">
+                            Edit Proceeding
+                          </button>
                         </div>
-                      );
-                    })}
+                      )}
+                    </div>
+
+                    {/* Events */}
+                    <div className="px-5 py-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Events ({sortedEvents.length})</p>
+                        {canEdit && (
+                          <button onClick={(e) => { e.stopPropagation(); openAddEvent(proc.id); }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg transition">
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                            </svg>
+                            Add Event
+                          </button>
+                        )}
+                      </div>
+                      {sortedEvents.length === 0 ? (
+                        <p className="text-xs text-[#9CA3AF]">No events recorded yet.</p>
+                      ) : (
+                        <div className="border border-[#F3F4F6] rounded-lg overflow-hidden">
+                          {sortedEvents.map((ev, evIdx) => {
+                            const summary = getEventSummary(ev.category, ev.details);
+                            const attachmentUrl = ev.details?.attachment;
+                            const isEvExpanded = expandedEvents.has(ev.id);
+                            // Derive primary date for collapsed row display
+                            const primaryKey = PRIMARY_DATE[ev.category];
+                            const primaryDate = primaryKey && ev.details?.[primaryKey]
+                              ? fmtDateTime(ev.details[primaryKey])
+                              : ev.event_date ? fmtDateTime(ev.event_date) : null;
+
+                            return (
+                              <div key={ev.id} className={`${evIdx > 0 ? "border-t border-[#F3F4F6]" : ""}`}>
+                                {/* Collapsed summary row */}
+                                <div
+                                  className="flex items-center gap-2 px-3 py-2.5 cursor-pointer hover:bg-[#F8F9FA] transition-colors select-none"
+                                  onClick={() => toggleEvent(ev.id)}
+                                >
+                                  {/* Chevron */}
+                                  <svg
+                                    className={`w-3.5 h-3.5 flex-shrink-0 text-[#9CA3AF] transition-transform duration-200 ${isEvExpanded ? "rotate-90" : ""}`}
+                                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+                                  >
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                                  </svg>
+
+                                  {/* Category badge */}
+                                  <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-[#EEF2FF] text-[#4A6FA5] whitespace-nowrap flex-shrink-0">
+                                    {EVENT_LABELS[ev.category] ?? ev.category}
+                                  </span>
+
+                                  {/* Primary date */}
+                                  {primaryDate && (
+                                    <span className="text-xs text-[#6B7280] truncate hidden sm:block">{primaryDate}</span>
+                                  )}
+
+                                  {/* Attachment indicator */}
+                                  {attachmentUrl && (
+                                    <svg className="w-3.5 h-3.5 text-[#4A6FA5] flex-shrink-0 hidden sm:block" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                    </svg>
+                                  )}
+
+                                  {/* Summary (truncated) */}
+                                  {summary && !primaryDate && (
+                                    <span className="text-xs text-[#9CA3AF] truncate flex-1 hidden md:block">{summary}</span>
+                                  )}
+
+                                  {/* Actions */}
+                                  <div className="ml-auto flex items-center gap-3 flex-shrink-0">
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); setViewEvent(ev); }}
+                                      className="text-xs text-[#4A6FA5] hover:text-[#1E3A5F] font-medium"
+                                    >
+                                      Quick View
+                                    </button>
+                                    {canEdit && (
+                                      <>
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); openEditEvent(ev); }}
+                                          className="text-xs text-[#6B7280] hover:text-[#1A1A2E] font-medium"
+                                        >
+                                          Edit
+                                        </button>
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); setConfirmDeleteEvent(ev); }}
+                                          className="text-xs text-red-400 hover:text-red-600 font-medium"
+                                        >
+                                          Delete
+                                        </button>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Expanded details */}
+                                {isEvExpanded && (
+                                  <div className="border-t border-[#F3F4F6] bg-[#FAFAFA] px-4 py-3">
+                                    {summary && <p className="text-xs text-[#6B7280] mb-1.5">{summary}</p>}
+                                    {ev.description && <p className="text-xs text-[#9CA3AF] italic mb-1.5">{ev.description}</p>}
+                                    {attachmentUrl && (
+                                      <a href={attachmentUrl} target="_blank" rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 text-xs text-[#4A6FA5] hover:underline">
+                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                        </svg>
+                                        View Attachment
+                                      </a>
+                                    )}
+                                    {!summary && !ev.description && !attachmentUrl && (
+                                      <p className="text-xs text-[#9CA3AF]">No additional details.</p>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
-            </div>
-          );
-        })
+            );
+          })}
+        </div>
       )}
 
       {/* Documents Section */}
@@ -873,6 +1043,13 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                 <select value={editAct} onChange={(e) => setEditAct(e.target.value)} className={inp}>
                   <option value="">Select…</option>
                   {(mastersByType["act_regulation"] ?? []).map((v) => <option key={v} value={v}>{v}</option>)}
+                </select>
+              </Field>
+              <Field label="Status">
+                <select value={editAppealStatus} onChange={(e) => setEditAppealStatus(e.target.value)} className={inp}>
+                  <option value="open">Open</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="closed">Closed</option>
                 </select>
               </Field>
             </div>
@@ -998,11 +1175,9 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                 {CATEGORY_FIELDS[editEventCategory].map((field) => (
                   <Field key={field.key} label={field.label} fullWidth={field.fullWidth}>
                     {field.type === "datetime" && (
-                      <input
-                        type="datetime-local"
+                      <DateTimeField
                         value={editEventDetails[field.key] ?? ""}
-                        onChange={(e) => setEditDetail(field.key, e.target.value)}
-                        className={inp}
+                        onChange={(v) => setEditDetail(field.key, v)}
                       />
                     )}
                     {field.type === "text" && (
@@ -1100,11 +1275,9 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                 {CATEGORY_FIELDS[eventCategory].map((field) => (
                   <Field key={field.key} label={field.label} fullWidth={field.fullWidth}>
                     {field.type === "datetime" && (
-                      <input
-                        type="datetime-local"
+                      <DateTimeField
                         value={eventDetails[field.key] ?? ""}
-                        onChange={(e) => setDetail(field.key, e.target.value)}
-                        className={inp}
+                        onChange={(v) => setDetail(field.key, v)}
                       />
                     )}
                     {field.type === "text" && (

@@ -27,6 +27,7 @@ export default async function SpLayout({ children }: { children: React.ReactNode
         userRole={user.role}
         orgName={org?.name}
         orgLogoUrl={org?.logo_url ?? undefined}
+        userAvatarUrl={user.avatar_url ?? undefined}
       />
       <main className="flex-1 overflow-y-auto">{children}</main>
     </div>

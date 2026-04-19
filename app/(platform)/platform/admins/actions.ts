@@ -11,6 +11,7 @@ export interface AdminInput {
   email: string;
   password: string;
   role: "super_admin" | "platform_admin";
+  avatar_url?: string;
 }
 
 export async function createPlatformAdmin(input: AdminInput) {
@@ -37,6 +38,7 @@ export async function createPlatformAdmin(input: AdminInput) {
     email: input.email,
     role: input.role,
     org_id: "00000000-0000-0000-0000-000000000001", // Platform org
+    avatar_url: input.avatar_url || null,
     is_active: true,
   });
 

@@ -108,16 +108,22 @@ export default function UsersClient({ users, clientOrgs: _clientOrgs, currentUse
                   </td>
                   {isAdmin && (
                     <td className="px-4 py-3">
-                      {u.id !== currentUserId && (
-                        <div className="flex items-center gap-3">
-                          <button onClick={() => handleToggle(u.id, u.is_active)} disabled={togglingId === u.id}
-                            className={`text-xs font-medium disabled:opacity-50 ${u.is_active ? "text-amber-600 hover:text-amber-800" : "text-green-600 hover:text-green-800"}`}>
-                            {togglingId === u.id ? "…" : u.is_active ? "Deactivate" : "Activate"}
-                          </button>
-                          <button onClick={() => setConfirmDelete({ id: u.id, name: fullName(u) })}
-                            className="text-xs font-medium text-red-500 hover:text-red-700">Delete</button>
-                        </div>
-                      )}
+                      <div className="flex items-center gap-3">
+                        <Link href={`/users/${u.id}/edit`}
+                          className="text-xs font-medium text-[#4A6FA5] hover:text-[#1E3A5F]">
+                          Edit
+                        </Link>
+                        {u.id !== currentUserId && (
+                          <>
+                            <button onClick={() => handleToggle(u.id, u.is_active)} disabled={togglingId === u.id}
+                              className={`text-xs font-medium disabled:opacity-50 ${u.is_active ? "text-amber-600 hover:text-amber-800" : "text-green-600 hover:text-green-800"}`}>
+                              {togglingId === u.id ? "…" : u.is_active ? "Deactivate" : "Activate"}
+                            </button>
+                            <button onClick={() => setConfirmDelete({ id: u.id, name: fullName(u) })}
+                              className="text-xs font-medium text-red-500 hover:text-red-700">Delete</button>
+                          </>
+                        )}
+                      </div>
                     </td>
                   )}
                 </tr>

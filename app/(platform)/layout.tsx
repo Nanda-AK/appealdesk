@@ -22,6 +22,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
         isPlatform
         orgName={settings?.platform_name}
         orgLogoUrl={settings?.logo_url ?? undefined}
+        userAvatarUrl={user.avatar_url ?? undefined}
       />
       <main className="flex-1 overflow-y-auto">{children}</main>
     </div>

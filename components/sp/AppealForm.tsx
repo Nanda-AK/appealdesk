@@ -32,6 +32,7 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
   const [financialYear, setFinancialYear] = useState("");
   const [assessmentYear, setAssessmentYear] = useState("");
   const [actRegulation, setActRegulation] = useState("");
+  const [appealStatus, setAppealStatus] = useState("open");
 
   // Proceeding
   const [proceedingType, setProceedingType] = useState("");
@@ -46,6 +47,7 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
   const [assignedTo, setAssignedTo] = useState("");
   const [clientStaff, setClientStaff] = useState("");
   const [possibleOutcome, setPossibleOutcome] = useState("");
+  const [proceedingStatus, setProceedingStatus] = useState("open");
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +59,7 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
     setSaving(true);
     setError(null);
     try {
-      const appeal: AppealInput = { client_org_id: clientOrgId, financial_year: financialYear, assessment_year: assessmentYear, act_regulation: actRegulation };
+      const appeal: AppealInput = { client_org_id: clientOrgId, financial_year: financialYear, assessment_year: assessmentYear, act_regulation: actRegulation, status: appealStatus };
       const proc: ProceedingInput = {
         proceeding_type: proceedingType,
         authority_type: authorityType,
@@ -71,6 +73,7 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
         assigned_to: assignedTo,
         client_staff_id: clientStaff,
         possible_outcome: possibleOutcome,
+        status: proceedingStatus,
       };
       const id = await createAppeal(appeal, proc);
       router.push(`/appeals/${id}`);
@@ -114,6 +117,13 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
               </select>
             </Field>
           </div>
+          <Field label="Status">
+            <select value={appealStatus} onChange={(e) => setAppealStatus(e.target.value)} className={inp}>
+              <option value="open">Open</option>
+              <option value="in-progress">In Progress</option>
+              <option value="closed">Closed</option>
+            </select>
+          </Field>
         </div>
       </section>
 
@@ -190,6 +200,13 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
               <option value="favourable">Favourable</option>
               <option value="doubtful">Doubtful</option>
               <option value="unfavourable">Unfavourable</option>
+            </select>
+          </Field>
+          <Field label="Status">
+            <select value={proceedingStatus} onChange={(e) => setProceedingStatus(e.target.value)} className={inp}>
+              <option value="open">Open</option>
+              <option value="in-progress">In Progress</option>
+              <option value="closed">Closed</option>
             </select>
           </Field>
         </div>

@@ -157,9 +157,10 @@ interface Props {
   isPlatform?: boolean;
   orgName?: string;
   orgLogoUrl?: string;
+  userAvatarUrl?: string;
 }
 
-export default function Sidebar({ userName, userRole, isPlatform = false, orgName, orgLogoUrl }: Props) {
+export default function Sidebar({ userName, userRole, isPlatform = false, orgName, orgLogoUrl, userAvatarUrl }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
@@ -295,18 +296,33 @@ export default function Sidebar({ userName, userRole, isPlatform = false, orgNam
       {/* User */}
       <div className="px-2 py-4 border-t border-white/10">
         {!collapsed && (
-          <div className="px-3 py-2 mb-1">
-            <p className="text-white text-sm font-medium truncate">{userName}</p>
-            <p className="text-white/50 text-xs capitalize mt-0.5">
-              {userRole.replace(/_/g, " ")}
-            </p>
+          <div className="px-3 py-2 mb-1 flex items-center gap-2.5">
+            {userAvatarUrl ? (
+              <img src={userAvatarUrl} alt={userName}
+                className="w-8 h-8 rounded-full object-cover flex-shrink-0 bg-white/10" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+                <span className="text-white text-xs font-semibold">{firstInitial}</span>
+              </div>
+            )}
+            <div className="overflow-hidden min-w-0">
+              <p className="text-white text-sm font-medium truncate">{userName}</p>
+              <p className="text-white/50 text-xs capitalize mt-0.5">
+                {userRole.replace(/_/g, " ")}
+              </p>
+            </div>
           </div>
         )}
         {collapsed && (
           <div className="flex justify-center mb-1">
-            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center" title={userName}>
-              <span className="text-white text-xs font-semibold">{firstInitial}</span>
-            </div>
+            {userAvatarUrl ? (
+              <img src={userAvatarUrl} alt={userName} title={userName}
+                className="w-8 h-8 rounded-full object-cover bg-white/10" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center" title={userName}>
+                <span className="text-white text-xs font-semibold">{firstInitial}</span>
+              </div>
+            )}
           </div>
         )}
         <button

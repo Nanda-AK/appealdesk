@@ -11,10 +11,10 @@ export default async function AppealsPage() {
   let appealsQuery = supabase
     .from("appeals")
     .select(`
-      id, act_regulation, financial_year, assessment_year, created_at,
+      id, act_regulation, financial_year, assessment_year, status, created_at,
       client_org:organizations!client_org_id(id, name),
       proceedings(
-        id, proceeding_type, authority_name, importance,
+        id, proceeding_type, authority_name, importance, status,
         to_be_completed_by, assigned_to, possible_outcome, is_active,
         assigned_user:users!assigned_to(first_name, last_name)
       )

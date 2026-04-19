@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { createPlatformAdmin, toggleAdminStatus, AdminInput } from "@/app/(platform)/platform/admins/actions";
 
 interface Admin {
@@ -27,6 +28,7 @@ const emptyForm = (): AdminInput => ({
   email: "",
   password: "",
   role: "platform_admin",
+  avatar_url: "",
 });
 
 export default function AdminsClient({ admins, currentUserId, isSuperAdmin }: Props) {
@@ -37,6 +39,19 @@ export default function AdminsClient({ admins, currentUserId, isSuperAdmin }: Pr
   const [error, setError] = useState<string | null>(null);
   const [toggling, setToggling] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<{ id: string; name: string; activate: boolean } | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+
+  async function handleAvatarUpload(file: File) {
+    setAvatarUploading(true);
+    const supabase = createClient();
+    const path = `user-avatars/${Date.now()}-${file.name}`;
+    const { data, error: uploadError } = await supabase.storage.from("org-files").upload(path, file, { upsert: true });
+    if (!uploadError && data) {
+      const { data: urlData } = supabase.storage.from("org-files").getPublicUrl(data.path);
+      setForm((prev) => ({ ...prev, avatar_url: urlData.publicUrl }));
+    }
+    setAvatarUploading(false);
+  }
 
   function updateForm(field: keyof AdminInput, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -165,6 +180,31 @@ export default function AdminsClient({ admins, currentUserId, isSuperAdmin }: Pr
             </div>
             <form onSubmit={handleCreate} className="space-y-3">
               {error && <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2.5 text-xs text-red-700">{error}</div>}
+
+              {/* Avatar upload */}
+              <div className="flex items-center gap-3 pb-3 border-b border-[#F3F4F6]">
+                {form.avatar_url ? (
+                  <img src={form.avatar_url} alt="Avatar" className="w-12 h-12 rounded-full object-cover border-2 border-[#E5E7EB] flex-shrink-0" />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-[#F3F4F6] border-2 border-dashed border-[#D1D5DB] flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 text-[#9CA3AF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                    </svg>
+                  </div>
+                )}
+                <div>
+                  <label className={`cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F8F9FA] transition ${avatarUploading ? "opacity-50 pointer-events-none" : ""}`}>
+                    {avatarUploading ? "Uploading…" : form.avatar_url ? "Change Photo" : "Upload Photo"}
+                    <input type="file" accept="image/*" className="hidden" disabled={avatarUploading}
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) handleAvatarUpload(f); }} />
+                  </label>
+                  {form.avatar_url && (
+                    <button type="button" onClick={() => setForm((p) => ({ ...p, avatar_url: "" }))}
+                      className="ml-2 text-xs text-red-500 hover:text-red-700">Remove</button>
+                  )}
+                </div>
+              </div>
+
               <div className="grid grid-cols-3 gap-2">
                 <div>
                   <label className="block text-xs font-medium text-[#6B7280] mb-1">First Name <span className="text-red-500">*</span></label>

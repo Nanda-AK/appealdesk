@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { createUser, UserInput } from "@/app/(sp)/users/actions";
 
 const COUNTRY_CODES = [
@@ -14,6 +15,54 @@ const COUNTRY_CODES = [
 ];
 
 const inp = "w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]";
+
+function AvatarUpload({ value, onChange }: { value: string; onChange: (url: string) => void }) {
+  const [uploading, setUploading] = useState(false);
+
+  async function handleFile(file: File) {
+    setUploading(true);
+    const supabase = createClient();
+    const path = `user-avatars/${Date.now()}-${file.name}`;
+    const { data, error } = await supabase.storage.from("org-files").upload(path, file, { upsert: true });
+    if (!error && data) {
+      const { data: urlData } = supabase.storage.from("org-files").getPublicUrl(data.path);
+      onChange(urlData.publicUrl);
+    }
+    setUploading(false);
+  }
+
+  return (
+    <div className="col-span-2 flex items-center gap-4 pb-4 border-b border-[#F3F4F6] mb-2">
+      <div className="relative flex-shrink-0">
+        {value ? (
+          <img src={value} alt="Avatar" className="w-16 h-16 rounded-full object-cover border-2 border-[#E5E7EB]" />
+        ) : (
+          <div className="w-16 h-16 rounded-full bg-[#F3F4F6] border-2 border-dashed border-[#D1D5DB] flex items-center justify-center">
+            <svg className="w-6 h-6 text-[#9CA3AF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+            </svg>
+          </div>
+        )}
+      </div>
+      <div>
+        <p className="text-xs font-medium text-[#6B7280] mb-1.5">Profile Photo</p>
+        <label className={`cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F8F9FA] transition ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+          </svg>
+          {uploading ? "Uploading…" : value ? "Change Photo" : "Upload Photo"}
+          <input type="file" accept="image/*" className="hidden" disabled={uploading}
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
+        </label>
+        {value && (
+          <button type="button" onClick={() => onChange("")}
+            className="ml-2 text-xs text-red-500 hover:text-red-700">Remove</button>
+        )}
+        <p className="text-xs text-[#9CA3AF] mt-1">JPG, PNG · shown in sidebar</p>
+      </div>
+    </div>
+  );
+}
 
 function Field({ label, required, children, full }: { label: string; required?: boolean; children: React.ReactNode; full?: boolean }) {
   return (
@@ -38,6 +87,7 @@ export default function ClientUserForm({ clientOrgs }: Props) {
     mobile_country_code: "+91", mobile_number: "",
     date_of_birth: "",
     client_org_id: "",
+    avatar_url: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -77,6 +127,8 @@ export default function ClientUserForm({ clientOrgs }: Props) {
       <section className="bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-sm">
         <h2 className="text-sm font-semibold text-[#1A1A2E] mb-4 pb-3 border-b border-[#E5E7EB]">User Details</h2>
         <div className="grid grid-cols-2 gap-4">
+
+          <AvatarUpload value={form.avatar_url ?? ""} onChange={set("avatar_url")} />
 
           <div className="col-span-2 grid grid-cols-3 gap-3">
             <Field label="First Name" required>
