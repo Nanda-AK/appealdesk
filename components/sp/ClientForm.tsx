@@ -15,7 +15,7 @@ const COMPLIANCE_TYPES = [
   { key: "gst", label: "GST" },
 ] as const;
 const EXTRA_ID_TYPES = [
-  "MSME / Udyam", "ESIC", "EPF / PF", "Professional Tax",
+  "GST", "MSME / Udyam", "ESIC", "EPF / PF", "Professional Tax",
   "Shops & Establishment", "IEC", "FSSAI", "Trade License",
   "Passport", "Driving Licence", "Voter ID", "Other",
 ];
