@@ -9,7 +9,7 @@ function isPlatformRole(role: string) {
 }
 
 export interface ComplianceInput {
-  type: "pan" | "aadhaar" | "tan" | "gst";
+  type: string;
   number?: string;
   login_id?: string;
   credential?: string;
@@ -93,14 +93,15 @@ export async function updateProvider(id: string, input: ProviderInput) {
 
   if (error) throw new Error(error.message);
 
-  // Upsert compliance details
-  for (const c of input.compliance) {
-    if (c.number || c.login_id || c.attachment_url) {
-      await supabase.from("compliance_details").upsert(
-        { ...c, org_id: id },
-        { onConflict: "org_id,type" }
-      );
-    }
+  // Replace all compliance rows (delete + insert)
+  await supabase.from("compliance_details").delete().eq("org_id", id);
+  const complianceRows = input.compliance.filter(
+    (c) => c.number || c.login_id || c.attachment_url
+  );
+  if (complianceRows.length > 0) {
+    await supabase.from("compliance_details").insert(
+      complianceRows.map((c) => ({ ...c, org_id: id }))
+    );
   }
 
   revalidatePath("/platform/providers");

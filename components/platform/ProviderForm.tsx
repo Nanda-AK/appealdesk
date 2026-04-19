@@ -6,12 +6,18 @@ import { createClient } from "@/lib/supabase/client";
 import { createProvider, updateProvider, ComplianceInput } from "@/app/(platform)/platform/providers/actions";
 
 const BUSINESS_TYPES = ["Company", "Trust", "Partnership", "LLP", "Sole Proprietorship", "OPC", "Custom"];
+const FIXED_TYPES = ["pan", "aadhaar", "tan", "gst"];
 const COMPLIANCE_TYPES = [
   { key: "pan", label: "PAN" },
   { key: "aadhaar", label: "Aadhaar" },
   { key: "tan", label: "TAN" },
   { key: "gst", label: "GST" },
 ] as const;
+const EXTRA_ID_TYPES = [
+  "MSME / Udyam", "ESIC", "EPF / PF", "Professional Tax",
+  "Shops & Establishment", "IEC", "FSSAI", "Trade License",
+  "Passport", "Driving Licence", "Voter ID", "Other",
+];
 
 interface InitialCompliance {
   type: string;
@@ -37,14 +43,31 @@ interface ComplianceState {
   uploading: boolean;
 }
 
-const defaultCompliance = (): ComplianceState => ({
-  number: "",
-  login_id: "",
-  credential: "",
-  attachment_url: "",
-  showCredential: false,
-  uploading: false,
-});
+interface ExtraRow {
+  rowId: string;
+  type: string;
+  number: string;
+  login_id: string;
+  credential: string;
+  attachment_url: string;
+  showCredential: boolean;
+  uploading: boolean;
+}
+
+function EyeIcon({ visible }: { visible: boolean }) {
+  return (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      {visible ? (
+        <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+      ) : (
+        <>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        </>
+      )}
+    </svg>
+  );
+}
 
 export default function ProviderForm({ mode, providerId, initialData, initialCompliance }: Props) {
   const router = useRouter();
@@ -62,7 +85,7 @@ export default function ProviderForm({ mode, providerId, initialData, initialCom
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Compliance state per type
+  // Fixed compliance state per type
   const [compliance, setCompliance] = useState<Record<string, ComplianceState>>(() => {
     const init: Record<string, ComplianceState> = {};
     COMPLIANCE_TYPES.forEach(({ key }) => {
@@ -79,8 +102,39 @@ export default function ProviderForm({ mode, providerId, initialData, initialCom
     return init;
   });
 
+  // Extra compliance rows
+  const [extraRows, setExtraRows] = useState<ExtraRow[]>(() =>
+    (initialCompliance ?? [])
+      .filter((c) => !FIXED_TYPES.includes(c.type))
+      .map((c) => ({
+        rowId: crypto.randomUUID(),
+        type: c.type,
+        number: c.number ?? "",
+        login_id: c.login_id ?? "",
+        credential: c.credential ?? "",
+        attachment_url: c.attachment_url ?? "",
+        showCredential: false,
+        uploading: false,
+      }))
+  );
+
   function updateCompliance(type: string, field: keyof ComplianceState, value: string | boolean) {
     setCompliance((prev) => ({ ...prev, [type]: { ...prev[type], [field]: value } }));
+  }
+
+  function addExtraRow() {
+    setExtraRows((prev) => [
+      ...prev,
+      { rowId: crypto.randomUUID(), type: EXTRA_ID_TYPES[0], number: "", login_id: "", credential: "", attachment_url: "", showCredential: false, uploading: false },
+    ]);
+  }
+
+  function updateExtraRow(rowId: string, field: keyof ExtraRow, value: string | boolean) {
+    setExtraRows((prev) => prev.map((r) => r.rowId === rowId ? { ...r, [field]: value } : r));
+  }
+
+  function removeExtraRow(rowId: string) {
+    setExtraRows((prev) => prev.filter((r) => r.rowId !== rowId));
   }
 
   async function uploadFile(file: File, path: string): Promise<string | null> {
@@ -111,6 +165,15 @@ export default function ProviderForm({ mode, providerId, initialData, initialCom
     updateCompliance(type, "uploading", false);
   }
 
+  async function handleExtraAttachmentUpload(rowId: string, type: string, e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    updateExtraRow(rowId, "uploading", true);
+    const url = await uploadFile(file, `compliance/${type.replace(/\s+/g, "_")}/${Date.now()}-${file.name}`);
+    if (url) updateExtraRow(rowId, "attachment_url", url);
+    updateExtraRow(rowId, "uploading", false);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) { setError("Service Provider name is required."); return; }
@@ -120,13 +183,22 @@ export default function ProviderForm({ mode, providerId, initialData, initialCom
     setSaving(true);
     setError(null);
 
-    const complianceInput: ComplianceInput[] = COMPLIANCE_TYPES.map(({ key }) => ({
-      type: key,
-      number: compliance[key].number || undefined,
-      login_id: compliance[key].login_id || undefined,
-      credential: compliance[key].credential || undefined,
-      attachment_url: compliance[key].attachment_url || undefined,
-    }));
+    const complianceInput: ComplianceInput[] = [
+      ...COMPLIANCE_TYPES.map(({ key }) => ({
+        type: key,
+        number: compliance[key].number || undefined,
+        login_id: compliance[key].login_id || undefined,
+        credential: compliance[key].credential || undefined,
+        attachment_url: compliance[key].attachment_url || undefined,
+      })),
+      ...extraRows.map((r) => ({
+        type: r.type,
+        number: r.number || undefined,
+        login_id: r.login_id || undefined,
+        credential: r.credential || undefined,
+        attachment_url: r.attachment_url || undefined,
+      })),
+    ];
 
     try {
       if (mode === "create") {
@@ -140,6 +212,8 @@ export default function ProviderForm({ mode, providerId, initialData, initialCom
       setSaving(false);
     }
   }
+
+  const inp = "w-full px-2.5 py-1.5 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -222,91 +296,118 @@ export default function ProviderForm({ mode, providerId, initialData, initialCom
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-[#F8F9FA] border-b border-[#E5E7EB]">
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280] whitespace-nowrap w-28">ID Type</th>
+                <th className="text-left px-4 py-3 font-medium text-[#6B7280] whitespace-nowrap w-40">ID Type</th>
                 <th className="text-left px-4 py-3 font-medium text-[#6B7280]">ID</th>
                 <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Login ID</th>
                 <th className="text-left px-4 py-3 font-medium text-[#6B7280] w-44">Password</th>
                 <th className="text-left px-4 py-3 font-medium text-[#6B7280] w-36">Attachment</th>
+                <th className="w-8" />
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E5E7EB]">
-              {COMPLIANCE_TYPES.map(({ key, label }) => {
-                const inp = "w-full px-2.5 py-1.5 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]";
-                return (
-                  <tr key={key} className="hover:bg-[#FAFAFA]">
-                    <td className="px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">{label}</td>
-                    <td className="px-4 py-3">
-                      <input
-                        value={compliance[key].number}
-                        onChange={(e) => updateCompliance(key, "number", e.target.value)}
-                        placeholder={`${label} number`}
-                        className={inp}
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <input
-                        value={compliance[key].login_id}
-                        onChange={(e) => updateCompliance(key, "login_id", e.target.value)}
-                        placeholder="Login ID"
-                        className={inp}
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="relative">
-                        <input
-                          type={compliance[key].showCredential ? "text" : "password"}
-                          value={compliance[key].credential}
-                          onChange={(e) => updateCompliance(key, "credential", e.target.value)}
-                          placeholder="Password"
-                          className={`${inp} pr-8`}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => updateCompliance(key, "showCredential", !compliance[key].showCredential)}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#6B7280]"
-                        >
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            {compliance[key].showCredential
-                              ? <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                              : <><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></>
-                            }
-                          </svg>
-                        </button>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {compliance[key].attachment_url && (
-                          <a
-                            href={compliance[key].attachment_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-xs text-[#4A6FA5] hover:underline"
-                          >
-                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                            View
-                          </a>
-                        )}
-                        <label className="cursor-pointer inline-flex items-center gap-1 px-2 py-1 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F8F9FA] transition whitespace-nowrap">
+              {/* Fixed rows */}
+              {COMPLIANCE_TYPES.map(({ key, label }) => (
+                <tr key={key} className="hover:bg-[#FAFAFA]">
+                  <td className="px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">{label}</td>
+                  <td className="px-4 py-3">
+                    <input value={compliance[key].number} onChange={(e) => updateCompliance(key, "number", e.target.value)} placeholder={`${label} number`} className={inp} />
+                  </td>
+                  <td className="px-4 py-3">
+                    <input value={compliance[key].login_id} onChange={(e) => updateCompliance(key, "login_id", e.target.value)} placeholder="Login ID" className={inp} />
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="relative">
+                      <input type={compliance[key].showCredential ? "text" : "password"} value={compliance[key].credential} onChange={(e) => updateCompliance(key, "credential", e.target.value)} placeholder="Password" className={`${inp} pr-8`} />
+                      <button type="button" onClick={() => updateCompliance(key, "showCredential", !compliance[key].showCredential)} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#6B7280]">
+                        <EyeIcon visible={compliance[key].showCredential} />
+                      </button>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {compliance[key].attachment_url && (
+                        <a href={compliance[key].attachment_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-[#4A6FA5] hover:underline">
                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                           </svg>
-                          {compliance[key].uploading ? "Uploading…" : compliance[key].attachment_url ? "Replace" : "Upload"}
-                          <input
-                            type="file"
-                            accept=".pdf,image/jpeg,image/png"
-                            className="hidden"
-                            onChange={(e) => handleAttachmentUpload(key, e)}
-                            disabled={compliance[key].uploading}
-                          />
-                        </label>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+                          View
+                        </a>
+                      )}
+                      <label className="cursor-pointer inline-flex items-center gap-1 px-2 py-1 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F8F9FA] transition whitespace-nowrap">
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        {compliance[key].uploading ? "Uploading…" : compliance[key].attachment_url ? "Replace" : "Upload"}
+                        <input type="file" accept=".pdf,image/jpeg,image/png" className="hidden" onChange={(e) => handleAttachmentUpload(key, e)} disabled={compliance[key].uploading} />
+                      </label>
+                    </div>
+                  </td>
+                  <td />
+                </tr>
+              ))}
+
+              {/* Extra rows */}
+              {extraRows.map((row) => (
+                <tr key={row.rowId} className="hover:bg-[#FAFAFA]">
+                  <td className="px-4 py-3">
+                    <select value={row.type} onChange={(e) => updateExtraRow(row.rowId, "type", e.target.value)} className={`${inp} text-xs`}>
+                      {EXTRA_ID_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </td>
+                  <td className="px-4 py-3">
+                    <input value={row.number} onChange={(e) => updateExtraRow(row.rowId, "number", e.target.value)} placeholder="ID number" className={inp} />
+                  </td>
+                  <td className="px-4 py-3">
+                    <input value={row.login_id} onChange={(e) => updateExtraRow(row.rowId, "login_id", e.target.value)} placeholder="Login ID" className={inp} />
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="relative">
+                      <input type={row.showCredential ? "text" : "password"} value={row.credential} onChange={(e) => updateExtraRow(row.rowId, "credential", e.target.value)} placeholder="Password" className={`${inp} pr-8`} />
+                      <button type="button" onClick={() => updateExtraRow(row.rowId, "showCredential", !row.showCredential)} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#6B7280]">
+                        <EyeIcon visible={row.showCredential} />
+                      </button>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {row.attachment_url && (
+                        <a href={row.attachment_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-[#4A6FA5] hover:underline">
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                          View
+                        </a>
+                      )}
+                      <label className="cursor-pointer inline-flex items-center gap-1 px-2 py-1 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F8F9FA] transition whitespace-nowrap">
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        {row.uploading ? "Uploading…" : row.attachment_url ? "Replace" : "Upload"}
+                        <input type="file" accept=".pdf,image/jpeg,image/png" className="hidden" onChange={(e) => handleExtraAttachmentUpload(row.rowId, row.type, e)} disabled={row.uploading} />
+                      </label>
+                    </div>
+                  </td>
+                  <td className="px-2 py-3">
+                    <button type="button" onClick={() => removeExtraRow(row.rowId)} className="text-[#9CA3AF] hover:text-red-500 transition" title="Remove row">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+
+              {/* Add Row */}
+              <tr className="bg-[#FAFAFA]">
+                <td colSpan={6} className="px-4 py-2.5">
+                  <button type="button" onClick={addExtraRow} className="inline-flex items-center gap-1.5 text-xs text-[#4A6FA5] hover:text-[#1E3A5F] transition font-medium">
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Add Row
+                  </button>
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>

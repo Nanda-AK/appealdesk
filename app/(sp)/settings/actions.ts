@@ -4,6 +4,14 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/user";
 import { revalidatePath } from "next/cache";
 
+export interface ComplianceInput {
+  type: string;
+  number?: string;
+  login_id?: string;
+  credential?: string;
+  attachment_url?: string;
+}
+
 export interface SpProfileInput {
   name: string;
   business_type?: string;
@@ -44,4 +52,22 @@ export async function updateSpProfile(input: SpProfileInput) {
 
   revalidatePath("/settings");
   revalidatePath("/dashboard");
+}
+
+export async function saveSpCompliance(compliance: ComplianceInput[]) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== "sp_admin") throw new Error("Unauthorized");
+
+  const supabase = await createServiceClient();
+
+  // Replace all compliance rows (delete + insert)
+  await supabase.from("compliance_details").delete().eq("org_id", user.org_id);
+  const rows = compliance.filter((c) => c.number || c.login_id || c.attachment_url);
+  if (rows.length > 0) {
+    await supabase.from("compliance_details").insert(
+      rows.map((c) => ({ ...c, org_id: user.org_id }))
+    );
+  }
+
+  revalidatePath("/settings");
 }
