@@ -102,6 +102,53 @@ export async function updateClientOrg(id: string, input: ClientInput) {
   redirect("/clients");
 }
 
+export async function deleteClient(id: string): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user || user.role !== "sp_admin") throw new Error("Unauthorized");
+
+  const supabase = await createServiceClient();
+
+  // Delete compliance details
+  await supabase.from("compliance_details").delete().eq("org_id", id);
+
+  // Delete users belonging to this client org
+  await supabase.from("users").delete().eq("org_id", id);
+
+  // Delete appeals and their children
+  const { data: appeals } = await supabase
+    .from("appeals")
+    .select("id")
+    .eq("client_org_id", id);
+
+  if (appeals?.length) {
+    const appealIds = appeals.map((a) => a.id);
+
+    const { data: proceedings } = await supabase
+      .from("proceedings")
+      .select("id")
+      .in("appeal_id", appealIds);
+
+    if (proceedings?.length) {
+      const procIds = proceedings.map((p) => p.id);
+      await supabase.from("events").delete().in("proceeding_id", procIds);
+      await supabase.from("proceedings").delete().in("id", procIds);
+    }
+
+    for (const appealId of appealIds) {
+      await supabase.from("appeal_documents").delete().eq("appeal_id", appealId);
+    }
+
+    await supabase.from("appeals").delete().in("id", appealIds);
+  }
+
+  // Delete the organisation
+  const { error } = await supabase.from("organizations").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/clients");
+  redirect("/clients");
+}
+
 export async function toggleClientStatus(id: string, isActive: boolean) {
   const user = await getCurrentUser();
   if (!user || user.role !== "sp_admin") throw new Error("Unauthorized");

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { toggleClientStatus } from "@/app/(sp)/clients/actions";
+import { toggleClientStatus, deleteClient } from "@/app/(sp)/clients/actions";
 
 interface Client {
   id: string;
@@ -21,6 +21,9 @@ interface Props {
 export default function ClientsClient({ clients, isAdmin }: Props) {
   const [loading, setLoading] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<{ id: string; name: string; activate: boolean } | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   async function handleToggle() {
     if (!confirm) return;
@@ -30,6 +33,18 @@ export default function ClientsClient({ clients, isAdmin }: Props) {
     } finally {
       setLoading(null);
       setConfirm(null);
+    }
+  }
+
+  async function handleDelete() {
+    if (!deleteConfirm) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await deleteClient(deleteConfirm.id);
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Failed to delete client.");
+      setDeleting(false);
     }
   }
 
@@ -89,19 +104,27 @@ export default function ClientsClient({ clients, isAdmin }: Props) {
                           {isAdmin ? "Edit" : "View"}
                         </Link>
                         {isAdmin && (
-                          <button
-                            onClick={() =>
-                              setConfirm({ id: client.id, name: client.name, activate: !client.is_active })
-                            }
-                            disabled={loading === client.id}
-                            className={`text-xs font-medium disabled:opacity-50 ${
-                              client.is_active
-                                ? "text-red-500 hover:text-red-700"
-                                : "text-green-600 hover:text-green-800"
-                            }`}
-                          >
-                            {client.is_active ? "Deactivate" : "Activate"}
-                          </button>
+                          <>
+                            <button
+                              onClick={() =>
+                                setConfirm({ id: client.id, name: client.name, activate: !client.is_active })
+                              }
+                              disabled={loading === client.id}
+                              className={`text-xs font-medium disabled:opacity-50 ${
+                                client.is_active
+                                  ? "text-orange-500 hover:text-orange-700"
+                                  : "text-green-600 hover:text-green-800"
+                              }`}
+                            >
+                              {client.is_active ? "Deactivate" : "Activate"}
+                            </button>
+                            <button
+                              onClick={() => { setDeleteError(null); setDeleteConfirm({ id: client.id, name: client.name }); }}
+                              className="text-xs font-medium text-red-500 hover:text-red-700"
+                            >
+                              Delete
+                            </button>
+                          </>
                         )}
                       </div>
                     </td>
@@ -113,7 +136,40 @@ export default function ClientsClient({ clients, isAdmin }: Props) {
         </div>
       </div>
 
-      {/* Confirm Modal */}
+      {/* Delete Confirm Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl border border-[#E5E7EB] p-6 w-full max-w-sm mx-4">
+            <h3 className="text-base font-semibold text-[#1A1A2E] mb-2">Delete Client?</h3>
+            <p className="text-sm text-[#6B7280] mb-2">
+              This will permanently delete <strong>{deleteConfirm.name}</strong> and all associated
+              appeals, proceedings, events, and documents.
+            </p>
+            <p className="text-xs text-red-600 font-medium mb-5">This action cannot be undone.</p>
+            {deleteError && (
+              <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">{deleteError}</p>
+            )}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                disabled={deleting}
+                className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex-1 px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition disabled:opacity-60"
+              >
+                {deleting ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Activate/Deactivate Confirm Modal */}
       {confirm && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl border border-[#E5E7EB] p-6 w-full max-w-sm mx-4">
