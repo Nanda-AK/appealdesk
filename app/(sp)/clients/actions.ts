@@ -146,7 +146,6 @@ export async function deleteClient(id: string): Promise<void> {
   if (error) throw new Error(error.message);
 
   revalidatePath("/clients");
-  redirect("/clients");
 }
 
 export async function toggleClientStatus(id: string, isActive: boolean) {

@@ -42,6 +42,7 @@ export default function ClientsClient({ clients, isAdmin }: Props) {
     setDeleteError(null);
     try {
       await deleteClient(deleteConfirm.id);
+      window.location.href = "/clients";
     } catch (err) {
       setDeleteError(err instanceof Error ? err.message : "Failed to delete client.");
       setDeleting(false);
