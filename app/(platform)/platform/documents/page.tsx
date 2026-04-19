@@ -1,31 +1,30 @@
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/user";
-import DocumentsClient from "@/components/sp/DocumentsClient";
+import PlatformDocumentsClient from "@/components/platform/PlatformDocumentsClient";
 
-export default async function DocumentsPage() {
+export default async function PlatformDocumentsPage() {
   const user = await getCurrentUser();
   const supabase = await createClient();
-  const spId = user?.service_provider_id ?? user?.org_id;
 
   const [{ data: forms }, { data: templates }] = await Promise.all([
     supabase
       .from("forms")
       .select("*")
-      .eq("service_provider_id", spId!)
+      .is("service_provider_id", null)
       .order("sort_order", { ascending: true }),
 
     supabase
       .from("templates")
       .select("*")
-      .eq("service_provider_id", spId!)
+      .is("service_provider_id", null)
       .order("created_at", { ascending: true }),
   ]);
 
-  const canEdit = user?.role === "sp_admin" || user?.role === "sp_staff";
+  const canEdit = user?.role === "super_admin" || user?.role === "platform_admin";
 
   return (
     <div className="p-8">
-      <DocumentsClient
+      <PlatformDocumentsClient
         forms={(forms ?? []) as any}
         templates={(templates ?? []) as any}
         canEdit={canEdit}

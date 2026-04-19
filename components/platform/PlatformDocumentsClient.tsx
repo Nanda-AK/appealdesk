@@ -6,9 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   createForm, updateForm, deleteForm, FormInput,
   createTemplate, updateTemplate, deleteTemplate, TemplateInput,
-} from "@/app/(sp)/documents/actions";
-
-// ── Types ──────────────────────────────────────────────────────────────
+} from "@/app/(platform)/platform/documents/actions";
 
 interface Form {
   id: string;
@@ -37,8 +35,6 @@ interface Props {
   canEdit: boolean;
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────
-
 function fmtDate(d: string) {
   return new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 }
@@ -58,17 +54,14 @@ function fileTypeBadge(nameOrType: string) {
   return { bg: "bg-gray-100", text: "text-gray-600", label: ext.toUpperCase() };
 }
 
-// ── Blank state ────────────────────────────────────────────────────────
-
 const blankForm: FormInput = { rule_no: "", rule_heading: "", form_no: "", page_no: "", parallel_rule_1962: "", url: "" };
+const inp = "w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]";
 
-// ── Main Component ─────────────────────────────────────────────────────
-
-export default function DocumentsClient({ forms, templates, canEdit }: Props) {
+export default function PlatformDocumentsClient({ forms, templates, canEdit }: Props) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"forms" | "templates">("forms");
 
-  // ── Form (IT Rules) state
+  // Form state
   const [showFormModal, setShowFormModal] = useState(false);
   const [editingForm, setEditingForm] = useState<Form | null>(null);
   const [formData, setFormData] = useState<FormInput>(blankForm);
@@ -77,7 +70,7 @@ export default function DocumentsClient({ forms, templates, canEdit }: Props) {
   const [deletingFormId, setDeletingFormId] = useState<string | null>(null);
   const [confirmDeleteForm, setConfirmDeleteForm] = useState<Form | null>(null);
 
-  // ── Template state
+  // Template state
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
   const [tplName, setTplName] = useState("");
@@ -88,162 +81,87 @@ export default function DocumentsClient({ forms, templates, canEdit }: Props) {
   const [deletingTplId, setDeletingTplId] = useState<string | null>(null);
   const [confirmDeleteTpl, setConfirmDeleteTpl] = useState<Template | null>(null);
 
-  // ── Form handlers ──────────────────────────────────────────────────
-
   function openAddForm() {
-    setEditingForm(null);
-    setFormData(blankForm);
-    setFormError(null);
-    setShowFormModal(true);
+    setEditingForm(null); setFormData(blankForm); setFormError(null); setShowFormModal(true);
   }
-
   function openEditForm(f: Form) {
     setEditingForm(f);
     setFormData({ rule_no: f.rule_no ?? "", rule_heading: f.rule_heading, form_no: f.form_no ?? "", page_no: f.page_no ?? "", parallel_rule_1962: f.parallel_rule_1962 ?? "", url: f.url ?? "" });
-    setFormError(null);
-    setShowFormModal(true);
+    setFormError(null); setShowFormModal(true);
   }
-
   async function handleFormSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!formData.rule_heading.trim()) { setFormError("Rule heading is required."); return; }
-    setFormSaving(true);
-    setFormError(null);
+    setFormSaving(true); setFormError(null);
     try {
-      if (editingForm) {
-        await updateForm(editingForm.id, formData);
-      } else {
-        await createForm(formData);
-      }
-      setShowFormModal(false);
-      router.refresh();
-    } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Something went wrong.");
-    } finally {
-      setFormSaving(false);
-    }
+      if (editingForm) { await updateForm(editingForm.id, formData); } else { await createForm(formData); }
+      setShowFormModal(false); router.refresh();
+    } catch (err) { setFormError(err instanceof Error ? err.message : "Something went wrong."); }
+    finally { setFormSaving(false); }
   }
-
   async function handleDeleteForm(f: Form) {
     setDeletingFormId(f.id);
-    try {
-      await deleteForm(f.id);
-      setConfirmDeleteForm(null);
-      router.refresh();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Delete failed.");
-    } finally {
-      setDeletingFormId(null);
-    }
+    try { await deleteForm(f.id); setConfirmDeleteForm(null); router.refresh(); }
+    catch (err) { alert(err instanceof Error ? err.message : "Delete failed."); }
+    finally { setDeletingFormId(null); }
   }
-
-  // ── Template handlers ──────────────────────────────────────────────
 
   function openAddTemplate() {
-    setEditingTemplate(null);
-    setTplName(""); setTplDesc(""); setTplFile(null);
-    setTplError(null);
-    setShowTemplateModal(true);
+    setEditingTemplate(null); setTplName(""); setTplDesc(""); setTplFile(null); setTplError(null); setShowTemplateModal(true);
   }
-
   function openEditTemplate(t: Template) {
-    setEditingTemplate(t);
-    setTplName(t.name);
-    setTplDesc(t.description ?? "");
-    setTplFile(null);
-    setTplError(null);
-    setShowTemplateModal(true);
+    setEditingTemplate(t); setTplName(t.name); setTplDesc(t.description ?? ""); setTplFile(null); setTplError(null); setShowTemplateModal(true);
   }
-
   async function handleTemplateSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!tplName.trim()) { setTplError("Template name is required."); return; }
     if (!editingTemplate && !tplFile) { setTplError("Please select a file."); return; }
-
-    setTplUploading(true);
-    setTplError(null);
+    setTplUploading(true); setTplError(null);
     try {
       if (editingTemplate) {
-        // Edit — only name/description, no file re-upload
         await updateTemplate(editingTemplate.id, { name: tplName, description: tplDesc || undefined });
       } else {
-        // Upload file first
         const supabase = createClient();
         const path = `templates/${Date.now()}-${tplFile!.name}`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from("org-files")
-          .upload(path, tplFile!, { upsert: false });
+        const { data: uploadData, error: uploadError } = await supabase.storage.from("org-files").upload(path, tplFile!, { upsert: false });
         if (uploadError) throw new Error(uploadError.message);
         const { data: urlData } = supabase.storage.from("org-files").getPublicUrl(uploadData.path);
-
         const ext = tplFile!.name.split(".").pop()?.toUpperCase();
-        await createTemplate({
-          name: tplName,
-          description: tplDesc || undefined,
-          file_url: urlData.publicUrl,
-          file_type: ext,
-          file_size: tplFile!.size,
-        });
+        await createTemplate({ name: tplName, description: tplDesc || undefined, file_url: urlData.publicUrl, file_type: ext, file_size: tplFile!.size });
       }
-      setShowTemplateModal(false);
-      router.refresh();
-    } catch (err) {
-      setTplError(err instanceof Error ? err.message : "Upload failed.");
-    } finally {
-      setTplUploading(false);
-    }
+      setShowTemplateModal(false); router.refresh();
+    } catch (err) { setTplError(err instanceof Error ? err.message : "Upload failed."); }
+    finally { setTplUploading(false); }
   }
-
   async function handleDeleteTemplate(t: Template) {
     setDeletingTplId(t.id);
-    try {
-      await deleteTemplate(t.id);
-      setConfirmDeleteTpl(null);
-      router.refresh();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Delete failed.");
-    } finally {
-      setDeletingTplId(null);
-    }
+    try { await deleteTemplate(t.id); setConfirmDeleteTpl(null); router.refresh(); }
+    catch (err) { alert(err instanceof Error ? err.message : "Delete failed."); }
+    finally { setDeletingTplId(null); }
   }
-
-  // ── Shared UI helpers ──────────────────────────────────────────────
-
-  const inp = "w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]";
 
   const tabs = [
     { key: "forms" as const, label: "Forms", count: forms.length },
     { key: "templates" as const, label: "Templates", count: templates.length },
   ];
 
-  // ── Render ─────────────────────────────────────────────────────────
-
   return (
     <div>
-      {/* Header + Tabs */}
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-[#1A1A2E]">Documents</h1>
-        <p className="text-[#6B7280] text-sm mt-0.5">Forms reference and templates library</p>
+        <p className="text-[#6B7280] text-sm mt-0.5">Platform-level forms reference and templates library</p>
       </div>
 
       <div className="flex items-center justify-between mb-5">
         <div className="flex gap-1 bg-[#F0F2F5] p-1 rounded-lg">
           {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`px-4 py-2 text-sm font-medium rounded-md transition ${
-                activeTab === tab.key ? "bg-white text-[#1A1A2E] shadow-sm" : "text-[#6B7280] hover:text-[#1A1A2E]"
-              }`}
-            >
+            <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition ${activeTab === tab.key ? "bg-white text-[#1A1A2E] shadow-sm" : "text-[#6B7280] hover:text-[#1A1A2E]"}`}>
               {tab.label}
-              <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-full ${activeTab === tab.key ? "bg-[#EEF2FF] text-[#4A6FA5]" : "bg-white text-[#6B7280]"}`}>
-                {tab.count}
-              </span>
+              <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-full ${activeTab === tab.key ? "bg-[#EEF2FF] text-[#4A6FA5]" : "bg-white text-[#6B7280]"}`}>{tab.count}</span>
             </button>
           ))}
         </div>
-
         {canEdit && activeTab === "forms" && (
           <button onClick={openAddForm} className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#1E3A5F] hover:bg-[#162d4a] text-white text-sm font-medium rounded-lg transition">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
@@ -258,7 +176,7 @@ export default function DocumentsClient({ forms, templates, canEdit }: Props) {
         )}
       </div>
 
-      {/* ── TAB: FORMS (Income Tax Rules) ── */}
+      {/* ── FORMS TAB ── */}
       {activeTab === "forms" && (
         <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-[#E5E7EB] bg-[#1E3A5F]">
@@ -279,22 +197,13 @@ export default function DocumentsClient({ forms, templates, canEdit }: Props) {
               </thead>
               <tbody>
                 {forms.length === 0 ? (
-                  <tr>
-                    <td colSpan={canEdit ? 6 : 5} className="px-4 py-12 text-center text-[#6B7280]">
-                      No forms added yet.{canEdit && " Click \"Add Row\" to get started."}
-                    </td>
-                  </tr>
+                  <tr><td colSpan={canEdit ? 6 : 5} className="px-4 py-12 text-center text-[#6B7280]">No forms added yet.{canEdit && " Click \"Add Row\" to get started."}</td></tr>
                 ) : (
                   forms.map((f, i) => (
-                    <tr
-                      key={f.id}
-                      onClick={() => f.url ? window.open(f.url, "_blank") : undefined}
-                      className={`border-b border-[#E5E7EB] ${i % 2 === 0 ? "bg-white" : "bg-[#F8F9FA]"} ${f.url ? "cursor-pointer hover:bg-[#EEF2FF]" : "hover:bg-[#F0F4FA]"} transition-colors`}
-                    >
+                    <tr key={f.id} onClick={() => f.url ? window.open(f.url, "_blank") : undefined}
+                      className={`border-b border-[#E5E7EB] ${i % 2 === 0 ? "bg-white" : "bg-[#F8F9FA]"} ${f.url ? "cursor-pointer hover:bg-[#EEF2FF]" : "hover:bg-[#F0F4FA]"} transition-colors`}>
                       <td className="px-4 py-3 text-center text-[#1A1A2E] font-medium border-r border-[#E5E7EB]">{f.rule_no || "—"}</td>
-                      <td className="px-4 py-3 text-[#1A1A2E] border-r border-[#E5E7EB]">
-                        <span className={f.url ? "text-[#4A6FA5] hover:underline" : ""}>{f.rule_heading}</span>
-                      </td>
+                      <td className="px-4 py-3 text-[#1A1A2E] border-r border-[#E5E7EB]"><span className={f.url ? "text-[#4A6FA5] hover:underline" : ""}>{f.rule_heading}</span></td>
                       <td className="px-4 py-3 text-center text-[#6B7280] border-r border-[#E5E7EB]">{f.form_no || "—"}</td>
                       <td className="px-4 py-3 text-center text-[#6B7280] border-r border-[#E5E7EB]">{f.page_no || "—"}</td>
                       <td className="px-4 py-3 text-center text-[#6B7280]">{f.parallel_rule_1962 || "—"}</td>
@@ -315,7 +224,7 @@ export default function DocumentsClient({ forms, templates, canEdit }: Props) {
         </div>
       )}
 
-      {/* ── TAB: TEMPLATES ── */}
+      {/* ── TEMPLATES TAB ── */}
       {activeTab === "templates" && (
         templates.length === 0 ? (
           <div className="bg-white border border-[#E5E7EB] rounded-xl p-16 text-center">
@@ -335,18 +244,15 @@ export default function DocumentsClient({ forms, templates, canEdit }: Props) {
                   <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Type</th>
                   <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Size</th>
                   <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Uploaded</th>
-                  <th className="px-4 py-3 font-medium text-[#6B7280] w-32" />
+                  <th className="px-4 py-3 w-36" />
                 </tr>
               </thead>
               <tbody>
                 {templates.map((t, i) => {
                   const badge = fileTypeBadge(t.file_type ?? t.name);
                   return (
-                    <tr
-                      key={t.id}
-                      onClick={() => window.open(t.file_url, "_blank")}
-                      className={`border-b border-[#E5E7EB] last:border-0 ${i % 2 === 0 ? "bg-white" : "bg-[#F8F9FA]"} hover:bg-[#EEF2FF] transition-colors cursor-pointer`}
-                    >
+                    <tr key={t.id} onClick={() => window.open(t.file_url, "_blank")}
+                      className={`border-b border-[#E5E7EB] last:border-0 ${i % 2 === 0 ? "bg-white" : "bg-[#F8F9FA]"} hover:bg-[#EEF2FF] transition-colors cursor-pointer`}>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className={`w-9 h-9 rounded-lg ${badge.bg} flex items-center justify-center flex-shrink-0`}>
@@ -357,11 +263,7 @@ export default function DocumentsClient({ forms, templates, canEdit }: Props) {
                       </td>
                       <td className="px-4 py-4 text-[#6B7280] max-w-[200px] truncate">{t.description ?? "—"}</td>
                       <td className="px-4 py-4">
-                        {t.file_type && (
-                          <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}>
-                            {t.file_type}
-                          </span>
-                        )}
+                        {t.file_type && <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}>{t.file_type}</span>}
                       </td>
                       <td className="px-4 py-4 text-[#6B7280]">{fmtSize(t.file_size)}</td>
                       <td className="px-4 py-4 text-[#6B7280] whitespace-nowrap">{fmtDate(t.created_at)}</td>
@@ -465,11 +367,8 @@ export default function DocumentsClient({ forms, templates, canEdit }: Props) {
               {!editingTemplate ? (
                 <div>
                   <label className="block text-xs font-medium text-[#6B7280] mb-1">File <span className="text-red-500">*</span></label>
-                  <input
-                    type="file"
-                    onChange={(e) => setTplFile(e.target.files?.[0] ?? null)}
-                    className="block w-full text-sm text-[#6B7280] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-[#1E3A5F] file:text-white hover:file:bg-[#162d4a] file:cursor-pointer cursor-pointer"
-                  />
+                  <input type="file" onChange={(e) => setTplFile(e.target.files?.[0] ?? null)}
+                    className="block w-full text-sm text-[#6B7280] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-[#1E3A5F] file:text-white hover:file:bg-[#162d4a] file:cursor-pointer cursor-pointer" />
                 </div>
               ) : (
                 <div>
@@ -489,7 +388,7 @@ export default function DocumentsClient({ forms, templates, canEdit }: Props) {
         </div>
       )}
 
-      {/* ── CONFIRM: Delete Form Row ── */}
+      {/* ── CONFIRM: Delete Form ── */}
       {confirmDeleteForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl shadow-xl border border-[#E5E7EB] p-6 w-full max-w-sm mx-4">
@@ -497,7 +396,8 @@ export default function DocumentsClient({ forms, templates, canEdit }: Props) {
             <p className="text-sm text-[#6B7280] mb-5">"{confirmDeleteForm.rule_heading}" will be permanently removed.</p>
             <div className="flex gap-3">
               <button onClick={() => setConfirmDeleteForm(null)} className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">Cancel</button>
-              <button onClick={() => handleDeleteForm(confirmDeleteForm)} disabled={deletingFormId === confirmDeleteForm.id} className="flex-1 px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition disabled:opacity-60">
+              <button onClick={() => handleDeleteForm(confirmDeleteForm)} disabled={deletingFormId === confirmDeleteForm.id}
+                className="flex-1 px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition disabled:opacity-60">
                 {deletingFormId === confirmDeleteForm.id ? "Deleting…" : "Delete"}
               </button>
             </div>
@@ -513,7 +413,8 @@ export default function DocumentsClient({ forms, templates, canEdit }: Props) {
             <p className="text-sm text-[#6B7280] mb-5">"{confirmDeleteTpl.name}" will be permanently removed.</p>
             <div className="flex gap-3">
               <button onClick={() => setConfirmDeleteTpl(null)} className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">Cancel</button>
-              <button onClick={() => handleDeleteTemplate(confirmDeleteTpl)} disabled={deletingTplId === confirmDeleteTpl.id} className="flex-1 px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition disabled:opacity-60">
+              <button onClick={() => handleDeleteTemplate(confirmDeleteTpl)} disabled={deletingTplId === confirmDeleteTpl.id}
+                className="flex-1 px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition disabled:opacity-60">
                 {deletingTplId === confirmDeleteTpl.id ? "Deleting…" : "Delete"}
               </button>
             </div>
