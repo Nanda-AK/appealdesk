@@ -179,6 +179,13 @@ export default function SpUserForm() {
             <p className="text-xs text-[#9CA3AF] mt-1">Share with user so they can log in immediately.</p>
           </Field>
 
+          <Field label="Role" required>
+            <select value={form.role} onChange={(e) => set("role")(e.target.value as UserInput["role"])} className={inp}>
+              <option value="sp_admin">SP Admin</option>
+              <option value="sp_staff">SP Staff</option>
+            </select>
+          </Field>
+
           <Field label="Confirm Password" required>
             <div className="relative">
               <input type={showConfirm ? "text" : "password"} value={confirmPassword}
@@ -197,13 +204,6 @@ export default function SpUserForm() {
             {confirmPassword && confirmPassword !== form.password && (
               <p className="text-xs text-red-500 mt-1">Passwords do not match.</p>
             )}
-          </Field>
-
-          <Field label="Role" required>
-            <select value={form.role} onChange={(e) => set("role")(e.target.value as UserInput["role"])} className={inp}>
-              <option value="sp_admin">SP Admin</option>
-              <option value="sp_staff">SP Staff</option>
-            </select>
           </Field>
 
         </div>
