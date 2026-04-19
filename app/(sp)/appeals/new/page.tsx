@@ -28,7 +28,7 @@ export default async function NewAppealPage() {
     supabase
       .from("master_records")
       .select("name, type")
-      .or(`level.eq.platform,service_provider_id.eq.${spId}`)
+      .eq("level", "platform")
       .eq("is_active", true)
       .order("sort_order"),
   ]);
