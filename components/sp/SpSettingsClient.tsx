@@ -225,60 +225,102 @@ export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
             </div>
           </div>
 
-          {/* Compliance accordion */}
-          <div>
-            <p className="text-xs font-medium text-[#6B7280] mb-2">Compliance Details</p>
-            <div className="space-y-2">
-              {COMPLIANCE_TYPES.map(({ key, label }) => (
-                <details key={key} className="border border-[#E5E7EB] rounded-lg">
-                  <summary className="px-4 py-3 text-sm font-medium text-[#1A1A2E] cursor-pointer select-none flex items-center justify-between">
-                    <span>{label}</span>
-                    {complianceState[key].number && (
-                      <span className="text-xs text-[#6B7280] font-normal">{complianceState[key].number}</span>
-                    )}
-                  </summary>
-                  <div className="px-4 pb-4 grid grid-cols-2 gap-3 border-t border-[#E5E7EB] pt-4">
-                    <div>
-                      <label className="block text-xs font-medium text-[#6B7280] mb-1">{label} Number</label>
-                      <input value={complianceState[key].number} onChange={(e) => updateCompliance(key, "number", e.target.value)} disabled={ro} className={fieldClass} />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-[#6B7280] mb-1">Login ID</label>
-                      <input value={complianceState[key].login_id} onChange={(e) => updateCompliance(key, "login_id", e.target.value)} disabled={ro} className={fieldClass} />
-                    </div>
-                    {!ro && (
-                      <div>
-                        <label className="block text-xs font-medium text-[#6B7280] mb-1">Password</label>
-                        <div className="relative">
+          {/* Compliance table */}
+          <div className="border border-[#E5E7EB] rounded-xl overflow-hidden">
+            <div className="px-4 py-3 bg-[#F8F9FA] border-b border-[#E5E7EB]">
+              <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Compliance Details</p>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[#E5E7EB] bg-white">
+                    <th className="text-left px-4 py-2.5 font-medium text-[#6B7280] whitespace-nowrap w-28">ID Type</th>
+                    <th className="text-left px-4 py-2.5 font-medium text-[#6B7280]">ID</th>
+                    <th className="text-left px-4 py-2.5 font-medium text-[#6B7280]">Login ID</th>
+                    <th className="text-left px-4 py-2.5 font-medium text-[#6B7280] w-44">Password</th>
+                    <th className="text-left px-4 py-2.5 font-medium text-[#6B7280] w-36">Attachment</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E5E7EB]">
+                  {COMPLIANCE_TYPES.map(({ key, label }) => {
+                    const cellInp = `w-full px-2.5 py-1.5 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] ${ro ? "bg-[#F8F9FA] text-[#6B7280] cursor-not-allowed" : ""}`;
+                    return (
+                      <tr key={key} className="hover:bg-[#FAFAFA]">
+                        <td className="px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">{label}</td>
+                        <td className="px-4 py-3">
                           <input
-                            type={complianceState[key].showCredential ? "text" : "password"}
-                            value={complianceState[key].credential}
-                            onChange={(e) => updateCompliance(key, "credential", e.target.value)}
-                            className="w-full px-3 py-2 pr-9 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]"
+                            value={complianceState[key].number}
+                            onChange={(e) => updateCompliance(key, "number", e.target.value)}
+                            disabled={ro}
+                            placeholder={`${label} number`}
+                            className={cellInp}
                           />
-                          <button type="button" onClick={() => updateCompliance(key, "showCredential", !complianceState[key].showCredential)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#6B7280]">
-                            <EyeIcon visible={complianceState[key].showCredential} />
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                    <div>
-                      <label className="block text-xs font-medium text-[#6B7280] mb-1">Attachment</label>
-                      <div className="flex items-center gap-2">
-                        {complianceState[key].attachment_url && (
-                          <a href={complianceState[key].attachment_url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#4A6FA5] hover:underline truncate max-w-[100px]">View file</a>
-                        )}
-                        {!ro && (
-                          <label className="cursor-pointer inline-flex items-center gap-1 px-2 py-1.5 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F8F9FA] transition">
-                            {complianceState[key].uploading ? "Uploading…" : complianceState[key].attachment_url ? "Change" : "Upload"}
-                            <input type="file" accept=".pdf,image/jpeg,image/png" className="hidden" onChange={(e) => handleAttachmentUpload(key, e)} disabled={complianceState[key].uploading} />
-                          </label>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </details>
-              ))}
+                        </td>
+                        <td className="px-4 py-3">
+                          <input
+                            value={complianceState[key].login_id}
+                            onChange={(e) => updateCompliance(key, "login_id", e.target.value)}
+                            disabled={ro}
+                            placeholder="Login ID"
+                            className={cellInp}
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="relative">
+                            <input
+                              type={complianceState[key].showCredential ? "text" : "password"}
+                              value={complianceState[key].credential}
+                              onChange={(e) => updateCompliance(key, "credential", e.target.value)}
+                              disabled={ro}
+                              placeholder="Password"
+                              className={`${cellInp} pr-8`}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => updateCompliance(key, "showCredential", !complianceState[key].showCredential)}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#6B7280]"
+                            >
+                              <EyeIcon visible={complianceState[key].showCredential} />
+                            </button>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {complianceState[key].attachment_url && (
+                              <a
+                                href={complianceState[key].attachment_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-xs text-[#4A6FA5] hover:underline"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                View
+                              </a>
+                            )}
+                            {!ro && (
+                              <label className="cursor-pointer inline-flex items-center gap-1 px-2 py-1 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F8F9FA] transition whitespace-nowrap">
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                </svg>
+                                {complianceState[key].uploading ? "Uploading…" : complianceState[key].attachment_url ? "Replace" : "Upload"}
+                                <input
+                                  type="file"
+                                  accept=".pdf,image/jpeg,image/png"
+                                  className="hidden"
+                                  onChange={(e) => handleAttachmentUpload(key, e)}
+                                  disabled={complianceState[key].uploading}
+                                />
+                              </label>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
 
