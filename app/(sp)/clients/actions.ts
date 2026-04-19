@@ -49,7 +49,11 @@ export async function createClientOrg(input: ClientInput) {
     .select("id")
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (error.code === "23505")
+      throw new Error(`A client named "${input.name}" already exists.`);
+    throw new Error(error.message);
+  }
 
   const complianceRows = input.compliance.filter(
     (c) => c.number || c.login_id || c.attachment_url
@@ -86,7 +90,11 @@ export async function updateClientOrg(id: string, input: ClientInput) {
     .eq("id", id)
     .eq("parent_sp_id", user.org_id); // ensure SP owns this client
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (error.code === "23505")
+      throw new Error(`A client named "${input.name}" already exists.`);
+    throw new Error(error.message);
+  }
 
   for (const c of input.compliance) {
     if (c.number || c.login_id || c.attachment_url) {
