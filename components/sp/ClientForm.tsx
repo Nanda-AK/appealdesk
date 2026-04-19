@@ -130,7 +130,7 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
 
     try {
       if (mode === "create") {
-        const { id } = await createClientOrg({
+        await createClientOrg({
           name,
           business_type: businessType || undefined,
           date_of_incorporation: dateOfIncorporation || undefined,
@@ -141,7 +141,7 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
           pin_code: pinCode || undefined,
           compliance: complianceInput,
         });
-        router.push(`/clients/${id}`);
+        router.push("/clients");
       } else {
         await updateClientOrg(clientId!, {
           name,
