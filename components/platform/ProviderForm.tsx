@@ -57,6 +57,7 @@ export default function ProviderForm({ mode, providerId, initialData, initialCom
   const [address1, setAddress1] = useState(initialData?.address_line1 ?? "");
   const [address2, setAddress2] = useState(initialData?.address_line2 ?? "");
   const [city, setCity] = useState(initialData?.city ?? "");
+  const [state, setState] = useState(initialData?.state ?? "");
   const [pinCode, setPinCode] = useState(initialData?.pin_code ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -129,9 +130,9 @@ export default function ProviderForm({ mode, providerId, initialData, initialCom
 
     try {
       if (mode === "create") {
-        await createProvider({ name, business_type: businessType, date_of_incorporation: dateOfIncorporation, logo_url: logoUrl || undefined, address_line1: address1 || undefined, address_line2: address2 || undefined, city: city || undefined, pin_code: pinCode || undefined, compliance: complianceInput });
+        await createProvider({ name, business_type: businessType, date_of_incorporation: dateOfIncorporation, logo_url: logoUrl || undefined, address_line1: address1 || undefined, address_line2: address2 || undefined, city: city || undefined, state: state || undefined, pin_code: pinCode || undefined, compliance: complianceInput });
       } else {
-        await updateProvider(providerId!, { name, business_type: businessType, date_of_incorporation: dateOfIncorporation, logo_url: logoUrl || undefined, address_line1: address1 || undefined, address_line2: address2 || undefined, city: city || undefined, pin_code: pinCode || undefined, compliance: complianceInput });
+        await updateProvider(providerId!, { name, business_type: businessType, date_of_incorporation: dateOfIncorporation, logo_url: logoUrl || undefined, address_line1: address1 || undefined, address_line2: address2 || undefined, city: city || undefined, state: state || undefined, pin_code: pinCode || undefined, compliance: complianceInput });
       }
       router.push("/platform/providers");
     } catch (err) {
@@ -198,6 +199,10 @@ export default function ProviderForm({ mode, providerId, initialData, initialCom
           <div>
             <label className="block text-xs font-medium text-[#6B7280] mb-1.5">City</label>
             <input value={city} onChange={(e) => setCity(e.target.value)} className="w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-[#6B7280] mb-1.5">State</label>
+            <input value={state} onChange={(e) => setState(e.target.value)} className="w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]" />
           </div>
           <div>
             <label className="block text-xs font-medium text-[#6B7280] mb-1.5">PIN Code</label>

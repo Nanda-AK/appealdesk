@@ -61,6 +61,7 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
   const [address1, setAddress1] = useState(initialData?.address_line1 ?? "");
   const [address2, setAddress2] = useState(initialData?.address_line2 ?? "");
   const [city, setCity] = useState(initialData?.city ?? "");
+  const [state, setState] = useState(initialData?.state ?? "");
   const [pinCode, setPinCode] = useState(initialData?.pin_code ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -138,6 +139,7 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
           address_line1: address1 || undefined,
           address_line2: address2 || undefined,
           city: city || undefined,
+          state: state || undefined,
           pin_code: pinCode || undefined,
           compliance: complianceInput,
         });
@@ -150,6 +152,7 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
           address_line1: address1 || undefined,
           address_line2: address2 || undefined,
           city: city || undefined,
+          state: state || undefined,
           pin_code: pinCode || undefined,
           compliance: complianceInput,
         });
@@ -249,6 +252,10 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
           <div>
             <label className="block text-xs font-medium text-[#6B7280] mb-1.5">City</label>
             <input value={city} onChange={(e) => setCity(e.target.value)} disabled={readOnly} className={fieldClass} />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-[#6B7280] mb-1.5">State</label>
+            <input value={state} onChange={(e) => setState(e.target.value)} disabled={readOnly} className={fieldClass} />
           </div>
           <div>
             <label className="block text-xs font-medium text-[#6B7280] mb-1.5">PIN Code</label>

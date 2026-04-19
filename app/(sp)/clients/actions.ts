@@ -21,6 +21,7 @@ export interface ClientInput {
   address_line1?: string;
   address_line2?: string;
   city?: string;
+  state?: string;
   pin_code?: string;
   compliance: ComplianceInput[];
 }
@@ -43,6 +44,7 @@ export async function createClientOrg(input: ClientInput) {
       address_line1: input.address_line1 || null,
       address_line2: input.address_line2 || null,
       city: input.city || null,
+      state: input.state || null,
       pin_code: input.pin_code || null,
       is_active: true,
     })
@@ -84,6 +86,7 @@ export async function updateClientOrg(id: string, input: ClientInput) {
       address_line1: input.address_line1 || null,
       address_line2: input.address_line2 || null,
       city: input.city || null,
+      state: input.state || null,
       pin_code: input.pin_code || null,
       updated_at: new Date().toISOString(),
     })

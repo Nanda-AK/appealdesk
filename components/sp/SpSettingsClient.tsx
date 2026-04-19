@@ -63,6 +63,7 @@ export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
   const [address1, setAddress1] = useState(org?.address_line1 ?? "");
   const [address2, setAddress2] = useState(org?.address_line2 ?? "");
   const [city, setCity] = useState(org?.city ?? "");
+  const [state, setState] = useState(org?.state ?? "");
   const [pinCode, setPinCode] = useState(org?.pin_code ?? "");
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
@@ -130,6 +131,7 @@ export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
         address_line1: address1 || undefined,
         address_line2: address2 || undefined,
         city: city || undefined,
+        state: state || undefined,
         pin_code: pinCode || undefined,
       });
       setProfileSuccess(true);
@@ -212,6 +214,10 @@ export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
             <div>
               <label className="block text-xs font-medium text-[#6B7280] mb-1.5">City</label>
               <input value={city} onChange={(e) => setCity(e.target.value)} disabled={ro} className={fieldClass} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-[#6B7280] mb-1.5">State</label>
+              <input value={state} onChange={(e) => setState(e.target.value)} disabled={ro} className={fieldClass} />
             </div>
             <div>
               <label className="block text-xs font-medium text-[#6B7280] mb-1.5">PIN Code</label>

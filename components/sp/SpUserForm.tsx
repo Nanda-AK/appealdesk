@@ -292,11 +292,11 @@ export default function SpUserForm() {
           <Field label="City">
             <input value={form.city ?? ""} onChange={(e) => set("city")(e.target.value)} className={inp} />
           </Field>
+          <Field label="State">
+            <input value={form.location ?? ""} onChange={(e) => set("location")(e.target.value)} placeholder="e.g. Tamil Nadu" className={inp} />
+          </Field>
           <Field label="PIN Code">
             <input value={form.pin_code ?? ""} onChange={(e) => set("pin_code")(e.target.value)} maxLength={10} className={inp} />
-          </Field>
-          <Field label="Location / State" full>
-            <input value={form.location ?? ""} onChange={(e) => set("location")(e.target.value)} placeholder="e.g. Tamil Nadu" className={inp} />
           </Field>
         </div>
       </section>
