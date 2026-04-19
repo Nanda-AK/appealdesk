@@ -141,7 +141,6 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
           pin_code: pinCode || undefined,
           compliance: complianceInput,
         });
-        window.location.href = "/clients";
       } else {
         await updateClientOrg(clientId!, {
           name,
@@ -154,7 +153,6 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
           pin_code: pinCode || undefined,
           compliance: complianceInput,
         });
-        window.location.href = "/clients";
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");

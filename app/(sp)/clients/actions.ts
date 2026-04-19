@@ -3,6 +3,7 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/user";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 export interface ComplianceInput {
   type: "pan" | "aadhaar" | "tan" | "gst";
@@ -60,7 +61,7 @@ export async function createClientOrg(input: ClientInput) {
   }
 
   revalidatePath("/clients");
-  return { id: org.id };
+  redirect("/clients");
 }
 
 export async function updateClientOrg(id: string, input: ClientInput) {
@@ -98,6 +99,7 @@ export async function updateClientOrg(id: string, input: ClientInput) {
 
   revalidatePath("/clients");
   revalidatePath(`/clients/${id}`);
+  redirect("/clients");
 }
 
 export async function toggleClientStatus(id: string, isActive: boolean) {
