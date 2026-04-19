@@ -251,7 +251,7 @@ export default function UsersClient({ users, clientOrgs, currentUserId, isAdmin 
           {(["team", "clients"] as const).map((tab) => (
             <button key={tab} onClick={() => setActiveTab(tab)}
               className={`px-4 py-2 text-sm font-medium rounded-lg transition ${activeTab === tab ? "bg-[#1E3A5F] text-white" : "text-[#6B7280] hover:text-[#1A1A2E] hover:bg-[#F8F9FA]"}`}>
-              {tab === "team" ? `Team (${teamUsers.length})` : `Client Users (${clientUsers.length})`}
+              {tab === "team" ? `SP Users (${teamUsers.length})` : `Client Users (${clientUsers.length})`}
             </button>
           ))}
         </div>
