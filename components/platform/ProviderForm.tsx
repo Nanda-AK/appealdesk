@@ -152,7 +152,7 @@ export default function ProviderForm({ mode, providerId, initialData, initialCom
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
             <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Service Provider Name <span className="text-red-500">*</span></label>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. MSSV & Co" className="w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]" />
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Service provider name" autoComplete="off" className="w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]" />
           </div>
           <div>
             <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Business Type <span className="text-red-500">*</span></label>
