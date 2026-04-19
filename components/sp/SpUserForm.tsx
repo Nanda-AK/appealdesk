@@ -1,0 +1,260 @@
+"use client";
+
+import { useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { createUser, UserInput } from "@/app/(sp)/users/actions";
+
+const COUNTRY_CODES = [
+  { code: "+91", label: "🇮🇳 +91" },
+  { code: "+1",  label: "🇺🇸 +1" },
+  { code: "+44", label: "🇬🇧 +44" },
+  { code: "+971", label: "🇦🇪 +971" },
+  { code: "+65", label: "🇸🇬 +65" },
+  { code: "+61", label: "🇦🇺 +61" },
+  { code: "+60", label: "🇲🇾 +60" },
+];
+
+const inp = "w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]";
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="col-span-2 border-t border-[#F3F4F6] pt-4 mt-1">
+      <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">{children}</p>
+    </div>
+  );
+}
+
+function Field({ label, required, children, full }: { label: string; required?: boolean; children: React.ReactNode; full?: boolean }) {
+  return (
+    <div className={full ? "col-span-2" : ""}>
+      <label className="block text-xs font-medium text-[#6B7280] mb-1.5">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+function FileUploadField({ label, value, onChange }: { label: string; value: string; onChange: (url: string) => void }) {
+  const [uploading, setUploading] = useState(false);
+
+  async function handleFile(file: File) {
+    setUploading(true);
+    const supabase = createClient();
+    const path = `user-docs/${Date.now()}-${file.name}`;
+    const { data, error } = await supabase.storage.from("org-files").upload(path, file, { upsert: true });
+    if (!error && data) {
+      const { data: urlData } = supabase.storage.from("org-files").getPublicUrl(data.path);
+      onChange(urlData.publicUrl);
+    }
+    setUploading(false);
+  }
+
+  return (
+    <div>
+      <label className="block text-xs font-medium text-[#6B7280] mb-1.5">{label} (Attachment)</label>
+      {value ? (
+        <div className="flex items-center gap-2">
+          <a href={value} target="_blank" rel="noopener noreferrer"
+            className="text-xs text-[#4A6FA5] hover:underline truncate max-w-[200px]">
+            View uploaded file
+          </a>
+          <button type="button" onClick={() => onChange("")}
+            className="text-xs text-red-500 hover:text-red-700">Remove</button>
+        </div>
+      ) : (
+        <label className={`cursor-pointer inline-flex items-center gap-2 px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F8F9FA] transition ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+          </svg>
+          {uploading ? "Uploading…" : "Upload File"}
+          <input type="file" className="hidden" disabled={uploading}
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
+        </label>
+      )}
+    </div>
+  );
+}
+
+const BLANK: UserInput = {
+  first_name: "", middle_name: "", last_name: "",
+  email: "", password: "",
+  role: "sp_staff",
+  mobile_country_code: "+91", mobile_number: "",
+  date_of_birth: "",
+  department: "", designation: "",
+  date_of_joining: "", date_of_leaving: "",
+  address_line1: "", address_line2: "", city: "", pin_code: "", location: "",
+  pan_number: "", pan_attachment: "",
+  aadhar_number: "", aadhar_attachment: "",
+};
+
+export default function SpUserForm() {
+  const [form, setForm] = useState<UserInput>(BLANK);
+  const [showPassword, setShowPassword] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const set = (field: keyof UserInput) => (val: string) =>
+    setForm((prev) => ({ ...prev, [field]: val }));
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.first_name.trim()) { setError("First name is required."); return; }
+    if (!form.last_name.trim()) { setError("Last name is required."); return; }
+    if (!form.email.trim()) { setError("Email is required."); return; }
+    if (form.password.length < 8) { setError("Password must be at least 8 characters."); return; }
+
+    setSaving(true);
+    setError(null);
+    try {
+      await createUser(form);
+      window.location.href = "/users";
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create user.");
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {error && (
+        <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>
+      )}
+
+      {/* Basic Information */}
+      <section className="bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-sm">
+        <h2 className="text-sm font-semibold text-[#1A1A2E] mb-4 pb-3 border-b border-[#E5E7EB]">Basic Information</h2>
+        <div className="grid grid-cols-2 gap-4">
+
+          <div className="col-span-2 grid grid-cols-3 gap-3">
+            <Field label="First Name" required>
+              <input value={form.first_name} onChange={(e) => set("first_name")(e.target.value)} className={inp} />
+            </Field>
+            <Field label="Middle Name">
+              <input value={form.middle_name ?? ""} onChange={(e) => set("middle_name")(e.target.value)} placeholder="Optional" className={inp} />
+            </Field>
+            <Field label="Last Name" required>
+              <input value={form.last_name} onChange={(e) => set("last_name")(e.target.value)} className={inp} />
+            </Field>
+          </div>
+
+          <Field label="Mobile">
+            <div className="flex gap-2">
+              <select value={form.mobile_country_code ?? "+91"} onChange={(e) => set("mobile_country_code")(e.target.value)}
+                className="px-2 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] w-28 flex-shrink-0">
+                {COUNTRY_CODES.map((c) => <option key={c.code} value={c.code}>{c.label}</option>)}
+              </select>
+              <input type="tel" value={form.mobile_number ?? ""} onChange={(e) => set("mobile_number")(e.target.value)}
+                placeholder="10-digit number" className={inp} />
+            </div>
+          </Field>
+
+          <Field label="Email" required>
+            <input type="email" value={form.email} onChange={(e) => set("email")(e.target.value)} className={inp} />
+          </Field>
+
+          <Field label="Date of Birth">
+            <input type="date" value={form.date_of_birth ?? ""} onChange={(e) => set("date_of_birth")(e.target.value)} className={inp} />
+          </Field>
+
+          <Field label="Password" required>
+            <div className="relative">
+              <input type={showPassword ? "text" : "password"} value={form.password}
+                onChange={(e) => set("password")(e.target.value)} placeholder="Min. 8 characters"
+                className="w-full px-3 py-2 pr-9 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]" />
+              <button type="button" onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#6B7280]">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  {showPassword
+                    ? <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                    : <><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></>
+                  }
+                </svg>
+              </button>
+            </div>
+            <p className="text-xs text-[#9CA3AF] mt-1">Share with user so they can log in immediately.</p>
+          </Field>
+
+          <Field label="Role" required>
+            <select value={form.role} onChange={(e) => set("role")(e.target.value as UserInput["role"])} className={inp}>
+              <option value="sp_admin">SP Admin</option>
+              <option value="sp_staff">SP Staff</option>
+            </select>
+          </Field>
+
+        </div>
+      </section>
+
+      {/* Employment Details */}
+      <section className="bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-sm">
+        <h2 className="text-sm font-semibold text-[#1A1A2E] mb-4 pb-3 border-b border-[#E5E7EB]">Employment Details</h2>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Department">
+            <input value={form.department ?? ""} onChange={(e) => set("department")(e.target.value)} placeholder="e.g. Tax, Audit" className={inp} />
+          </Field>
+          <Field label="Designation">
+            <input value={form.designation ?? ""} onChange={(e) => set("designation")(e.target.value)} placeholder="e.g. CA, Manager" className={inp} />
+          </Field>
+          <Field label="Date of Joining">
+            <input type="date" value={form.date_of_joining ?? ""} onChange={(e) => set("date_of_joining")(e.target.value)} className={inp} />
+          </Field>
+          <Field label="Date of Leaving">
+            <input type="date" value={form.date_of_leaving ?? ""} onChange={(e) => set("date_of_leaving")(e.target.value)} className={inp} />
+          </Field>
+        </div>
+      </section>
+
+      {/* Address */}
+      <section className="bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-sm">
+        <h2 className="text-sm font-semibold text-[#1A1A2E] mb-4 pb-3 border-b border-[#E5E7EB]">Address</h2>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Address Line 1" full>
+            <input value={form.address_line1 ?? ""} onChange={(e) => set("address_line1")(e.target.value)} placeholder="Street / Building" className={inp} />
+          </Field>
+          <Field label="Address Line 2" full>
+            <input value={form.address_line2 ?? ""} onChange={(e) => set("address_line2")(e.target.value)} placeholder="Area / Landmark" className={inp} />
+          </Field>
+          <Field label="City">
+            <input value={form.city ?? ""} onChange={(e) => set("city")(e.target.value)} className={inp} />
+          </Field>
+          <Field label="PIN Code">
+            <input value={form.pin_code ?? ""} onChange={(e) => set("pin_code")(e.target.value)} maxLength={10} className={inp} />
+          </Field>
+          <Field label="Location / State" full>
+            <input value={form.location ?? ""} onChange={(e) => set("location")(e.target.value)} placeholder="e.g. Tamil Nadu" className={inp} />
+          </Field>
+        </div>
+      </section>
+
+      {/* Identity Documents */}
+      <section className="bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-sm">
+        <h2 className="text-sm font-semibold text-[#1A1A2E] mb-4 pb-3 border-b border-[#E5E7EB]">Identity Documents</h2>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="PAN Number">
+            <input value={form.pan_number ?? ""} onChange={(e) => set("pan_number")(e.target.value.toUpperCase())}
+              placeholder="ABCDE1234F" maxLength={10} className={inp} />
+          </Field>
+          <FileUploadField label="PAN" value={form.pan_attachment ?? ""} onChange={set("pan_attachment")} />
+          <Field label="Aadhar Number">
+            <input value={form.aadhar_number ?? ""} onChange={(e) => set("aadhar_number")(e.target.value)}
+              placeholder="XXXX XXXX XXXX" maxLength={14} className={inp} />
+          </Field>
+          <FileUploadField label="Aadhar" value={form.aadhar_attachment ?? ""} onChange={set("aadhar_attachment")} />
+        </div>
+      </section>
+
+      {/* Actions */}
+      <div className="flex gap-3">
+        <button type="button" onClick={() => window.location.href = "/users"}
+          className="px-5 py-2.5 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">
+          Cancel
+        </button>
+        <button type="submit" disabled={saving}
+          className="px-5 py-2.5 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60">
+          {saving ? "Creating…" : "Create SP User"}
+        </button>
+      </div>
+    </form>
+  );
+}
