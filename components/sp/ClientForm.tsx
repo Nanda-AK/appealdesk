@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { createClientOrg, updateClientOrg, ComplianceInput } from "@/app/(sp)/clients/actions";
 
-const BUSINESS_TYPES = ["Company", "Trust", "Partnership", "LLP", "Sole Proprietorship", "OPC", "HUF", "Individual", "Custom"];
+// Fallback used only if master_records are not passed from the server
+const BUSINESS_TYPES_FALLBACK = ["Company", "Trust", "Partnership", "LLP", "Sole Proprietorship", "OPC", "HUF", "Individual", "Custom"];
 const COMPLIANCE_TYPES = [
   { key: "pan", label: "PAN" },
   { key: "aadhaar", label: "Aadhaar" },
@@ -27,6 +28,7 @@ interface Props {
   initialData?: Record<string, string | null>;
   initialCompliance?: InitialCompliance[];
   readOnly?: boolean;
+  businessTypes?: string[];
 }
 
 interface ComplianceState {
@@ -47,7 +49,8 @@ const defaultCompliance = (): ComplianceState => ({
   uploading: false,
 });
 
-export default function ClientForm({ mode, clientId, initialData, initialCompliance, readOnly = false }: Props) {
+export default function ClientForm({ mode, clientId, initialData, initialCompliance, readOnly = false, businessTypes }: Props) {
+  const BUSINESS_TYPES = businessTypes?.length ? businessTypes : BUSINESS_TYPES_FALLBACK;
   const router = useRouter();
 
   const [name, setName] = useState(initialData?.name ?? "");

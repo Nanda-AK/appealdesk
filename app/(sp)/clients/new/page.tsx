@@ -1,7 +1,19 @@
 import Link from "next/link";
 import ClientForm from "@/components/sp/ClientForm";
+import { createClient } from "@/lib/supabase/server";
 
-export default function NewClientPage() {
+export default async function NewClientPage() {
+  const supabase = await createClient();
+  const { data: btRecords } = await supabase
+    .from("master_records")
+    .select("name")
+    .eq("type", "business_type")
+    .eq("is_active", true)
+    .order("sort_order")
+    .order("name");
+
+  const businessTypes = (btRecords ?? []).map((r) => r.name);
+
   return (
     <div className="p-8 max-w-3xl">
       <div className="mb-6">
@@ -14,7 +26,7 @@ export default function NewClientPage() {
         <h1 className="text-2xl font-semibold text-[#1A1A2E]">Add Client</h1>
         <p className="text-[#6B7280] text-sm mt-0.5">Onboard a new client organization</p>
       </div>
-      <ClientForm mode="create" />
+      <ClientForm mode="create" businessTypes={businessTypes} />
     </div>
   );
 }

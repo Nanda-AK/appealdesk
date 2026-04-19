@@ -9,10 +9,13 @@ export default async function EditClientPage({ params }: { params: Promise<{ id:
   const user = await getCurrentUser();
   const supabase = await createClient();
 
-  const [{ data: org }, { data: compliance }] = await Promise.all([
+  const [{ data: org }, { data: compliance }, { data: btRecords }] = await Promise.all([
     supabase.from("organizations").select("*").eq("id", id).single(),
     supabase.from("compliance_details").select("*").eq("org_id", id),
+    supabase.from("master_records").select("name").eq("type", "business_type").eq("is_active", true).order("sort_order").order("name"),
   ]);
+
+  const businessTypes = (btRecords ?? []).map((r) => r.name);
 
   if (!org) notFound();
 
@@ -36,6 +39,7 @@ export default async function EditClientPage({ params }: { params: Promise<{ id:
         initialData={org}
         initialCompliance={compliance ?? []}
         readOnly={user?.role !== "sp_admin"}
+        businessTypes={businessTypes}
       />
     </div>
   );
