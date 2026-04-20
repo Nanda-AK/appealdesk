@@ -313,9 +313,9 @@ export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-[#E5E7EB] bg-white">
-                    <th className="text-left px-4 py-2.5 font-medium text-[#6B7280] whitespace-nowrap w-40">ID Type</th>
-                    <th className="text-left px-4 py-2.5 font-medium text-[#6B7280]">ID</th>
-                    <th className="text-left px-4 py-2.5 font-medium text-[#6B7280]">Login ID</th>
+                    <th className="text-left px-4 py-2.5 font-medium text-[#6B7280] whitespace-nowrap w-36">ID Type</th>
+                    <th className="text-left px-4 py-2.5 font-medium text-[#6B7280] w-40">ID</th>
+                    <th className="text-left px-4 py-2.5 font-medium text-[#6B7280] w-40">Login ID</th>
                     <th className="text-left px-4 py-2.5 font-medium text-[#6B7280] w-44">Password</th>
                     <th className="text-left px-4 py-2.5 font-medium text-[#6B7280] w-36">Attachment</th>
                     <th className="w-8" />
