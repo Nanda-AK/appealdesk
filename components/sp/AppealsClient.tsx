@@ -123,7 +123,7 @@ export default function AppealsClient({ appeals, clients, teamMembers, canEdit }
           placeholder="Search client…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] w-44"
+          className="px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] w-44 bg-white"
         />
         <select value={filterClient} onChange={(e) => setFilterClient(e.target.value)} className={selCls}>
           <option value="">All Clients</option>
@@ -167,17 +167,17 @@ export default function AppealsClient({ appeals, clients, teamMembers, canEdit }
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#E5E7EB] bg-[#F8F9FA]">
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280] w-10">#</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280] whitespace-nowrap">Client</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280] whitespace-nowrap">FY / AY</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280] whitespace-nowrap">Act</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280] whitespace-nowrap">Forum</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280] whitespace-nowrap">Importance</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280] whitespace-nowrap">Assigned To</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280] whitespace-nowrap">Deadline</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280] whitespace-nowrap">Outcome</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280] whitespace-nowrap">Status</th>
+              <tr className="border-b-2 border-[#B0BDD0] bg-[#D1D9E6]">
+                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] w-10">#</th>
+                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">Client</th>
+                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">FY / AY</th>
+                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">Act</th>
+                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">Forum</th>
+                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">Importance</th>
+                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">Assigned To</th>
+                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">Deadline</th>
+                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">Outcome</th>
+                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">Status</th>
                 <th className="px-4 py-3 w-16"></th>
               </tr>
             </thead>

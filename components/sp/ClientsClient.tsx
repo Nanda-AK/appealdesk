@@ -19,11 +19,23 @@ interface Props {
 }
 
 export default function ClientsClient({ clients, isAdmin }: Props) {
+  const [search, setSearch] = useState("");
+  const [sortAsc, setSortAsc] = useState(true);
   const [loading, setLoading] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<{ id: string; name: string; activate: boolean } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const q = search.toLowerCase();
+  const filtered = clients
+    .filter((c) =>
+      c.name.toLowerCase().includes(q) ||
+      (c.business_type ?? "").toLowerCase().includes(q) ||
+      (c.city ?? "").toLowerCase().includes(q) ||
+      (c.is_active ? "active" : "inactive").includes(q)
+    )
+    .sort((a, b) => sortAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name));
 
   async function handleToggle() {
     if (!confirm) return;
@@ -51,32 +63,57 @@ export default function ClientsClient({ clients, isAdmin }: Props) {
 
   return (
     <>
+      {/* Search bar */}
+      <div className="mb-4">
+        <div className="relative max-w-sm">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+          </svg>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search clients…"
+            className="w-full pl-9 pr-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] bg-white"
+          />
+        </div>
+      </div>
+
       <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-[#F8F9FA] border-b border-[#E5E7EB]">
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Name</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Business Type</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280]">City</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Status</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Added</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Actions</th>
+              <tr className="bg-[#D1D9E6] border-b-2 border-[#B0BDD0]">
+                <th className="text-center px-4 py-3 font-medium text-[#1A1A2E] w-10">#</th>
+                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">
+                  <button onClick={() => setSortAsc(!sortAsc)} className="inline-flex items-center gap-1 hover:text-[#1E3A5F] transition-colors">
+                    Name
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      {sortAsc ? <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" /> : <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />}
+                    </svg>
+                  </button>
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Business Type</th>
+                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">City</th>
+                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Status</th>
+                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Added</th>
+                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E5E7EB]">
-              {clients.length === 0 ? (
+              {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-[#6B7280]">
-                    No clients yet. Add the first one.
+                  <td colSpan={7} className="px-4 py-12 text-center text-[#6B7280]">
+                    {search ? `No results for "${search}"` : "No clients yet. Add the first one."}
                   </td>
                 </tr>
               ) : (
-                clients.map((client, i) => (
+                filtered.map((client, i) => (
                   <tr
                     key={client.id}
                     className={`hover:bg-[#F8F9FA] transition-colors ${i % 2 === 1 ? "bg-[#FAFAFA]" : ""}`}
                   >
+                    <td className="px-4 py-3 text-center text-[#9CA3AF] text-xs">{i + 1}</td>
                     <td className="px-4 py-3 font-medium text-[#1A1A2E]">{client.name}</td>
                     <td className="px-4 py-3 text-[#6B7280]">{client.business_type ?? "—"}</td>
                     <td className="px-4 py-3 text-[#6B7280]">{client.city ?? "—"}</td>

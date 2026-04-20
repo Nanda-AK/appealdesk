@@ -42,6 +42,8 @@ function fullName(u: { first_name: string; middle_name: string | null; last_name
 
 export default function UsersClient({ users, clientOrgs: _clientOrgs, currentUserId, isAdmin }: Props) {
   const [activeTab, setActiveTab] = useState<"team" | "clients">("team");
+  const [search, setSearch] = useState("");
+  const [sortAsc, setSortAsc] = useState(true);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -55,6 +57,28 @@ export default function UsersClient({ users, clientOrgs: _clientOrgs, currentUse
     if (params.get("tab") === "clients") setActiveTab("clients");
   }, []);
 
+  const q = search.toLowerCase();
+  function applyFilter(list: UserRecord[]) {
+    return list
+      .filter((u) => {
+        const name = fullName(u).toLowerCase();
+        const role = (ROLE_LABELS[u.role] ?? u.role).toLowerCase();
+        const status = u.is_active ? "active" : "inactive";
+        return (
+          name.includes(q) ||
+          u.email.toLowerCase().includes(q) ||
+          role.includes(q) ||
+          (u.designation ?? "").toLowerCase().includes(q) ||
+          (u.organization?.name ?? "").toLowerCase().includes(q) ||
+          status.includes(q)
+        );
+      })
+      .sort((a, b) => {
+        const na = fullName(a), nb = fullName(b);
+        return sortAsc ? na.localeCompare(nb) : nb.localeCompare(na);
+      });
+  }
+
   async function handleToggle(id: string, isActive: boolean) {
     setTogglingId(id);
     try { await toggleUserStatus(id, !isActive); } finally { setTogglingId(null); }
@@ -67,28 +91,40 @@ export default function UsersClient({ users, clientOrgs: _clientOrgs, currentUse
   }
 
   function UserTable({ list }: { list: UserRecord[] }) {
+    const rows = applyFilter(list);
     return (
       <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-[#F8F9FA] border-b border-[#E5E7EB]">
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Name</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Email</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Role</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Organisation</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Designation</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Status</th>
-                {isAdmin && <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Actions</th>}
+              <tr className="bg-[#D1D9E6] border-b-2 border-[#B0BDD0]">
+                <th className="text-center px-4 py-3 font-medium text-[#1A1A2E] w-10">#</th>
+                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">
+                  <button onClick={() => setSortAsc(!sortAsc)} className="inline-flex items-center gap-1 hover:text-[#1E3A5F] transition-colors">
+                    Name
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      {sortAsc ? <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" /> : <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />}
+                    </svg>
+                  </button>
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Email</th>
+                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Role</th>
+                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Organisation</th>
+                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Designation</th>
+                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Status</th>
+                {isAdmin && <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E5E7EB]">
-              {list.length === 0 ? (
+              {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={isAdmin ? 7 : 6} className="px-4 py-12 text-center text-[#6B7280]">No users found.</td>
+                  <td colSpan={isAdmin ? 8 : 7} className="px-4 py-12 text-center text-[#6B7280]">
+                    {search ? `No results for "${search}"` : "No users found."}
+                  </td>
                 </tr>
-              ) : list.map((u, i) => (
+              ) : rows.map((u, i) => (
                 <tr key={u.id} className={`hover:bg-[#F8F9FA] transition-colors ${i % 2 === 1 ? "bg-[#FAFAFA]" : ""}`}>
+                  <td className="px-4 py-3 text-center text-[#9CA3AF] text-xs">{i + 1}</td>
                   <td className="px-4 py-3 font-medium text-[#1A1A2E]">
                     {fullName(u)}
                     {u.id === currentUserId && <span className="ml-1.5 text-xs text-[#9CA3AF]">(you)</span>}
@@ -109,10 +145,7 @@ export default function UsersClient({ users, clientOrgs: _clientOrgs, currentUse
                   {isAdmin && (
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <Link href={`/users/${u.id}/edit`}
-                          className="text-xs font-medium text-[#4A6FA5] hover:text-[#1E3A5F]">
-                          Edit
-                        </Link>
+                        <Link href={`/users/${u.id}/edit`} className="text-xs font-medium text-[#4A6FA5] hover:text-[#1E3A5F]">Edit</Link>
                         {u.id !== currentUserId && (
                           <>
                             <button onClick={() => handleToggle(u.id, u.is_active)} disabled={togglingId === u.id}
@@ -137,6 +170,22 @@ export default function UsersClient({ users, clientOrgs: _clientOrgs, currentUse
 
   return (
     <>
+      {/* Search bar */}
+      <div className="mb-4">
+        <div className="relative max-w-sm">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+          </svg>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); }}
+            placeholder="Search users…"
+            className="w-full pl-9 pr-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] bg-white"
+          />
+        </div>
+      </div>
+
       <div className="flex items-center justify-between mb-4">
         <div className="flex gap-1 bg-white border border-[#E5E7EB] rounded-xl p-1 shadow-sm">
           {(["team", "clients"] as const).map((tab) => (
