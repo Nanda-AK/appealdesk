@@ -4,13 +4,16 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/user";
 import { revalidatePath } from "next/cache";
 
-export interface AdminInput {
+function platformOnly(role: string) {
+  if (!["super_admin", "platform_admin"].includes(role)) throw new Error("Unauthorized");
+}
+
+export interface SpAdminFullInput {
   first_name: string;
   middle_name?: string;
   last_name: string;
   email: string;
   password: string;
-  role: "super_admin" | "platform_admin";
   // Contact
   mobile_country_code?: string;
   mobile_number?: string;
@@ -35,11 +38,22 @@ export interface AdminInput {
   avatar_url?: string;
 }
 
-export async function createPlatformAdmin(input: AdminInput) {
+export async function createPlatformSpAdmin(spId: string, input: SpAdminFullInput) {
   const user = await getCurrentUser();
-  if (!user || user.role !== "super_admin") throw new Error("Unauthorized");
+  if (!user) throw new Error("Unauthorized");
+  platformOnly(user.role);
 
   const supabase = await createServiceClient();
+
+  // Verify SP exists
+  const { data: sp } = await supabase
+    .from("organizations")
+    .select("id")
+    .eq("id", spId)
+    .eq("type", "service_provider")
+    .single();
+
+  if (!sp) throw new Error("Service provider not found");
 
   // Create auth user
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({
@@ -57,8 +71,8 @@ export async function createPlatformAdmin(input: AdminInput) {
     middle_name: input.middle_name || null,
     last_name: input.last_name,
     email: input.email,
-    role: input.role,
-    org_id: "00000000-0000-0000-0000-000000000001", // Platform org
+    role: "sp_admin",
+    org_id: spId,
     mobile_country_code: input.mobile_country_code || "+91",
     mobile_number: input.mobile_number || null,
     date_of_birth: input.date_of_birth || null,
@@ -80,27 +94,37 @@ export async function createPlatformAdmin(input: AdminInput) {
   });
 
   if (profileError) {
-    // Rollback auth user if profile insert fails
     await supabase.auth.admin.deleteUser(authData.user.id);
     throw new Error(profileError.message);
   }
 
-  revalidatePath("/platform/admins");
   revalidatePath("/platform/users");
+  revalidatePath("/platform/providers");
 }
 
-export async function toggleAdminStatus(id: string, isActive: boolean) {
+export async function toggleSpAdminStatus(id: string, isActive: boolean) {
   const user = await getCurrentUser();
-  if (!user || user.role !== "super_admin") throw new Error("Unauthorized");
-  if (id === user.id) throw new Error("Cannot deactivate your own account");
+  if (!user) throw new Error("Unauthorized");
+  platformOnly(user.role);
 
   const supabase = await createServiceClient();
-
   await supabase
     .from("users")
     .update({ is_active: isActive, updated_at: new Date().toISOString() })
     .eq("id", id);
 
-  revalidatePath("/platform/admins");
   revalidatePath("/platform/users");
+}
+
+export async function deletePlatformSpAdmin(id: string) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+  platformOnly(user.role);
+
+  const supabase = await createServiceClient();
+  await supabase.from("users").delete().eq("id", id);
+  await supabase.auth.admin.deleteUser(id);
+
+  revalidatePath("/platform/users");
+  revalidatePath("/platform/providers");
 }

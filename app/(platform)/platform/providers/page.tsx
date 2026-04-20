@@ -7,24 +7,11 @@ export default async function ProvidersPage() {
   const user = await getCurrentUser();
   const supabase = await createClient();
 
-  const [{ data: providers }, { data: spAdmins }] = await Promise.all([
-    supabase
-      .from("organizations")
-      .select("id, name, business_type, city, is_active, created_at")
-      .eq("type", "service_provider")
-      .order("name"),
-    supabase
-      .from("users")
-      .select("id, first_name, middle_name, last_name, email, org_id, is_active")
-      .eq("role", "sp_admin"),
-  ]);
-
-  // Group admins by SP id
-  const adminsBySpId: Record<string, NonNullable<typeof spAdmins>> = {};
-  for (const admin of spAdmins ?? []) {
-    if (!adminsBySpId[admin.org_id]) adminsBySpId[admin.org_id] = [];
-    adminsBySpId[admin.org_id].push(admin);
-  }
+  const { data: providers } = await supabase
+    .from("organizations")
+    .select("id, name, business_type, city, is_active, created_at")
+    .eq("type", "service_provider")
+    .order("name");
 
   return (
     <div className="p-8">
@@ -45,7 +32,7 @@ export default async function ProvidersPage() {
           Add Service Provider
         </Link>
       </div>
-      <ProvidersClient providers={providers ?? []} adminsBySpId={adminsBySpId} userRole={user!.role} />
+      <ProvidersClient providers={providers ?? []} userRole={user!.role} />
     </div>
   );
 }
