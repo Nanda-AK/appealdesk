@@ -23,8 +23,29 @@ interface Props {
 
 export default function AdminsClient({ admins, currentUserId, isSuperAdmin }: Props) {
   const router = useRouter();
+  const [search, setSearch] = useState("");
+  const [sortAsc, setSortAsc] = useState(true);
   const [toggling, setToggling] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<{ id: string; name: string; activate: boolean } | null>(null);
+
+  const q = search.toLowerCase();
+  const filtered = admins
+    .filter((a) => {
+      const fullName = [a.first_name, a.middle_name, a.last_name].filter(Boolean).join(" ");
+      const role = a.role === "super_admin" ? "super admin" : "platform admin";
+      const status = a.is_active ? "active" : "inactive";
+      return (
+        fullName.toLowerCase().includes(q) ||
+        a.email.toLowerCase().includes(q) ||
+        role.includes(q) ||
+        status.includes(q)
+      );
+    })
+    .sort((a, b) => {
+      const nameA = [a.first_name, a.last_name].join(" ");
+      const nameB = [b.first_name, b.last_name].join(" ");
+      return sortAsc ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+    });
 
   async function handleToggle() {
     if (!confirm) return;
@@ -39,7 +60,19 @@ export default function AdminsClient({ admins, currentUserId, isSuperAdmin }: Pr
 
   return (
     <>
-      <div className="flex justify-end mb-4">
+      <div className="flex items-center justify-between mb-4">
+        <div className="relative max-w-sm w-full">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+          </svg>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search admins…"
+            className="w-full pl-9 pr-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] bg-white"
+          />
+        </div>
         {isSuperAdmin && (
           <button
             onClick={() => router.push("/platform/admins/new")}
@@ -56,26 +89,40 @@ export default function AdminsClient({ admins, currentUserId, isSuperAdmin }: Pr
       <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-[#F8F9FA] border-b border-[#E5E7EB]">
-              <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Name</th>
-              <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Email</th>
-              <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Role</th>
-              <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Status</th>
-              <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Added</th>
-              {isSuperAdmin && <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Actions</th>}
+            <tr className="bg-[#D1D9E6] border-b-2 border-[#B0BDD0]">
+              <th className="text-center px-4 py-3 font-medium text-[#1A1A2E] w-10">#</th>
+              <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">
+                <button onClick={() => setSortAsc(!sortAsc)} className="inline-flex items-center gap-1 hover:text-[#1E3A5F] transition-colors">
+                  Name
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    {sortAsc
+                      ? <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+                      : <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    }
+                  </svg>
+                </button>
+              </th>
+              <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Email</th>
+              <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Role</th>
+              <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Status</th>
+              <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Added</th>
+              {isSuperAdmin && <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Actions</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-[#E5E7EB]">
-            {admins.length === 0 ? (
+            {filtered.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-12 text-center text-[#6B7280]">No platform admins found.</td>
+                <td colSpan={isSuperAdmin ? 7 : 6} className="px-4 py-12 text-center text-[#6B7280]">
+                  {search ? `No results for "${search}"` : "No platform admins found."}
+                </td>
               </tr>
             ) : (
-              admins.map((admin, i) => {
+              filtered.map((admin, i) => {
                 const fullName = [admin.first_name, admin.middle_name, admin.last_name].filter(Boolean).join(" ");
                 const isMe = admin.id === currentUserId;
                 return (
                   <tr key={admin.id} className={`hover:bg-[#F8F9FA] transition-colors ${i % 2 === 1 ? "bg-[#FAFAFA]" : ""}`}>
+                    <td className="px-4 py-3 text-center text-[#9CA3AF] text-xs">{i + 1}</td>
                     <td className="px-4 py-3 font-medium text-[#1A1A2E]">
                       {fullName} {isMe && <span className="text-xs text-[#9CA3AF]">(you)</span>}
                     </td>
