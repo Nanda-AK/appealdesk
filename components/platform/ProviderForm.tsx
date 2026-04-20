@@ -293,12 +293,12 @@ export default function ProviderForm({ mode, providerId, initialData, initialCom
           </h2>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="min-w-full text-sm">
             <thead>
               <tr className="bg-[#F8F9FA] border-b border-[#E5E7EB]">
                 <th className="text-left px-4 py-3 font-medium text-[#6B7280] whitespace-nowrap w-40">ID Type</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280] w-40">ID</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280] w-40">Login ID</th>
+                <th className="text-left px-4 py-3 font-medium text-[#6B7280] min-w-[180px]">ID</th>
+                <th className="text-left px-4 py-3 font-medium text-[#6B7280] min-w-[180px]">Login ID</th>
                 <th className="text-left px-4 py-3 font-medium text-[#6B7280] w-44">Password</th>
                 <th className="text-left px-4 py-3 font-medium text-[#6B7280] w-36">Attachment</th>
                 <th className="w-8" />
