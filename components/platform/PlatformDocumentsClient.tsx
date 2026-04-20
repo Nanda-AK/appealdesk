@@ -55,7 +55,7 @@ function fileTypeBadge(nameOrType: string) {
 }
 
 const blankForm: FormInput = { rule_no: "", rule_heading: "", form_no: "", page_no: "", parallel_rule_1962: "", url: "" };
-const inp = "w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]";
+const inp = "w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]";
 
 export default function PlatformDocumentsClient({ forms, templates, canEdit }: Props) {
   const router = useRouter();

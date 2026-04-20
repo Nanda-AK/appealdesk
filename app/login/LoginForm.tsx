@@ -119,7 +119,7 @@ export default function LoginForm({ platformName, logoUrl, supportEmail }: Props
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E7EB] text-[#1A1A2E] text-sm placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent transition"
+                    className="w-full px-3.5 py-2.5 rounded-lg border-2 border-[#4A6FA5] text-[#1A1A2E] text-sm placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent transition"
                   />
                 </div>
 
@@ -140,7 +140,7 @@ export default function LoginForm({ platformName, logoUrl, supportEmail }: Props
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E7EB] text-[#1A1A2E] text-sm placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent transition"
+                    className="w-full px-3.5 py-2.5 rounded-lg border-2 border-[#4A6FA5] text-[#1A1A2E] text-sm placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent transition"
                   />
                 </div>
 
@@ -209,7 +209,7 @@ export default function LoginForm({ platformName, logoUrl, supportEmail }: Props
                     value={resetEmail}
                     onChange={(e) => setResetEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E7EB] text-[#1A1A2E] text-sm placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent transition"
+                    className="w-full px-3.5 py-2.5 rounded-lg border-2 border-[#4A6FA5] text-[#1A1A2E] text-sm placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent transition"
                   />
                 </div>
 

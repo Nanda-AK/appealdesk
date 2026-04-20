@@ -62,7 +62,7 @@ export default function PlatformLogsClient({ logs, providers }: Props) {
     });
   }, [logs, filterAction, filterEntity, filterProvider, search]);
 
-  const selCls = "px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]";
+  const selCls = "px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]";
   const hasFilters = filterAction || filterEntity || filterProvider || search;
 
   return (
@@ -79,7 +79,7 @@ export default function PlatformLogsClient({ logs, providers }: Props) {
           placeholder="Search user, record or provider…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] w-56"
+          className="px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] w-56"
         />
         <select value={filterProvider} onChange={(e) => setFilterProvider(e.target.value)} className={selCls}>
           <option value="">All Providers</option>

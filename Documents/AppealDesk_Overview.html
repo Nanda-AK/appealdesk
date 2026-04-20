@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AppealDesk — Application Overview</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #1A1A2E;
+    background: #fff;
+  }
+
+  /* ── Cover Page ── */
+  .cover {
+    width: 100%;
+    min-height: 100vh;
+    background: linear-gradient(145deg, #1E3A5F 0%, #2d5491 60%, #3a6bc7 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 60px 40px;
+    page-break-after: always;
+  }
+
+  .cover-logo {
+    width: 72px; height: 72px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 20px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 28px;
+    backdrop-filter: blur(8px);
+  }
+
+  .cover-logo svg { width: 38px; height: 38px; }
+
+  .cover h1 {
+    font-size: 42px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -1px;
+    margin-bottom: 12px;
+  }
+
+  .cover-tagline {
+    font-size: 16px;
+    color: rgba(255,255,255,0.75);
+    font-weight: 400;
+    margin-bottom: 48px;
+  }
+
+  .cover-divider {
+    width: 60px; height: 3px;
+    background: rgba(255,255,255,0.4);
+    border-radius: 2px;
+    margin: 0 auto 48px;
+  }
+
+  .cover-meta {
+    font-size: 12px;
+    color: rgba(255,255,255,0.55);
+    line-height: 2;
+  }
+
+  /* ── Content Pages ── */
+  .page {
+    padding: 56px 64px;
+    max-width: 860px;
+    margin: 0 auto;
+    page-break-after: always;
+  }
+
+  .page:last-child { page-break-after: auto; }
+
+  /* Section Header */
+  .section-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #4A6FA5;
+    margin-bottom: 6px;
+  }
+
+  h2 {
+    font-size: 26px;
+    font-weight: 700;
+    color: #1E3A5F;
+    margin-bottom: 6px;
+    letter-spacing: -0.5px;
+  }
+
+  .section-desc {
+    font-size: 13px;
+    color: #6B7280;
+    margin-bottom: 32px;
+    border-bottom: 1px solid #E5E7EB;
+    padding-bottom: 16px;
+  }
+
+  /* Cards */
+  .card-grid {
+    display: grid;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .card-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+  .card-grid.cols-1 { grid-template-columns: 1fr; }
+
+  .card {
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    padding: 20px 22px;
+    background: #FAFAFA;
+  }
+
+  .card-accent {
+    border-left: 3px solid #1E3A5F;
+    background: #F0F4FA;
+  }
+
+  .card h3 {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1E3A5F;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card h3 .icon {
+    width: 24px; height: 24px;
+    background: #1E3A5F;
+    border-radius: 6px;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .card h3 .icon svg { width: 13px; height: 13px; }
+
+  .card p {
+    font-size: 12px;
+    color: #6B7280;
+    line-height: 1.65;
+  }
+
+  /* Feature lists */
+  ul.features {
+    list-style: none;
+    margin-top: 10px;
+  }
+
+  ul.features li {
+    font-size: 12px;
+    color: #374151;
+    padding: 4px 0;
+    padding-left: 16px;
+    position: relative;
+    line-height: 1.55;
+  }
+
+  ul.features li::before {
+    content: "›";
+    position: absolute;
+    left: 0;
+    color: #4A6FA5;
+    font-weight: 700;
+  }
+
+  /* Role badges */
+  .badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-right: 4px;
+    margin-bottom: 4px;
+  }
+
+  .badge-admin  { background: #EDE9FE; color: #6D28D9; }
+  .badge-staff  { background: #DBEAFE; color: #1D4ED8; }
+  .badge-client { background: #FEF3C7; color: #92400E; }
+  .badge-super  { background: #FCE7F3; color: #9D174D; }
+
+  /* Portal header stripe */
+  .portal-header {
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .portal-header.platform { background: linear-gradient(135deg, #1E3A5F, #2d5491); }
+  .portal-header.sp       { background: linear-gradient(135deg, #065F46, #059669); }
+
+  .portal-header .ph-icon {
+    width: 40px; height: 40px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .portal-header .ph-icon svg { width: 22px; height: 22px; }
+
+  .portal-header h2 {
+    font-size: 18px;
+    color: #fff;
+    margin: 0;
+  }
+
+  .portal-header p {
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+    margin-top: 2px;
+  }
+
+  /* Table */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-top: 12px;
+  }
+
+  th {
+    background: #1E3A5F;
+    color: #fff;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 11px;
+  }
+
+  th:first-child { border-radius: 8px 0 0 0; }
+  th:last-child  { border-radius: 0 8px 0 0; }
+
+  td {
+    padding: 9px 14px;
+    border-bottom: 1px solid #F3F4F6;
+    color: #374151;
+    vertical-align: top;
+  }
+
+  tr:nth-child(even) td { background: #F9FAFB; }
+
+  /* Info box */
+  .info-box {
+    background: #EFF6FF;
+    border: 1px solid #BFDBFE;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-top: 20px;
+  }
+
+  .info-box p {
+    font-size: 12px;
+    color: #1E40AF;
+    line-height: 1.6;
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 32px 0 0;
+    border-top: 1px solid #E5E7EB;
+    margin-top: 40px;
+    font-size: 11px;
+    color: #9CA3AF;
+  }
+
+  @media print {
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .cover { min-height: 100vh; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ COVER PAGE ═══════════════ -->
+<div class="cover">
+  <div class="cover-logo">
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M9 12h6M9 16h4M7 4H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V8l-5-4H7z" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M14 4v4h4" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+  <h1>AppealDesk</h1>
+  <p class="cover-tagline">Appeal Management Platform — Application Overview</p>
+  <div class="cover-divider"></div>
+  <p class="cover-meta">
+    Prepared for: MSSV &amp; Co — Chartered Accountants<br/>
+    Version 1.0 &nbsp;|&nbsp; April 2026
+  </p>
+</div>
+
+
+<!-- ═══════════════ PAGE 1 — WHAT IS APPEALDESK ═══════════════ -->
+<div class="page">
+  <p class="section-label">Introduction</p>
+  <h2>What is AppealDesk?</h2>
+  <p class="section-desc">
+    A web-based platform that replaces Excel for tracking and managing income tax appeals across clients.
+  </p>
+
+  <div class="card-grid cols-1">
+    <div class="card card-accent">
+      <h3>The Problem It Solves</h3>
+      <p>
+        MSSV &amp; Co manages 1,000+ income tax appeals using spreadsheets — leading to data inconsistency,
+        no real-time visibility, and manual coordination overhead across team members.
+        AppealDesk centralises all appeal data in one secure, multi-user web application accessible from
+        any browser (desktop or mobile).
+      </p>
+    </div>
+  </div>
+
+  <div class="card-grid cols-2">
+    <div class="card">
+      <h3>
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>
+        Key Benefits
+      </h3>
+      <ul class="features">
+        <li>Real-time access for the entire team</li>
+        <li>Centralised appeal data — no more Excel silos</li>
+        <li>Track deadlines, hearings, and outcomes</li>
+        <li>Role-based access (admin, staff, client)</li>
+        <li>Document storage attached to each appeal</li>
+        <li>Complete audit trail of all actions</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></span>
+        Who Uses It
+      </h3>
+      <ul class="features">
+        <li><strong>Platform Admin</strong> — manages the platform itself</li>
+        <li><strong>SP Admin</strong> — MSSV senior partners/admins</li>
+        <li><strong>SP Staff</strong> — CA team members handling appeals</li>
+        <li><strong>Client Users</strong> — client company staff (view-only)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card-grid cols-2">
+    <div class="card">
+      <h3>
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span>
+        Two Portals
+      </h3>
+      <p>The system has two distinct portals, each with its own purpose and user base:</p>
+      <ul class="features" style="margin-top:8px">
+        <li><strong>Platform Portal</strong> — system-level administration</li>
+        <li><strong>SP Portal</strong> — day-to-day appeal management for MSSV &amp; clients</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+        Access &amp; Security
+      </h3>
+      <ul class="features">
+        <li>Email + password login (Supabase Auth)</li>
+        <li>Row-level security — users only see their data</li>
+        <li>Role-based permissions enforced server-side</li>
+        <li>All actions logged in an audit trail</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ PAGE 2 — PLATFORM PORTAL ═══════════════ -->
+<div class="page">
+  <div class="portal-header platform">
+    <div class="ph-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/></svg>
+    </div>
+    <div>
+      <h2>Platform Portal</h2>
+      <p>System-level administration — accessed by the Platform Super Admin only</p>
+    </div>
+  </div>
+
+  <p class="section-desc" style="margin-top:-8px">
+    The Platform Portal is the top-level control panel for AppealDesk. It is used to set up and govern
+    the entire system — creating service providers, managing master data, and configuring branding.
+    Regular firm users never access this portal.
+  </p>
+
+  <div class="card-grid cols-2">
+
+    <div class="card">
+      <h3>
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/></svg></span>
+        Dashboard
+      </h3>
+      <p>High-level overview of the platform — total service providers, active firms, and system health at a glance.</p>
+    </div>
+
+    <div class="card">
+      <h3>
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+        Service Providers
+      </h3>
+      <p>Create and manage CA firms (service providers) that use AppealDesk. Each provider gets their own isolated workspace with their own clients, users, and appeals.</p>
+      <ul class="features">
+        <li>Add / edit / deactivate a service provider</li>
+        <li>Set provider name, PAN, GST, contact details</li>
+        <li>Upload service provider logo</li>
+        <li>View provider detail page</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></span>
+        Admins
+      </h3>
+      <p>Manage platform-level administrator accounts. These are the super-admins who have full access to the Platform Portal.</p>
+      <ul class="features">
+        <li>Create / deactivate platform admin users</li>
+        <li>Assign admin roles</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M4 6h16M4 10h16M4 14h10"/></svg></span>
+        Master Records
+      </h3>
+      <p>Maintain global reference data used across all service providers, such as authority types, proceeding types, and other dropdown values.</p>
+      <ul class="features">
+        <li>Manage authority types and names</li>
+        <li>Manage proceeding type categories</li>
+        <li>Maintain jurisdiction and city lists</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <div class="card-grid cols-1">
+    <div class="card">
+      <h3>
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg></span>
+        Settings
+      </h3>
+      <p>Configure platform-wide branding and support information that appears across the entire application, including the login page.</p>
+      <ul class="features">
+        <li><strong>Platform Logo</strong> — upload the logo displayed on the login page and platform sidebar</li>
+        <li><strong>Platform Name</strong> — the name shown throughout the application</li>
+        <li><strong>Support Email</strong> — contact shown to users who need help</li>
+        <li><strong>Account Settings</strong> — update platform admin's own password</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="info-box">
+    <p><strong>Who can access:</strong> &nbsp;<span class="badge badge-super">Super Admin</span>&nbsp;
+    Only the platform super admin account created during setup can log into the Platform Portal.
+    All other users (SP admins, staff, clients) go through the SP Portal.</p>
+  </div>
+</div>
+
+
+<!-- ═══════════════ PAGE 3 — SP PORTAL ═══════════════ -->
+<div class="page">
+  <div class="portal-header sp">
+    <div class="ph-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </div>
+    <div>
+      <h2>Service Provider (SP) Portal</h2>
+      <p>The main workspace for MSSV &amp; Co — where appeals are managed day-to-day</p>
+    </div>
+  </div>
+
+  <p class="section-desc" style="margin-top:-8px">
+    The SP Portal is where the CA firm team (admins, staff) and their clients interact with the system.
+    This is the primary interface used every day for creating and tracking income tax appeals.
+  </p>
+
+  <div class="card-grid cols-2">
+
+    <div class="card">
+      <h3>
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/></svg></span>
+        Dashboard
+      </h3>
+      <p>A live summary of the workspace. Shows key metrics at a glance:</p>
+      <ul class="features">
+        <li>Total active appeals and clients</li>
+        <li>Appeals by importance (Critical / High / Medium / Low)</li>
+        <li>Outcome distribution (Favourable / Doubtful / Unfavourable)</li>
+        <li>Upcoming deadlines within the next 30 days</li>
+        <li>Recent activity feed</li>
+        <li>Client users see only their organisation's appeals</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 12h6M9 16h4M7 4H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V8l-5-4H7z"/><path d="M14 4v4h4"/></svg></span>
+        Appeals <em style="font-size:11px;font-weight:400;color:#6B7280">(Core Module)</em>
+      </h3>
+      <p>The central module — full detail on the next page.</p>
+      <ul class="features">
+        <li>List all appeals with filters and search</li>
+        <li>Create new appeals</li>
+        <li>View full appeal detail with proceedings and events</li>
+        <li>Upload and manage documents</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span>
+        Clients
+      </h3>
+      <p>Manage the client organisations whose appeals are handled by MSSV.</p>
+      <ul class="features">
+        <li>Add / edit / view client organisations</li>
+        <li>Store PAN, TAN, GST, address details</li>
+        <li>View all appeals belonging to a client</li>
+        <li>Manage client contact staff</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></span>
+        Users
+      </h3>
+      <p>Manage all user accounts in the workspace — SP team and client users.</p>
+      <ul class="features">
+        <li>Create SP Admin, SP Staff, and Client user accounts</li>
+        <li>Set role, department, designation, contact details</li>
+        <li>Activate / deactivate user accounts</li>
+        <li>Store identity documents (PAN, Aadhar) for SP staff</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
+        Documents
+      </h3>
+      <p>A consolidated view of all documents uploaded across all appeals — searchable and filterable by client or appeal.</p>
+      <ul class="features">
+        <li>View all uploaded files in one place</li>
+        <li>Filter by client or appeal</li>
+        <li>Download or delete documents</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span>
+        Audit Logs
+        <span class="badge badge-admin" style="margin-left:auto;font-size:9px">Admin only</span>
+      </h3>
+      <p>A chronological record of every significant action performed in the system.</p>
+      <ul class="features">
+        <li>Who did what and when</li>
+        <li>Filter by action type or date range</li>
+        <li>Track appeal creates, updates, deletes</li>
+        <li>Only visible to SP Admins</li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ═══════════════ PAGE 4 — APPEALS IN DETAIL ═══════════════ -->
+<div class="page">
+  <p class="section-label">Core Module</p>
+  <h2>Appeals — In Detail</h2>
+  <p class="section-desc">
+    The Appeals module is the heart of AppealDesk. Each appeal represents one income tax matter
+    for a client and contains all related proceedings, events, and documents in one place.
+  </p>
+
+  <div class="card-grid cols-1">
+    <div class="card card-accent">
+      <h3>Appeal Structure</h3>
+      <p>
+        An <strong>Appeal</strong> is the top-level record for a tax matter (e.g., AY 2023-24, Income Tax Act).
+        Under each appeal, there can be one or more <strong>Proceedings</strong> (e.g., Assessment, Penalty).
+        Each proceeding contains a timeline of <strong>Events</strong> (notices, hearings, orders, etc.).
+      </p>
+      <p style="margin-top:8px; font-size:11px; color:#4A6FA5; font-weight:600;">
+        Appeal &nbsp;→&nbsp; Proceedings &nbsp;→&nbsp; Events &nbsp;→&nbsp; Documents
+      </p>
+    </div>
+  </div>
+
+  <div class="card-grid cols-2">
+
+    <div class="card">
+      <h3>Appeal Fields</h3>
+      <ul class="features">
+        <li>Client Organisation</li>
+        <li>Financial Year (e.g. 2023-24)</li>
+        <li>Assessment Year (e.g. AY 2024-25)</li>
+        <li>Act / Regulation (e.g. Income Tax Act)</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>Proceeding Fields</h3>
+      <ul class="features">
+        <li>Proceeding type (Assessment, Penalty, etc.)</li>
+        <li>Authority type and authority name</li>
+        <li>Jurisdiction and city</li>
+        <li>Importance level (Critical / High / Medium / Low)</li>
+        <li>Mode (Online / Offline)</li>
+        <li>Initiated on &amp; completion deadline</li>
+        <li>Assigned to (SP staff member)</li>
+        <li>Client staff contact</li>
+        <li>Possible outcome (Favourable / Doubtful / Unfavourable)</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <p style="font-size:12px;font-weight:600;color:#1E3A5F;margin-bottom:10px;">Event Types (Timeline entries within a Proceeding)</p>
+  <table>
+    <thead>
+      <tr>
+        <th>Event Type</th>
+        <th>Description</th>
+        <th>Key Fields Captured</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Notice from Authority</strong></td>
+        <td>A notice received from the tax authority</td>
+        <td>Date of notice, response due date, notice details</td>
+      </tr>
+      <tr>
+        <td><strong>Response to Notice</strong></td>
+        <td>A reply or submission made to the authority</td>
+        <td>Response submitted date, method, summary</td>
+      </tr>
+      <tr>
+        <td><strong>Adjournment Request</strong></td>
+        <td>Request to postpone a hearing</td>
+        <td>Original date, adjourned-to date, reason</td>
+      </tr>
+      <tr>
+        <td><strong>Personal Hearing</strong></td>
+        <td>In-person hearing with the authority</td>
+        <td>Hearing date, location, attendees, outcome</td>
+      </tr>
+      <tr>
+        <td><strong>Virtual Hearing</strong></td>
+        <td>Online hearing / video conference</td>
+        <td>Hearing date, platform, link, outcome</td>
+      </tr>
+      <tr>
+        <td><strong>Personal Follow-up</strong></td>
+        <td>A follow-up visit or communication</td>
+        <td>Against notice dated, follow-up details</td>
+      </tr>
+      <tr>
+        <td><strong>Assessment Order</strong></td>
+        <td>Final order issued by the assessing officer</td>
+        <td>Date of order, demand amount, outcome</td>
+      </tr>
+      <tr>
+        <td><strong>Notice of Penalty</strong></td>
+        <td>Penalty notice received from the authority</td>
+        <td>Date of notice, penalty section, amount</td>
+      </tr>
+      <tr>
+        <td><strong>Penalty Order</strong></td>
+        <td>Final penalty order issued</td>
+        <td>Date of order, confirmed penalty amount</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="card-grid cols-2" style="margin-top:20px;">
+    <div class="card">
+      <h3>What You Can Do in Appeals</h3>
+      <ul class="features">
+        <li>Create a new appeal with initial proceeding</li>
+        <li>Edit appeal details (client, FY, AY, act)</li>
+        <li>Add multiple proceedings to one appeal</li>
+        <li>Edit proceeding details and assignment</li>
+        <li>Add events to the proceeding timeline</li>
+        <li>Quick-view or edit any event in a modal</li>
+        <li>Delete events (with confirmation)</li>
+        <li>Upload documents (PDF, Word, etc.) to an appeal</li>
+        <li>Download or delete attached documents</li>
+        <li>Delete an entire appeal (with confirmation)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Appeals List — Filters &amp; Search</h3>
+      <ul class="features">
+        <li>Search by client name or keywords</li>
+        <li>Filter by client organisation</li>
+        <li>Filter by financial year</li>
+        <li>Filter by importance level</li>
+        <li>Filter by possible outcome</li>
+        <li>Filter by assigned team member</li>
+        <li>Client users automatically see only their organisation's appeals</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ PAGE 5 — ROLES & ACCESS ═══════════════ -->
+<div class="page">
+  <p class="section-label">Access Control</p>
+  <h2>Roles &amp; Permissions</h2>
+  <p class="section-desc">AppealDesk uses role-based access control. Each user is assigned one role that determines what they can see and do.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Feature / Action</th>
+        <th>SP Admin</th>
+        <th>SP Staff</th>
+        <th>Client User</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>View Dashboard</td>
+        <td>✅ Full</td>
+        <td>✅ Full</td>
+        <td>✅ Own org only</td>
+      </tr>
+      <tr>
+        <td>View Appeals List</td>
+        <td>✅ All</td>
+        <td>✅ All</td>
+        <td>✅ Own org only</td>
+      </tr>
+      <tr>
+        <td>Create / Edit Appeals</td>
+        <td>✅</td>
+        <td>✅</td>
+        <td>❌</td>
+      </tr>
+      <tr>
+        <td>Delete Appeals</td>
+        <td>✅</td>
+        <td>✅</td>
+        <td>❌</td>
+      </tr>
+      <tr>
+        <td>Add / Edit / Delete Events</td>
+        <td>✅</td>
+        <td>✅</td>
+        <td>❌</td>
+      </tr>
+      <tr>
+        <td>Upload / Delete Documents</td>
+        <td>✅</td>
+        <td>✅</td>
+        <td>❌</td>
+      </tr>
+      <tr>
+        <td>View Documents</td>
+        <td>✅</td>
+        <td>✅</td>
+        <td>✅ Own org only</td>
+      </tr>
+      <tr>
+        <td>Manage Clients</td>
+        <td>✅</td>
+        <td>✅ View only</td>
+        <td>❌</td>
+      </tr>
+      <tr>
+        <td>Manage Users</td>
+        <td>✅ Full</td>
+        <td>❌</td>
+        <td>❌</td>
+      </tr>
+      <tr>
+        <td>View Audit Logs</td>
+        <td>✅</td>
+        <td>❌</td>
+        <td>❌</td>
+      </tr>
+      <tr>
+        <td>SP Settings</td>
+        <td>✅ Edit</td>
+        <td>✅ View only</td>
+        <td>❌</td>
+      </tr>
+      <tr>
+        <td>Master Records</td>
+        <td>✅</td>
+        <td>✅ View only</td>
+        <td>❌</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="card-grid cols-2" style="margin-top:24px;">
+    <div class="card">
+      <h3>Getting Started — New User</h3>
+      <ul class="features">
+        <li>Visit <strong>appealdesk.saavigen.ai</strong></li>
+        <li>Log in with your email and password</li>
+        <li>You are taken to the Dashboard automatically</li>
+        <li>Use the sidebar to navigate to Appeals, Clients, Documents, etc.</li>
+        <li>Use "Forgot password?" on the login page to reset your password</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Tech Stack (for reference)</h3>
+      <ul class="features">
+        <li><strong>Frontend:</strong> Next.js 16 (React) — hosted on Hostinger VPS</li>
+        <li><strong>Backend / DB:</strong> Supabase (PostgreSQL)</li>
+        <li><strong>Auth:</strong> Supabase Auth (email + password)</li>
+        <li><strong>Storage:</strong> Supabase Storage (documents)</li>
+        <li><strong>Domain:</strong> appealdesk.saavigen.ai</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer">
+    AppealDesk &nbsp;·&nbsp; MSSV &amp; Co &nbsp;·&nbsp; Confidential &nbsp;·&nbsp; April 2026
+  </div>
+</div>
+
+</body>
+</html>

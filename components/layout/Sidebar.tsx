@@ -416,7 +416,7 @@ export default function Sidebar({ userName, userRole, isPlatform = false, orgNam
                       onChange={(e) => setCurrentPassword(e.target.value)}
                       placeholder="Enter your current password"
                       autoComplete="current-password"
-                      className="w-full px-3 py-2 pr-9 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]"
+                      className="w-full px-3 py-2 pr-9 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]"
                     />
                     <button
                       type="button"
@@ -442,7 +442,7 @@ export default function Sidebar({ userName, userRole, isPlatform = false, orgNam
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="Min. 8 characters"
                       autoComplete="new-password"
-                      className="w-full px-3 py-2 pr-9 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]"
+                      className="w-full px-3 py-2 pr-9 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]"
                     />
                     <button
                       type="button"
@@ -467,7 +467,7 @@ export default function Sidebar({ userName, userRole, isPlatform = false, orgNam
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Repeat new password"
                     autoComplete="new-password"
-                    className="w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]"
+                    className="w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]"
                   />
                 </div>
 

@@ -213,7 +213,7 @@ export default function ProviderForm({ mode, providerId, initialData, initialCom
     }
   }
 
-  const inp = "w-full px-2.5 py-1.5 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]";
+  const inp = "w-full px-2.5 py-1.5 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
@@ -227,18 +227,18 @@ export default function ProviderForm({ mode, providerId, initialData, initialCom
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
             <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Service Provider Name <span className="text-red-500">*</span></label>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Service provider name" autoComplete="off" className="w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]" />
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Service provider name" autoComplete="off" className="w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]" />
           </div>
           <div>
             <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Business Type <span className="text-red-500">*</span></label>
-            <select value={businessType} onChange={(e) => setBusinessType(e.target.value)} className="w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]">
+            <select value={businessType} onChange={(e) => setBusinessType(e.target.value)} className="w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]">
               <option value="">Select type</option>
               {BUSINESS_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Date of Incorporation <span className="text-red-500">*</span></label>
-            <input type="date" value={dateOfIncorporation} onChange={(e) => setDateOfIncorporation(e.target.value)} className="w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]" />
+            <input type="date" value={dateOfIncorporation} onChange={(e) => setDateOfIncorporation(e.target.value)} className="w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]" />
           </div>
           <div className="col-span-2">
             <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Logo <span className="text-[#9CA3AF]">(JPG/PNG, max 2MB)</span></label>
@@ -264,23 +264,23 @@ export default function ProviderForm({ mode, providerId, initialData, initialCom
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
             <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Address Line 1 <span className="text-[#9CA3AF]">(Building, Road)</span></label>
-            <input value={address1} onChange={(e) => setAddress1(e.target.value)} className="w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]" />
+            <input value={address1} onChange={(e) => setAddress1(e.target.value)} className="w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]" />
           </div>
           <div className="col-span-2">
             <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Address Line 2 <span className="text-[#9CA3AF]">(Area, Locality)</span></label>
-            <input value={address2} onChange={(e) => setAddress2(e.target.value)} className="w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]" />
+            <input value={address2} onChange={(e) => setAddress2(e.target.value)} className="w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]" />
           </div>
           <div>
             <label className="block text-xs font-medium text-[#6B7280] mb-1.5">City</label>
-            <input value={city} onChange={(e) => setCity(e.target.value)} className="w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]" />
+            <input value={city} onChange={(e) => setCity(e.target.value)} className="w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]" />
           </div>
           <div>
             <label className="block text-xs font-medium text-[#6B7280] mb-1.5">State</label>
-            <input value={state} onChange={(e) => setState(e.target.value)} className="w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]" />
+            <input value={state} onChange={(e) => setState(e.target.value)} className="w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]" />
           </div>
           <div>
             <label className="block text-xs font-medium text-[#6B7280] mb-1.5">PIN Code</label>
-            <input value={pinCode} onChange={(e) => setPinCode(e.target.value)} maxLength={6} className="w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]" />
+            <input value={pinCode} onChange={(e) => setPinCode(e.target.value)} maxLength={6} className="w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]" />
           </div>
         </div>
       </section>

@@ -69,7 +69,7 @@ function EyeIcon({ visible }: { visible: boolean }) {
 
 export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
   const ro = !isAdmin; // read-only for non-admins
-  const fieldClass = `w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] ${ro ? "bg-[#F8F9FA] text-[#6B7280] cursor-not-allowed" : ""}`;
+  const fieldClass = `w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] ${ro ? "bg-[#F8F9FA] text-[#6B7280] cursor-not-allowed" : ""}`;
 
   // Profile state
   const [name, setName] = useState(org?.name ?? "");
@@ -220,7 +220,7 @@ export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
     }
   }
 
-  const cellInp = `w-full px-2.5 py-1.5 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] ${ro ? "bg-[#F8F9FA] text-[#6B7280] cursor-not-allowed" : ""}`;
+  const cellInp = `w-full px-2.5 py-1.5 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] ${ro ? "bg-[#F8F9FA] text-[#6B7280] cursor-not-allowed" : ""}`;
 
   return (
     <div className="space-y-6">

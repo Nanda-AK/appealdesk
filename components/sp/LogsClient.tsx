@@ -53,7 +53,7 @@ export default function LogsClient({ logs }: Props) {
     });
   }, [logs, filterAction, filterEntity, search]);
 
-  const selCls = "px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]";
+  const selCls = "px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]";
 
   return (
     <div>
@@ -69,7 +69,7 @@ export default function LogsClient({ logs }: Props) {
           placeholder="Search user or record…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] w-52"
+          className="px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] w-52"
         />
         <select value={filterAction} onChange={(e) => setFilterAction(e.target.value)} className={selCls}>
           <option value="">All Actions</option>

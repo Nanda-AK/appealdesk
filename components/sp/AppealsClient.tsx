@@ -91,7 +91,7 @@ export default function AppealsClient({ appeals, clients, teamMembers, canEdit }
   }, [appeals, search, filterClient, filterAY, filterImportance, filterAssigned, filterStatus]);
 
   const hasFilters = search || filterClient || filterAY || filterImportance || filterAssigned || filterStatus;
-  const selCls = "px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]";
+  const selCls = "px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]";
 
   return (
     <div>

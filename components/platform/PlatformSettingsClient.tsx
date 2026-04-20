@@ -26,7 +26,7 @@ export default function PlatformSettingsClient({ settings, isSuperAdmin }: Props
   const [brandingSuccess, setBrandingSuccess] = useState(false);
 
   const fieldClass = (disabled: boolean) =>
-    `w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] ${
+    `w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] ${
       disabled ? "bg-[#F8F9FA] text-[#6B7280] cursor-not-allowed" : ""
     }`;
 
