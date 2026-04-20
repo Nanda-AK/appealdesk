@@ -145,7 +145,7 @@ export default function ProvidersClient({ providers, adminsBySpId, userRole }: P
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search service providers…"
-            className="w-full pl-9 pr-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]"
+            className="w-full pl-9 pr-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] bg-white"
           />
         </div>
       </div>
@@ -154,7 +154,7 @@ export default function ProvidersClient({ providers, adminsBySpId, userRole }: P
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-[#F8F9FA] border-b border-[#E5E7EB]">
+              <tr className="bg-[#D1D9E6] border-b-2 border-[#B0BDD0]">
                 <th className="text-center px-4 py-3 font-medium text-[#6B7280] w-10">#</th>
                 <th className="text-left px-4 py-3 font-medium text-[#6B7280]">
                   <button
