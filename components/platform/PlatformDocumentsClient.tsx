@@ -91,7 +91,7 @@ export default function PlatformDocumentsClient({ forms, templates, canEdit }: P
   }
   async function handleFormSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!formData.rule_heading.trim()) { setFormError("Rule heading is required."); return; }
+    if (!formData.rule_heading.trim()) { setFormError("Form description is required."); return; }
     setFormSaving(true); setFormError(null);
     try {
       if (editingForm) { await updateForm(editingForm.id, formData); } else { await createForm(formData); }
@@ -188,16 +188,15 @@ export default function PlatformDocumentsClient({ forms, templates, canEdit }: P
               <thead>
                 <tr className="bg-[#F8F9FA] border-b-2 border-[#E5E7EB]">
                   <th className="text-center px-4 py-3 font-semibold text-[#1A1A2E] w-24 border-r border-[#E5E7EB]">Rule No.</th>
-                  <th className="text-left px-4 py-3 font-semibold text-[#1A1A2E] border-r border-[#E5E7EB]">Rule Heading</th>
+                  <th className="text-left px-4 py-3 font-semibold text-[#1A1A2E] border-r border-[#E5E7EB]">Form Description</th>
                   <th className="text-center px-4 py-3 font-semibold text-[#1A1A2E] w-24 border-r border-[#E5E7EB]">Form No.</th>
-                  <th className="text-center px-4 py-3 font-semibold text-[#1A1A2E] w-24 border-r border-[#E5E7EB]">Page No.</th>
-                  <th className="text-center px-4 py-3 font-semibold text-[#1A1A2E] w-44">Parallel Rule under<br />Income-tax Rules, 1962</th>
+                  <th className="text-center px-4 py-3 font-semibold text-[#1A1A2E] w-24">Section</th>
                   {canEdit && <th className="w-28 px-4 py-3" />}
                 </tr>
               </thead>
               <tbody>
                 {forms.length === 0 ? (
-                  <tr><td colSpan={canEdit ? 6 : 5} className="px-4 py-12 text-center text-[#6B7280]">No forms added yet.{canEdit && " Click \"Add Row\" to get started."}</td></tr>
+                  <tr><td colSpan={canEdit ? 5 : 4} className="px-4 py-12 text-center text-[#6B7280]">No forms added yet.{canEdit && " Click \"Add Row\" to get started."}</td></tr>
                 ) : (
                   forms.map((f, i) => (
                     <tr key={f.id} onClick={() => f.url ? window.open(f.url, "_blank") : undefined}
@@ -205,8 +204,7 @@ export default function PlatformDocumentsClient({ forms, templates, canEdit }: P
                       <td className="px-4 py-3 text-center text-[#1A1A2E] font-medium border-r border-[#E5E7EB]">{f.rule_no || "—"}</td>
                       <td className="px-4 py-3 text-[#1A1A2E] border-r border-[#E5E7EB]"><span className={f.url ? "text-[#4A6FA5] hover:underline" : ""}>{f.rule_heading}</span></td>
                       <td className="px-4 py-3 text-center text-[#6B7280] border-r border-[#E5E7EB]">{f.form_no || "—"}</td>
-                      <td className="px-4 py-3 text-center text-[#6B7280] border-r border-[#E5E7EB]">{f.page_no || "—"}</td>
-                      <td className="px-4 py-3 text-center text-[#6B7280]">{f.parallel_rule_1962 || "—"}</td>
+                      <td className="px-4 py-3 text-center text-[#6B7280]">{f.page_no || "—"}</td>
                       {canEdit && (
                         <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-center gap-3">
@@ -316,18 +314,12 @@ export default function PlatformDocumentsClient({ forms, templates, canEdit }: P
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#6B7280] mb-1">Rule Heading <span className="text-red-500">*</span></label>
+                <label className="block text-xs font-medium text-[#6B7280] mb-1">Form Description <span className="text-red-500">*</span></label>
                 <input value={formData.rule_heading} onChange={(e) => setFormData((p) => ({ ...p, rule_heading: e.target.value }))} className={inp} />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-[#6B7280] mb-1">Page No.</label>
-                  <input value={formData.page_no ?? ""} onChange={(e) => setFormData((p) => ({ ...p, page_no: e.target.value }))} className={inp} />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-[#6B7280] mb-1">Parallel Rule (1962)</label>
-                  <input value={formData.parallel_rule_1962 ?? ""} onChange={(e) => setFormData((p) => ({ ...p, parallel_rule_1962: e.target.value }))} className={inp} />
-                </div>
+              <div>
+                <label className="block text-xs font-medium text-[#6B7280] mb-1">Section</label>
+                <input value={formData.page_no ?? ""} onChange={(e) => setFormData((p) => ({ ...p, page_no: e.target.value }))} className={inp} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-[#6B7280] mb-1">URL <span className="text-[#9CA3AF]">(link to form document)</span></label>
