@@ -233,6 +233,7 @@ export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
         </h2>
 
         <form onSubmit={handleSaveProfile} className="space-y-4" autoComplete="off">
+          <div className="max-w-2xl space-y-4">
           {/* Logo */}
           <div>
             <label className="block text-xs font-medium text-[#6B7280] mb-2">Logo <span className="text-[#9CA3AF]">(JPG/PNG, max 2MB)</span></label>
@@ -303,6 +304,8 @@ export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
               <input value={pinCode} onChange={(e) => setPinCode(e.target.value)} maxLength={6} disabled={ro} className={fieldClass} />
             </div>
           </div>
+
+          </div>{/* end max-w-2xl */}
 
           {/* Compliance table */}
           <div className="border border-[#E5E7EB] rounded-xl overflow-hidden">
