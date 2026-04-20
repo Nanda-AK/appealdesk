@@ -402,7 +402,7 @@ export default function Sidebar({ userName, userRole, isPlatform = false, orgNam
                 </button>
               </div>
             ) : (
-              <form onSubmit={handleChangePassword} className="p-6 space-y-4">
+              <form onSubmit={handleChangePassword} className="p-6 space-y-4" autoComplete="off">
                 {pwError && (
                   <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">{pwError}</div>
                 )}
@@ -415,6 +415,7 @@ export default function Sidebar({ userName, userRole, isPlatform = false, orgNam
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
                       placeholder="Enter your current password"
+                      autoComplete="current-password"
                       className="w-full px-3 py-2 pr-9 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]"
                     />
                     <button
@@ -440,6 +441,7 @@ export default function Sidebar({ userName, userRole, isPlatform = false, orgNam
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="Min. 8 characters"
+                      autoComplete="new-password"
                       className="w-full px-3 py-2 pr-9 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]"
                     />
                     <button
@@ -464,6 +466,7 @@ export default function Sidebar({ userName, userRole, isPlatform = false, orgNam
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Repeat new password"
+                    autoComplete="new-password"
                     className="w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]"
                   />
                 </div>

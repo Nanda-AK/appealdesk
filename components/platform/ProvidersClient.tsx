@@ -274,7 +274,7 @@ export default function ProvidersClient({ providers, adminsBySpId, userRole }: P
               )}
 
               {showInviteForm && !inviteSuccess && (
-                <form onSubmit={handleCreateAdmin} className="space-y-4 border border-[#E5E7EB] rounded-lg p-4">
+                <form onSubmit={handleCreateAdmin} className="space-y-4 border border-[#E5E7EB] rounded-lg p-4" autoComplete="off">
                   <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Invite New Admin</p>
 
                   {inviteError && (
@@ -309,6 +309,7 @@ export default function ProvidersClient({ providers, adminsBySpId, userRole }: P
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Min. 8 characters"
+                        autoComplete="new-password"
                         className="w-full px-3 py-2 pr-9 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]"
                       />
                       <button

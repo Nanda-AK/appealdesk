@@ -196,7 +196,7 @@ export default function EditSpUserForm({ user }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
       {error && (
         <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>
       )}
@@ -253,6 +253,7 @@ export default function EditSpUserForm({ user }: Props) {
             <div className="relative">
               <input type={showPassword ? "text" : "password"} value={form.new_password ?? ""}
                 onChange={(e) => set("new_password")(e.target.value)} placeholder="Leave blank to keep current"
+                autoComplete="new-password"
                 className="w-full px-3 py-2 pr-9 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]" />
               <button type="button" onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#6B7280]">
@@ -270,6 +271,7 @@ export default function EditSpUserForm({ user }: Props) {
             <div className="relative">
               <input type={showConfirm ? "text" : "password"} value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Repeat new password"
+                autoComplete="new-password"
                 className={`w-full px-3 py-2 pr-9 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] ${confirmPassword && confirmPassword !== form.new_password ? "border-red-400" : "border-[#E5E7EB]"}`} />
               <button type="button" onClick={() => setShowConfirm(!showConfirm)}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#6B7280]">
