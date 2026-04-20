@@ -40,8 +40,14 @@ export default function ProvidersClient({ providers, adminsBySpId, userRole }: P
   const [loading, setLoading] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<{ id: string; name: string; activate: boolean } | null>(null);
 
+  const q = search.toLowerCase();
   const filtered = providers
-    .filter((sp) => sp.name.toLowerCase().includes(search.toLowerCase()))
+    .filter((sp) =>
+      sp.name.toLowerCase().includes(q) ||
+      (sp.business_type ?? "").toLowerCase().includes(q) ||
+      (sp.city ?? "").toLowerCase().includes(q) ||
+      (sp.is_active ? "active" : "inactive").includes(q)
+    )
     .sort((a, b) => sortAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name));
 
   // Manage Admins modal state
