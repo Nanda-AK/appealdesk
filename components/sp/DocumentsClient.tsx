@@ -261,9 +261,8 @@ export default function DocumentsClient({ forms, templates, canEdit }: Props) {
       {/* ── TAB: FORMS (Income Tax Rules) ── */}
       {activeTab === "forms" && (
         <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-[#E5E7EB] bg-[#1E3A5F]">
-            <p className="text-white font-semibold text-sm text-center tracking-wide">THE INCOME TAX RULES, 2026</p>
-            <p className="text-white/70 text-xs text-center mt-0.5">Tabular Mapping of Rules and Forms vis-à-vis Rules and Forms under the Income-tax Rules, 1962</p>
+          <div className="px-6 py-3 border-b border-[#E5E7EB] bg-[#F8F9FA]">
+            <p className="text-[#1A1A2E] font-semibold text-sm">Forms</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
