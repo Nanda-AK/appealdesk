@@ -45,7 +45,7 @@ const platformNav: NavItem[] = [
     ),
   },
   {
-    label: "Master Records",
+    label: "Masters",
     href: "/platform/masters",
     roles: ["super_admin", "platform_admin"],
     icon: (
@@ -139,7 +139,7 @@ const spNav: NavItem[] = [
     ),
   },
   {
-    label: "Master Records",
+    label: "Masters",
     href: "/masters",
     roles: ["sp_admin", "sp_staff"],
     icon: (
