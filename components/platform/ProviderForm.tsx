@@ -216,7 +216,7 @@ export default function ProviderForm({ mode, providerId, initialData, initialCom
   const inp = "w-full px-2.5 py-1.5 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]";
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
       {error && (
         <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>
       )}
@@ -317,7 +317,7 @@ export default function ProviderForm({ mode, providerId, initialData, initialCom
                   </td>
                   <td className="px-4 py-3">
                     <div className="relative">
-                      <input type={compliance[key].showCredential ? "text" : "password"} value={compliance[key].credential} onChange={(e) => updateCompliance(key, "credential", e.target.value)} placeholder="Password" className={`${inp} pr-8`} />
+                      <input type={compliance[key].showCredential ? "text" : "password"} value={compliance[key].credential} onChange={(e) => updateCompliance(key, "credential", e.target.value)} placeholder="Password" autoComplete="new-password" className={`${inp} pr-8`} />
                       <button type="button" onClick={() => updateCompliance(key, "showCredential", !compliance[key].showCredential)} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#6B7280]">
                         <EyeIcon visible={compliance[key].showCredential} />
                       </button>
@@ -362,7 +362,7 @@ export default function ProviderForm({ mode, providerId, initialData, initialCom
                   </td>
                   <td className="px-4 py-3">
                     <div className="relative">
-                      <input type={row.showCredential ? "text" : "password"} value={row.credential} onChange={(e) => updateExtraRow(row.rowId, "credential", e.target.value)} placeholder="Password" className={`${inp} pr-8`} />
+                      <input type={row.showCredential ? "text" : "password"} value={row.credential} onChange={(e) => updateExtraRow(row.rowId, "credential", e.target.value)} placeholder="Password" autoComplete="new-password" className={`${inp} pr-8`} />
                       <button type="button" onClick={() => updateExtraRow(row.rowId, "showCredential", !row.showCredential)} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#6B7280]">
                         <EyeIcon visible={row.showCredential} />
                       </button>

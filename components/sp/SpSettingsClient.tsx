@@ -232,7 +232,7 @@ export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
           {ro && <span className="text-xs font-normal text-[#9CA3AF]">Read-only</span>}
         </h2>
 
-        <form onSubmit={handleSaveProfile} className="space-y-4">
+        <form onSubmit={handleSaveProfile} className="space-y-4" autoComplete="off">
           {/* Logo */}
           <div>
             <label className="block text-xs font-medium text-[#6B7280] mb-2">Logo <span className="text-[#9CA3AF]">(JPG/PNG, max 2MB)</span></label>
@@ -334,7 +334,7 @@ export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
                       </td>
                       <td className="px-4 py-3">
                         <div className="relative">
-                          <input type={complianceState[key].showCredential ? "text" : "password"} value={complianceState[key].credential} onChange={(e) => updateCompliance(key, "credential", e.target.value)} disabled={ro} placeholder="Password" className={`${cellInp} pr-8`} />
+                          <input type={complianceState[key].showCredential ? "text" : "password"} value={complianceState[key].credential} onChange={(e) => updateCompliance(key, "credential", e.target.value)} disabled={ro} placeholder="Password" autoComplete="new-password" className={`${cellInp} pr-8`} />
                           <button type="button" onClick={() => updateCompliance(key, "showCredential", !complianceState[key].showCredential)} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#6B7280]">
                             <EyeIcon visible={complianceState[key].showCredential} />
                           </button>
@@ -385,7 +385,7 @@ export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
                       </td>
                       <td className="px-4 py-3">
                         <div className="relative">
-                          <input type={row.showCredential ? "text" : "password"} value={row.credential} onChange={(e) => updateExtraRow(row.rowId, "credential", e.target.value)} disabled={ro} placeholder="Password" className={`${cellInp} pr-8`} />
+                          <input type={row.showCredential ? "text" : "password"} value={row.credential} onChange={(e) => updateExtraRow(row.rowId, "credential", e.target.value)} disabled={ro} placeholder="Password" autoComplete="new-password" className={`${cellInp} pr-8`} />
                           <button type="button" onClick={() => updateExtraRow(row.rowId, "showCredential", !row.showCredential)} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#6B7280]">
                             <EyeIcon visible={row.showCredential} />
                           </button>
