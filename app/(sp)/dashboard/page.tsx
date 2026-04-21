@@ -46,6 +46,13 @@ export default async function DashboardPage() {
     { count: totalTeam },
     { data: proceedings },
     { data: recentEvents },
+    { count: cntCritical },
+    { count: cntHigh },
+    { count: cntMedium },
+    { count: cntLow },
+    { count: cntFavourable },
+    { count: cntDoubtful },
+    { count: cntUnfavourable },
   ] = await Promise.all([
     supabase.from("appeals").select("*", { count: "exact", head: true }).eq(appealFilter.col, appealFilter.val),
     isClient
@@ -79,20 +86,28 @@ export default async function DashboardPage() {
     `).eq("service_provider_id", spId!)
       .order("created_at", { ascending: false })
       .limit(8),
+    // Importance counts — one lightweight count query per value, no rows transferred
+    isClient ? Promise.resolve({ count: 0 }) : supabase.from("proceedings").select("*", { count: "exact", head: true }).eq("service_provider_id", spId!).eq("importance", "critical"),
+    isClient ? Promise.resolve({ count: 0 }) : supabase.from("proceedings").select("*", { count: "exact", head: true }).eq("service_provider_id", spId!).eq("importance", "high"),
+    isClient ? Promise.resolve({ count: 0 }) : supabase.from("proceedings").select("*", { count: "exact", head: true }).eq("service_provider_id", spId!).eq("importance", "medium"),
+    isClient ? Promise.resolve({ count: 0 }) : supabase.from("proceedings").select("*", { count: "exact", head: true }).eq("service_provider_id", spId!).eq("importance", "low"),
+    // Outcome counts
+    isClient ? Promise.resolve({ count: 0 }) : supabase.from("proceedings").select("*", { count: "exact", head: true }).eq("service_provider_id", spId!).eq("possible_outcome", "favourable"),
+    isClient ? Promise.resolve({ count: 0 }) : supabase.from("proceedings").select("*", { count: "exact", head: true }).eq("service_provider_id", spId!).eq("possible_outcome", "doubtful"),
+    isClient ? Promise.resolve({ count: 0 }) : supabase.from("proceedings").select("*", { count: "exact", head: true }).eq("service_provider_id", spId!).eq("possible_outcome", "unfavourable"),
   ]);
 
-  // Importance & outcome breakdown from all active proceedings for SP
-  const { data: allProceedings } = isClient
-    ? { data: [] }
-    : await supabase.from("proceedings").select("importance, possible_outcome")
-        .eq("service_provider_id", spId!);
-
-  const importanceCounts: Record<string, number> = { critical: 0, high: 0, medium: 0, low: 0 };
-  const outcomeCounts: Record<string, number> = { favourable: 0, doubtful: 0, unfavourable: 0 };
-  (allProceedings ?? []).forEach((p) => {
-    if (p.importance && importanceCounts[p.importance] !== undefined) importanceCounts[p.importance]++;
-    if (p.possible_outcome && outcomeCounts[p.possible_outcome] !== undefined) outcomeCounts[p.possible_outcome]++;
-  });
+  const importanceCounts = {
+    critical: cntCritical ?? 0,
+    high: cntHigh ?? 0,
+    medium: cntMedium ?? 0,
+    low: cntLow ?? 0,
+  };
+  const outcomeCounts = {
+    favourable: cntFavourable ?? 0,
+    doubtful: cntDoubtful ?? 0,
+    unfavourable: cntUnfavourable ?? 0,
+  };
 
   const upcomingDeadlines = proceedings ?? [];
 
