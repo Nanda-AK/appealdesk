@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { updateUser, UserEditInput } from "@/app/(sp)/users/actions";
-import { INDIAN_STATES, COUNTRY_CODES_COMMON, COUNTRY_CODES_ALL } from "@/lib/constants";
+import { INDIAN_STATES } from "@/lib/constants";
 
 const inp = "w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]";
 
@@ -224,15 +224,8 @@ export default function EditSpUserForm({ user }: Props) {
 
           <Field label="Mobile">
             <div className="flex gap-2">
-              <select value={form.mobile_country_code ?? "+91"} onChange={(e) => set("mobile_country_code")(e.target.value)}
-                className="px-2 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] w-48 flex-shrink-0">
-                <optgroup label="── Common ──">
-                  {COUNTRY_CODES_COMMON.map((c) => <option key={`common-${c.label}`} value={c.code}>{c.label}</option>)}
-                </optgroup>
-                <optgroup label="── All Countries ──">
-                  {COUNTRY_CODES_ALL.map((c) => <option key={`all-${c.label}`} value={c.code}>{c.label}</option>)}
-                </optgroup>
-              </select>
+              <input type="text" value={form.mobile_country_code ?? "+91"} onChange={(e) => set("mobile_country_code")(e.target.value)}
+                placeholder="+91" className="px-2 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] w-20 flex-shrink-0" />
               <input type="tel" value={form.mobile_number ?? ""} onChange={(e) => set("mobile_number")(e.target.value)}
                 placeholder="10-digit number" className={inp} />
             </div>
