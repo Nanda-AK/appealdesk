@@ -19,7 +19,7 @@ export default async function EditUserPage({ params }: { params: Promise<{ id: s
       id, first_name, middle_name, last_name, email, role, org_id, is_active,
       mobile_country_code, mobile_number, date_of_birth, avatar_url,
       designation, department, date_of_joining, date_of_leaving,
-      address_line1, address_line2, city, pin_code, location,
+      address_line1, address_line2, city, pin_code, location, country,
       pan_number, pan_attachment, aadhar_number, aadhar_attachment
     `)
     .eq("id", id)

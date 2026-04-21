@@ -26,6 +26,7 @@ export interface ProviderInput {
   city?: string;
   state?: string;
   pin_code?: string;
+  country?: string;
   compliance: ComplianceInput[];
 }
 
@@ -48,6 +49,7 @@ export async function createProvider(input: ProviderInput) {
       city: input.city || null,
       state: input.state || null,
       pin_code: input.pin_code || null,
+      country: input.country || "India",
       is_active: true,
     })
     .select("id")
@@ -87,6 +89,7 @@ export async function updateProvider(id: string, input: ProviderInput) {
       city: input.city || null,
       state: input.state || null,
       pin_code: input.pin_code || null,
+      country: input.country || "India",
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);

@@ -12,7 +12,7 @@ export default function NewProviderPage() {
           Back to Service Providers
         </Link>
         <h1 className="text-2xl font-semibold text-[#1A1A2E]">Add Service Provider</h1>
-        <p className="text-[#6B7280] text-sm mt-0.5">Onboard a new firm to the platform</p>
+        <p className="text-[#6B7280] text-sm mt-0.5">Onboard a new entity to the platform</p>
       </div>
       <ProviderForm mode="create" />
     </div>

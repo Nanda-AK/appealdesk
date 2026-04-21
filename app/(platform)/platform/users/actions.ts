@@ -29,6 +29,7 @@ export interface SpAdminFullInput {
   city?: string;
   pin_code?: string;
   location?: string;
+  country?: string;
   // Identity
   pan_number?: string;
   pan_attachment?: string;
@@ -85,6 +86,7 @@ export async function createPlatformSpAdmin(spId: string, input: SpAdminFullInpu
     city: input.city || null,
     pin_code: input.pin_code || null,
     location: input.location || null,
+    country: input.country || "India",
     pan_number: input.pan_number || null,
     pan_attachment: input.pan_attachment || null,
     aadhar_number: input.aadhar_number || null,

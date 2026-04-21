@@ -148,7 +148,7 @@ export default function ClientsClient({ clients, isAdmin }: Props) {
                                 setConfirm({ id: client.id, name: client.name, activate: !client.is_active })
                               }
                               disabled={loading === client.id}
-                              className={`text-xs font-medium disabled:opacity-50 ${
+                              className={`text-xs font-medium cursor-pointer disabled:opacity-50 ${
                                 client.is_active
                                   ? "text-orange-500 hover:text-orange-700"
                                   : "text-green-600 hover:text-green-800"
@@ -158,7 +158,7 @@ export default function ClientsClient({ clients, isAdmin }: Props) {
                             </button>
                             <button
                               onClick={() => { setDeleteError(null); setDeleteConfirm({ id: client.id, name: client.name }); }}
-                              className="text-xs font-medium text-red-500 hover:text-red-700"
+                              className="text-xs font-medium cursor-pointer text-red-500 hover:text-red-700"
                             >
                               Delete
                             </button>
@@ -181,7 +181,7 @@ export default function ClientsClient({ clients, isAdmin }: Props) {
             <h3 className="text-base font-semibold text-[#1A1A2E] mb-2">Delete Client?</h3>
             <p className="text-sm text-[#6B7280] mb-2">
               This will permanently delete <strong>{deleteConfirm.name}</strong> and all associated
-              appeals, proceedings, events, and documents.
+              litigations, proceedings, events, and documents.
             </p>
             <p className="text-xs text-red-600 font-medium mb-5">This action cannot be undone.</p>
             {deleteError && (

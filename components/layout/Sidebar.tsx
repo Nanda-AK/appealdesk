@@ -99,7 +99,7 @@ const spNav: NavItem[] = [
     ),
   },
   {
-    label: "Appeals",
+    label: "Litigations",
     href: "/appeals",
     roles: ["sp_admin", "sp_staff", "client"],
     icon: (

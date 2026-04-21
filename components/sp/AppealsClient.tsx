@@ -98,9 +98,9 @@ export default function AppealsClient({ appeals, clients, teamMembers, canEdit }
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-[#1A1A2E]">Appeals</h1>
+          <h1 className="text-2xl font-semibold text-[#1A1A2E]">Litigations</h1>
           <p className="text-[#6B7280] text-sm mt-0.5">
-            {filtered.length} of {appeals.length} appeals
+            {filtered.length} of {appeals.length} litigations
           </p>
         </div>
         {canEdit && (
@@ -111,7 +111,7 @@ export default function AppealsClient({ appeals, clients, teamMembers, canEdit }
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
-            New Appeal
+            New Litigation
           </Link>
         )}
       </div>
@@ -186,10 +186,10 @@ export default function AppealsClient({ appeals, clients, teamMembers, canEdit }
                 <tr>
                   <td colSpan={11} className="px-4 py-16 text-center text-[#6B7280]">
                     {hasFilters
-                      ? "No appeals match your filters."
+                      ? "No litigations match your filters."
                       : canEdit
-                      ? "No appeals yet. Click 'New Appeal' to get started."
-                      : "No appeals found."}
+                      ? "No litigations yet. Click 'New Litigation' to get started."
+                      : "No litigations found."}
                   </td>
                 </tr>
               ) : (

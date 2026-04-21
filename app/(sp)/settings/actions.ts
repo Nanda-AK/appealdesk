@@ -22,6 +22,7 @@ export interface SpProfileInput {
   city?: string;
   state?: string;
   pin_code?: string;
+  country?: string;
   support_email?: string;
 }
 
@@ -43,6 +44,7 @@ export async function updateSpProfile(input: SpProfileInput) {
       city: input.city || null,
       state: input.state || null,
       pin_code: input.pin_code || null,
+      country: input.country || "India",
       updated_at: new Date().toISOString(),
     })
     .eq("id", user.org_id)

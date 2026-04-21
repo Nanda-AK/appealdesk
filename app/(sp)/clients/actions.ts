@@ -23,6 +23,7 @@ export interface ClientInput {
   city?: string;
   state?: string;
   pin_code?: string;
+  country?: string;
   compliance: ComplianceInput[];
 }
 
@@ -46,6 +47,7 @@ export async function createClientOrg(input: ClientInput) {
       city: input.city || null,
       state: input.state || null,
       pin_code: input.pin_code || null,
+      country: input.country || "India",
       is_active: true,
     })
     .select("id")
@@ -88,6 +90,7 @@ export async function updateClientOrg(id: string, input: ClientInput) {
       city: input.city || null,
       state: input.state || null,
       pin_code: input.pin_code || null,
+      country: input.country || "India",
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)

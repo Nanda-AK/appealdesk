@@ -62,10 +62,10 @@ export default async function NewAppealPage() {
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
-          Back to Appeals
+          Back to Litigations
         </Link>
-        <h1 className="text-2xl font-semibold text-[#1A1A2E]">Create New Appeal</h1>
-        <p className="text-[#6B7280] text-sm mt-0.5">Fill in the appeal details and first proceeding below.</p>
+        <h1 className="text-2xl font-semibold text-[#1A1A2E]">Create New Litigation</h1>
+        <p className="text-[#6B7280] text-sm mt-0.5">Fill in the litigation details and first proceeding below.</p>
       </div>
       <AppealForm
         clients={clients ?? []}

@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "AppealDesk",
-  description: "Multi-tenant Appeal Management Platform",
+  description: "Multi-tenant Litigation Management Platform",
 };
 
 export default function RootLayout({

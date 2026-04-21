@@ -78,7 +78,7 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
       const id = await createAppeal(appeal, proc);
       router.push(`/appeals/${id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create appeal.");
+      setError(err instanceof Error ? err.message : "Failed to create litigation.");
       setSaving(false);
     }
   }
@@ -87,7 +87,7 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Section 1 */}
       <section className="bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-sm">
-        <h2 className="text-sm font-semibold text-[#1A1A2E] pb-3 border-b border-[#E5E7EB] mb-5">Appeal Details</h2>
+        <h2 className="text-sm font-semibold text-[#1A1A2E] pb-3 border-b border-[#E5E7EB] mb-5">Litigation Details</h2>
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
             <Field label="Client Organisation" required>
@@ -223,7 +223,7 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
         </button>
         <button type="submit" disabled={saving}
           className="px-5 py-2.5 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60">
-          {saving ? "Creating…" : "Create Appeal"}
+          {saving ? "Creating…" : "Create Litigation"}
         </button>
       </div>
     </form>

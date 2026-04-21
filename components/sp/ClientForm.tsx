@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { createClientOrg, updateClientOrg, ComplianceInput } from "@/app/(sp)/clients/actions";
+import { INDIAN_STATES } from "@/lib/constants";
 
 // Fallback used only if master_records are not passed from the server
 const BUSINESS_TYPES_FALLBACK = ["Company", "Trust", "Partnership", "LLP", "Sole Proprietorship", "OPC", "HUF", "Individual", "Custom"];
@@ -86,6 +87,10 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
   const [city, setCity] = useState(initialData?.city ?? "");
   const [state, setState] = useState(initialData?.state ?? "");
   const [pinCode, setPinCode] = useState(initialData?.pin_code ?? "");
+  const [country, setCountry] = useState(initialData?.country ?? "India");
+  const [stateOther, setStateOther] = useState(
+    !INDIAN_STATES.includes(initialData?.state ?? "") && (initialData?.state ?? "") !== ""
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -212,6 +217,7 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
           city: city || undefined,
           state: state || undefined,
           pin_code: pinCode || undefined,
+          country: country || undefined,
           compliance: complianceInput,
         });
       } else {
@@ -225,6 +231,7 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
           city: city || undefined,
           state: state || undefined,
           pin_code: pinCode || undefined,
+          country: country || undefined,
           compliance: complianceInput,
         });
       }
@@ -327,11 +334,33 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
           </div>
           <div>
             <label className="block text-xs font-medium text-[#6B7280] mb-1.5">State</label>
-            <input value={state} onChange={(e) => setState(e.target.value)} disabled={readOnly} className={fieldClass} />
+            <select
+              value={stateOther ? "Other" : state}
+              onChange={(e) => {
+                if (e.target.value === "Other") { setStateOther(true); setState(""); }
+                else { setStateOther(false); setState(e.target.value); }
+              }}
+              disabled={readOnly}
+              className={fieldClass}
+            >
+              <option value="">Select state / UT</option>
+              {INDIAN_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
+              <option value="Other">Other (specify)</option>
+            </select>
+            {stateOther && !readOnly && (
+              <input value={state} onChange={(e) => setState(e.target.value)} placeholder="Enter state / UT name" className={`${fieldClass} mt-2`} />
+            )}
+            {stateOther && readOnly && (
+              <input value={state} disabled className={`${fieldClass} mt-2`} />
+            )}
           </div>
           <div>
             <label className="block text-xs font-medium text-[#6B7280] mb-1.5">PIN Code</label>
             <input value={pinCode} onChange={(e) => setPinCode(e.target.value)} maxLength={6} disabled={readOnly} className={fieldClass} />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Country</label>
+            <input value={country} onChange={(e) => setCountry(e.target.value)} disabled={readOnly} className={fieldClass} />
           </div>
         </div>
       </section>

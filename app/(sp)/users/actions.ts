@@ -27,6 +27,7 @@ export interface UserInput {
   city?: string;
   pin_code?: string;
   location?: string;
+  country?: string;
   // Identity
   pan_number?: string;
   pan_attachment?: string;
@@ -79,6 +80,7 @@ export async function createUser(input: UserInput) {
     city: isSpUser ? (input.city || null) : null,
     pin_code: isSpUser ? (input.pin_code || null) : null,
     location: isSpUser ? (input.location || null) : null,
+    country: isSpUser ? (input.country || "India") : null,
     pan_number: isSpUser ? (input.pan_number || null) : null,
     pan_attachment: isSpUser ? (input.pan_attachment || null) : null,
     aadhar_number: isSpUser ? (input.aadhar_number || null) : null,
@@ -141,6 +143,7 @@ export interface UserEditInput {
   city?: string;
   pin_code?: string;
   location?: string;
+  country?: string;
   // Identity
   pan_number?: string;
   pan_attachment?: string;
@@ -180,6 +183,7 @@ export async function updateUser(id: string, input: UserEditInput) {
     city: isSpUser ? (input.city || null) : null,
     pin_code: isSpUser ? (input.pin_code || null) : null,
     location: isSpUser ? (input.location || null) : null,
+    country: isSpUser ? (input.country || "India") : null,
     pan_number: isSpUser ? (input.pan_number || null) : null,
     pan_attachment: isSpUser ? (input.pan_attachment || null) : null,
     aadhar_number: isSpUser ? (input.aadhar_number || null) : null,

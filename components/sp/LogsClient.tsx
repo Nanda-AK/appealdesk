@@ -22,7 +22,7 @@ const ACTION_CFG: Record<string, { label: string; cls: string }> = {
 };
 
 const ENTITY_LABELS: Record<string, string> = {
-  appeal: "Appeal",
+  appeal: "Litigation",
   proceeding: "Proceeding",
   event: "Event",
   document: "Document",
@@ -79,7 +79,7 @@ export default function LogsClient({ logs }: Props) {
         </select>
         <select value={filterEntity} onChange={(e) => setFilterEntity(e.target.value)} className={selCls}>
           <option value="">All Types</option>
-          <option value="appeal">Appeal</option>
+          <option value="appeal">Litigation</option>
           <option value="proceeding">Proceeding</option>
           <option value="event">Event</option>
           <option value="document">Document</option>

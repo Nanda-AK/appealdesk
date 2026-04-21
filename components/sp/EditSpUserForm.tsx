@@ -3,16 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { updateUser, UserEditInput } from "@/app/(sp)/users/actions";
-
-const COUNTRY_CODES = [
-  { code: "+91", label: "🇮🇳 +91" },
-  { code: "+1",  label: "🇺🇸 +1" },
-  { code: "+44", label: "🇬🇧 +44" },
-  { code: "+971", label: "🇦🇪 +971" },
-  { code: "+65", label: "🇸🇬 +65" },
-  { code: "+61", label: "🇦🇺 +61" },
-  { code: "+60", label: "🇲🇾 +60" },
-];
+import { INDIAN_STATES, COUNTRY_CODES_COMMON, COUNTRY_CODES_ALL } from "@/lib/constants";
 
 const inp = "w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]";
 
@@ -133,6 +124,7 @@ interface UserData {
   city: string | null;
   pin_code: string | null;
   location: string | null;
+  country: string | null;
   pan_number: string | null;
   pan_attachment: string | null;
   aadhar_number: string | null;
@@ -162,12 +154,16 @@ export default function EditSpUserForm({ user }: Props) {
     city: user.city ?? "",
     pin_code: user.pin_code ?? "",
     location: user.location ?? "",
+    country: user.country ?? "India",
     pan_number: user.pan_number ?? "",
     pan_attachment: user.pan_attachment ?? "",
     aadhar_number: user.aadhar_number ?? "",
     aadhar_attachment: user.aadhar_attachment ?? "",
     new_password: "",
   });
+  const [locationOther, setLocationOther] = useState(
+    !INDIAN_STATES.includes(user.location ?? "") && (user.location ?? "") !== ""
+  );
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -229,8 +225,13 @@ export default function EditSpUserForm({ user }: Props) {
           <Field label="Mobile">
             <div className="flex gap-2">
               <select value={form.mobile_country_code ?? "+91"} onChange={(e) => set("mobile_country_code")(e.target.value)}
-                className="px-2 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] w-28 flex-shrink-0">
-                {COUNTRY_CODES.map((c) => <option key={c.code} value={c.code}>{c.label}</option>)}
+                className="px-2 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] w-48 flex-shrink-0">
+                <optgroup label="── Common ──">
+                  {COUNTRY_CODES_COMMON.map((c) => <option key={`common-${c.label}`} value={c.code}>{c.label}</option>)}
+                </optgroup>
+                <optgroup label="── All Countries ──">
+                  {COUNTRY_CODES_ALL.map((c) => <option key={`all-${c.label}`} value={c.code}>{c.label}</option>)}
+                </optgroup>
               </select>
               <input type="tel" value={form.mobile_number ?? ""} onChange={(e) => set("mobile_number")(e.target.value)}
                 placeholder="10-digit number" className={inp} />
@@ -324,10 +325,27 @@ export default function EditSpUserForm({ user }: Props) {
             <input value={form.city ?? ""} onChange={(e) => set("city")(e.target.value)} className={inp} />
           </Field>
           <Field label="State">
-            <input value={form.location ?? ""} onChange={(e) => set("location")(e.target.value)} placeholder="e.g. Tamil Nadu" className={inp} />
+            <select
+              value={locationOther ? "Other" : (form.location ?? "")}
+              onChange={(e) => {
+                if (e.target.value === "Other") { setLocationOther(true); set("location")(""); }
+                else { setLocationOther(false); set("location")(e.target.value); }
+              }}
+              className={inp}
+            >
+              <option value="">Select state / UT</option>
+              {INDIAN_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
+              <option value="Other">Other (specify)</option>
+            </select>
+            {locationOther && (
+              <input value={form.location ?? ""} onChange={(e) => set("location")(e.target.value)} placeholder="Enter state / UT name" className={`${inp} mt-2`} />
+            )}
           </Field>
           <Field label="PIN Code">
             <input value={form.pin_code ?? ""} onChange={(e) => set("pin_code")(e.target.value)} maxLength={10} className={inp} />
+          </Field>
+          <Field label="Country">
+            <input value={form.country ?? "India"} onChange={(e) => set("country")(e.target.value)} className={inp} />
           </Field>
         </div>
       </section>

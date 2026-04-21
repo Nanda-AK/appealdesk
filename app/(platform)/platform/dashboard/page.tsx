@@ -14,7 +14,7 @@ export default async function PlatformDashboardPage() {
   const cards = [
     { label: "Service Providers", value: spCount ?? 0 },
     { label: "Total Users", value: userCount ?? 0 },
-    { label: "Total Appeals", value: appealCount ?? 0 },
+    { label: "Total Litigations", value: appealCount ?? 0 },
   ];
 
   return (

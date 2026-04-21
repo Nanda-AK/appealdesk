@@ -3,22 +3,13 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { createPlatformSpAdmin, SpAdminFullInput } from "@/app/(platform)/platform/users/actions";
+import { INDIAN_STATES, COUNTRY_CODES_COMMON, COUNTRY_CODES_ALL } from "@/lib/constants";
 
 interface SP { id: string; name: string; }
 
 interface Props {
   providers: SP[];
 }
-
-const COUNTRY_CODES = [
-  { code: "+91", label: "🇮🇳 +91" },
-  { code: "+1",  label: "🇺🇸 +1" },
-  { code: "+44", label: "🇬🇧 +44" },
-  { code: "+971", label: "🇦🇪 +971" },
-  { code: "+65", label: "🇸🇬 +65" },
-  { code: "+61", label: "🇦🇺 +61" },
-  { code: "+60", label: "🇲🇾 +60" },
-];
 
 const inp = "w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]";
 
@@ -133,7 +124,7 @@ const BLANK: SpAdminFullInput = {
   date_of_birth: "",
   department: "", designation: "",
   date_of_joining: "", date_of_leaving: "",
-  address_line1: "", address_line2: "", city: "", pin_code: "", location: "",
+  address_line1: "", address_line2: "", city: "", pin_code: "", location: "", country: "India",
   pan_number: "", pan_attachment: "",
   aadhar_number: "", aadhar_attachment: "",
   avatar_url: "",
@@ -142,6 +133,7 @@ const BLANK: SpAdminFullInput = {
 export default function PlatformSpUserForm({ providers }: Props) {
   const [selectedSpId, setSelectedSpId] = useState(providers[0]?.id ?? "");
   const [form, setForm] = useState<SpAdminFullInput>(BLANK);
+  const [locationOther, setLocationOther] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
@@ -220,8 +212,13 @@ export default function PlatformSpUserForm({ providers }: Props) {
           <Field label="Mobile">
             <div className="flex gap-2">
               <select value={form.mobile_country_code ?? "+91"} onChange={(e) => set("mobile_country_code")(e.target.value)}
-                className="px-2 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] w-28 flex-shrink-0">
-                {COUNTRY_CODES.map((c) => <option key={c.code} value={c.code}>{c.label}</option>)}
+                className="px-2 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] w-48 flex-shrink-0">
+                <optgroup label="── Common ──">
+                  {COUNTRY_CODES_COMMON.map((c) => <option key={`common-${c.label}`} value={c.code}>{c.label}</option>)}
+                </optgroup>
+                <optgroup label="── All Countries ──">
+                  {COUNTRY_CODES_ALL.map((c) => <option key={`all-${c.label}`} value={c.code}>{c.label}</option>)}
+                </optgroup>
               </select>
               <input type="tel" value={form.mobile_number ?? ""} onChange={(e) => set("mobile_number")(e.target.value)}
                 placeholder="10-digit number" className={inp} />
@@ -299,10 +296,27 @@ export default function PlatformSpUserForm({ providers }: Props) {
             <input value={form.city ?? ""} onChange={(e) => set("city")(e.target.value)} className={inp} />
           </Field>
           <Field label="State">
-            <input value={form.location ?? ""} onChange={(e) => set("location")(e.target.value)} placeholder="e.g. Tamil Nadu" className={inp} />
+            <select
+              value={locationOther ? "Other" : (form.location ?? "")}
+              onChange={(e) => {
+                if (e.target.value === "Other") { setLocationOther(true); set("location")(""); }
+                else { setLocationOther(false); set("location")(e.target.value); }
+              }}
+              className={inp}
+            >
+              <option value="">Select state / UT</option>
+              {INDIAN_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
+              <option value="Other">Other (specify)</option>
+            </select>
+            {locationOther && (
+              <input value={form.location ?? ""} onChange={(e) => set("location")(e.target.value)} placeholder="Enter state / UT name" className={`${inp} mt-2`} />
+            )}
           </Field>
           <Field label="PIN Code">
             <input value={form.pin_code ?? ""} onChange={(e) => set("pin_code")(e.target.value)} maxLength={10} className={inp} />
+          </Field>
+          <Field label="Country">
+            <input value={form.country ?? "India"} onChange={(e) => set("country")(e.target.value)} className={inp} />
           </Field>
         </div>
       </section>

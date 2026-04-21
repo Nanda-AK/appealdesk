@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { createProvider, updateProvider, ComplianceInput } from "@/app/(platform)/platform/providers/actions";
+import { INDIAN_STATES } from "@/lib/constants";
 
 const BUSINESS_TYPES = ["Company", "Trust", "Partnership", "LLP", "Sole Proprietorship", "OPC", "Custom"];
 const FIXED_TYPES = ["pan", "aadhaar", "tan", "gst"];
@@ -82,6 +83,10 @@ export default function ProviderForm({ mode, providerId, initialData, initialCom
   const [city, setCity] = useState(initialData?.city ?? "");
   const [state, setState] = useState(initialData?.state ?? "");
   const [pinCode, setPinCode] = useState(initialData?.pin_code ?? "");
+  const [country, setCountry] = useState(initialData?.country ?? "India");
+  const [stateOther, setStateOther] = useState(
+    !INDIAN_STATES.includes(initialData?.state ?? "") && (initialData?.state ?? "") !== ""
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -202,9 +207,9 @@ export default function ProviderForm({ mode, providerId, initialData, initialCom
 
     try {
       if (mode === "create") {
-        await createProvider({ name, business_type: businessType, date_of_incorporation: dateOfIncorporation, logo_url: logoUrl || undefined, address_line1: address1 || undefined, address_line2: address2 || undefined, city: city || undefined, state: state || undefined, pin_code: pinCode || undefined, compliance: complianceInput });
+        await createProvider({ name, business_type: businessType, date_of_incorporation: dateOfIncorporation, logo_url: logoUrl || undefined, address_line1: address1 || undefined, address_line2: address2 || undefined, city: city || undefined, state: state || undefined, pin_code: pinCode || undefined, country: country || undefined, compliance: complianceInput });
       } else {
-        await updateProvider(providerId!, { name, business_type: businessType, date_of_incorporation: dateOfIncorporation, logo_url: logoUrl || undefined, address_line1: address1 || undefined, address_line2: address2 || undefined, city: city || undefined, state: state || undefined, pin_code: pinCode || undefined, compliance: complianceInput });
+        await updateProvider(providerId!, { name, business_type: businessType, date_of_incorporation: dateOfIncorporation, logo_url: logoUrl || undefined, address_line1: address1 || undefined, address_line2: address2 || undefined, city: city || undefined, state: state || undefined, pin_code: pinCode || undefined, country: country || undefined, compliance: complianceInput });
       }
       router.push("/platform/providers");
     } catch (err) {
@@ -276,11 +281,29 @@ export default function ProviderForm({ mode, providerId, initialData, initialCom
           </div>
           <div>
             <label className="block text-xs font-medium text-[#6B7280] mb-1.5">State</label>
-            <input value={state} onChange={(e) => setState(e.target.value)} className="w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]" />
+            <select
+              value={stateOther ? "Other" : state}
+              onChange={(e) => {
+                if (e.target.value === "Other") { setStateOther(true); setState(""); }
+                else { setStateOther(false); setState(e.target.value); }
+              }}
+              className="w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]"
+            >
+              <option value="">Select state / UT</option>
+              {INDIAN_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
+              <option value="Other">Other (specify)</option>
+            </select>
+            {stateOther && (
+              <input value={state} onChange={(e) => setState(e.target.value)} placeholder="Enter state / UT name" className="w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] mt-2" />
+            )}
           </div>
           <div>
             <label className="block text-xs font-medium text-[#6B7280] mb-1.5">PIN Code</label>
             <input value={pinCode} onChange={(e) => setPinCode(e.target.value)} maxLength={6} className="w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Country</label>
+            <input value={country} onChange={(e) => setCountry(e.target.value)} className="w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]" />
           </div>
         </div>
       </section>
