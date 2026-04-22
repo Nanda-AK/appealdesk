@@ -19,7 +19,7 @@ export default async function AppealDetailPage({ params }: { params: Promise<{ i
       assessment_year:master_records!assessment_year_id(id, name),
       client_org:organizations!client_org_id(id, name),
       proceedings(
-        id, authority_type, authority_name,
+        id, authority_type, authority_name, deleted_at,
         proceeding_type:master_records!proceeding_type_id(id, name),
         jurisdiction, jurisdiction_city, importance, mode, status,
         initiated_on, to_be_completed_by, assigned_to, client_staff_id,

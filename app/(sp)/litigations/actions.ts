@@ -214,6 +214,26 @@ export async function addEvent(input: EventInput): Promise<void> {
   revalidatePath("/litigations");
 }
 
+export async function deleteProceeding(proceedingId: string): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+  spOnly(user.role);
+  const spId = user.service_provider_id ?? user.org_id;
+  const supabase = await createServiceClient();
+
+  const now = new Date().toISOString();
+
+  // Soft-delete events under this proceeding
+  await supabase.from("events").update({ deleted_at: now }).eq("proceeding_id", proceedingId).is("deleted_at", null);
+
+  // Soft-delete the proceeding
+  const { error } = await supabase.from("proceedings").update({ deleted_at: now }).eq("id", proceedingId);
+  if (error) throw new Error(error.message);
+
+  await logAction(supabase, { actorId: user.id, spId: spId!, action: "delete", entityType: "proceeding", entityLabel: proceedingId });
+  revalidatePath("/litigations");
+}
+
 export async function deleteEvent(eventId: string): Promise<void> {
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");

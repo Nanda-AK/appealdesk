@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
   updateAppeal, updateProceeding, addProceeding, addEvent, updateEvent,
-  deleteEvent, deleteAppeal,
+  deleteEvent, deleteAppeal, deleteProceeding,
   AppealInput, ProceedingInput, EventInput,
 } from "@/app/(sp)/litigations/actions";
 import { addDocument, deleteDocument } from "@/app/(sp)/documents/actions";
@@ -592,6 +592,22 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
     } finally { setDeletingEvent(false); }
   }
 
+  // ── Delete Proceeding ──
+  const [confirmDeleteProc, setConfirmDeleteProc] = useState<Proceeding | null>(null);
+  const [deletingProc, setDeletingProc] = useState(false);
+
+  async function handleDeleteProceeding() {
+    if (!confirmDeleteProc) return;
+    setDeletingProc(true);
+    try {
+      await deleteProceeding(confirmDeleteProc.id);
+      setConfirmDeleteProc(null);
+      router.refresh();
+    } catch {
+      // swallow
+    } finally { setDeletingProc(false); }
+  }
+
   // ── Delete Appeal ──
   const [confirmDeleteAppeal, setConfirmDeleteAppeal] = useState(false);
   const [deletingAppeal, setDeletingAppeal] = useState(false);
@@ -695,9 +711,9 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
   const proceedingFormChange = (setter: React.Dispatch<React.SetStateAction<ProceedingInput>>) =>
     (field: keyof ProceedingInput, value: string) => setter((prev) => ({ ...prev, [field]: value }));
 
-  const sortedProceedings = [...(appeal.proceedings ?? [])].sort(
-    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-  );
+  const sortedProceedings = [...(appeal.proceedings ?? [])]
+    .filter((p) => !(p as any).deleted_at)
+    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
   // Track which proceedings are expanded (collapsed by default)
   const [expandedProcs, setExpandedProcs] = useState<Set<string>>(new Set());
@@ -827,10 +843,14 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                         <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${outCfg.cls}`}>{outCfg.label}</span>
                       ) : null} />
                       {canEdit && (
-                        <div className="col-span-3 flex justify-end pt-1">
+                        <div className="col-span-3 flex justify-end gap-2 pt-1">
                           <button onClick={(e) => { e.stopPropagation(); openEditProc(proc); }}
                             className="px-3 py-1.5 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:text-[#1A1A2E] hover:bg-white transition">
                             Edit Proceeding
+                          </button>
+                          <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteProc(proc); }}
+                            className="px-3 py-1.5 text-xs border border-red-200 rounded-lg text-red-600 hover:bg-red-50 transition">
+                            Delete Proceeding
                           </button>
                         </div>
                       )}
@@ -1362,6 +1382,35 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
             </div>
           </form>
         </Modal>
+      )}
+
+      {/* ── Confirm Delete Proceeding ── */}
+      {confirmDeleteProc && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl border border-[#E5E7EB] w-full max-w-sm p-6">
+            <h3 className="text-base font-semibold text-[#1A1A2E] mb-2">Delete Proceeding?</h3>
+            <p className="text-sm text-[#6B7280] mb-1">
+              This will also delete all <strong>{confirmDeleteProc.events.length} event{confirmDeleteProc.events.length !== 1 ? "s" : ""}</strong> under this proceeding.
+            </p>
+            <p className="text-xs text-[#9CA3AF] mb-5">Deleted items move to Trash and can be restored within 30 days.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmDeleteProc(null)}
+                disabled={deletingProc}
+                className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteProceeding}
+                disabled={deletingProc}
+                className="flex-1 px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition disabled:opacity-60"
+              >
+                {deletingProc ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ── Confirm Delete Event ── */}
