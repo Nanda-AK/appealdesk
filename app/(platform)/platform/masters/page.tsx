@@ -8,7 +8,7 @@ export default async function MastersPage() {
 
   const { data: records } = await supabase
     .from("master_records")
-    .select("*")
+    .select("id, name, type, parent_id, is_active, sort_order")
     .eq("level", "platform")
     .order("sort_order", { ascending: true });
 

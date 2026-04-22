@@ -120,10 +120,19 @@ export interface MasterRecord {
   type: string;
   level: MasterRecordLevel;
   service_provider_id?: string;
+  parent_id: string | null;
   is_active: boolean;
   sort_order: number;
   created_at: string;
   updated_at: string;
+}
+
+/** Lightweight master item passed to form components */
+export interface MasterItem {
+  id: string;
+  name: string;
+  type: string;
+  parent_id: string | null;
 }
 
 // ─── Appeals ─────────────────────────────────────────────────────────────────

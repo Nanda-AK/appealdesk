@@ -58,7 +58,7 @@ export default async function AppealDetailPage({ params }: { params: Promise<{ i
       .eq("is_active", true),
     supabase
       .from("master_records")
-      .select("name, type")
+      .select("id, name, type, parent_id")
       .eq("level", "platform")
       .eq("is_active", true)
       .order("sort_order"),
@@ -66,9 +66,9 @@ export default async function AppealDetailPage({ params }: { params: Promise<{ i
 
   const mastersByType = (masters ?? []).reduce((acc, rec) => {
     if (!acc[rec.type]) acc[rec.type] = [];
-    acc[rec.type].push(rec.name);
+    acc[rec.type].push({ id: rec.id, name: rec.name, type: rec.type, parent_id: rec.parent_id ?? null });
     return acc;
-  }, {} as Record<string, string[]>);
+  }, {} as Record<string, { id: string; name: string; type: string; parent_id: string | null }[]>);
 
   const clientOrg = (appeal.client_org as any) ?? null;
 

@@ -62,12 +62,14 @@ interface Appeal {
   documents: AppDocument[];
 }
 
+type MasterItem = { id: string; name: string; type: string; parent_id: string | null };
+
 interface Props {
   appeal: Appeal;
   clients: { id: string; name: string }[];
   teamMembers: { id: string; first_name: string; last_name: string }[];
   clientUsers: { id: string; first_name: string; last_name: string }[];
-  mastersByType: Record<string, string[]>;
+  mastersByType: Record<string, MasterItem[]>;
   canEdit: boolean;
 }
 
@@ -317,20 +319,26 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 
 // ─── Proceeding Form Fields ────────────────────────────────────────
 function ProceedingFormFields({
-  values, onChange, mastersByType, teamMembers, clientUsers,
+  values, onChange, mastersByType, teamMembers, clientUsers, actRegulationName,
 }: {
   values: ProceedingInput;
   onChange: (field: keyof ProceedingInput, value: string) => void;
-  mastersByType: Record<string, string[]>;
+  mastersByType: Record<string, MasterItem[]>;
   teamMembers: { id: string; first_name: string; last_name: string }[];
   clientUsers: { id: string; first_name: string; last_name: string }[];
+  actRegulationName?: string;
 }) {
+  const acts = mastersByType["act_regulation"] ?? [];
+  const allProcs = mastersByType["proceeding_type"] ?? [];
+  const selectedAct = actRegulationName ? acts.find(m => m.name === actRegulationName) : null;
+  const availableProcs = selectedAct ? allProcs.filter(m => m.parent_id === selectedAct.id) : allProcs;
+
   return (
     <div className="grid grid-cols-2 gap-4">
       <Field label="Forum">
         <select value={values.proceeding_type ?? ""} onChange={(e) => onChange("proceeding_type", e.target.value)} className={inp}>
           <option value="">Select…</option>
-          {(mastersByType["proceeding_type"] ?? []).map((v) => <option key={v} value={v}>{v}</option>)}
+          {availableProcs.map((m) => <option key={m.id} value={m.name}>{m.name}</option>)}
         </select>
       </Field>
       <Field label="Authority Type">
@@ -1030,19 +1038,19 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
               <Field label="Financial Year / Tax Year">
                 <select value={editFY} onChange={(e) => setEditFY(e.target.value)} className={inp}>
                   <option value="">Select…</option>
-                  {(mastersByType["financial_year"] ?? []).map((v) => <option key={v} value={v}>{v}</option>)}
+                  {(mastersByType["financial_year"] ?? []).map((m) => <option key={m.id} value={m.name}>{m.name}</option>)}
                 </select>
               </Field>
               <Field label="Assessment Year">
                 <select value={editAY} onChange={(e) => setEditAY(e.target.value)} className={inp}>
                   <option value="">Select…</option>
-                  {(mastersByType["assessment_year"] ?? []).map((v) => <option key={v} value={v}>{v}</option>)}
+                  {(mastersByType["assessment_year"] ?? []).map((m) => <option key={m.id} value={m.name}>{m.name}</option>)}
                 </select>
               </Field>
               <Field label="Act / Regulation" fullWidth>
                 <select value={editAct} onChange={(e) => setEditAct(e.target.value)} className={inp}>
                   <option value="">Select…</option>
-                  {(mastersByType["act_regulation"] ?? []).map((v) => <option key={v} value={v}>{v}</option>)}
+                  {(mastersByType["act_regulation"] ?? []).map((m) => <option key={m.id} value={m.name}>{m.name}</option>)}
                 </select>
               </Field>
               <Field label="Status">
@@ -1068,7 +1076,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
       {editProc && (
         <Modal title="Edit Proceeding" onClose={() => setEditProc(null)}>
           <form onSubmit={handleSaveProc} className="space-y-4">
-            <ProceedingFormFields values={editProcValues} onChange={proceedingFormChange(setEditProcValues)} mastersByType={mastersByType} teamMembers={teamMembers} clientUsers={clientUsers} />
+            <ProceedingFormFields values={editProcValues} onChange={proceedingFormChange(setEditProcValues)} mastersByType={mastersByType} teamMembers={teamMembers} clientUsers={clientUsers} actRegulationName={appeal.act_regulation ?? undefined} />
             {editProcError && <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">{editProcError}</div>}
             <div className="flex gap-3 justify-end pt-2">
               <button type="button" onClick={() => setEditProc(null)} className="px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">Cancel</button>
@@ -1084,7 +1092,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
       {showAddProc && (
         <Modal title="Add Proceeding" onClose={() => setShowAddProc(false)}>
           <form onSubmit={handleAddProc} className="space-y-4">
-            <ProceedingFormFields values={addProcValues} onChange={proceedingFormChange(setAddProcValues)} mastersByType={mastersByType} teamMembers={teamMembers} clientUsers={clientUsers} />
+            <ProceedingFormFields values={addProcValues} onChange={proceedingFormChange(setAddProcValues)} mastersByType={mastersByType} teamMembers={teamMembers} clientUsers={clientUsers} actRegulationName={appeal.act_regulation ?? undefined} />
             {addProcError && <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">{addProcError}</div>}
             <div className="flex gap-3 justify-end pt-2">
               <button type="button" onClick={() => setShowAddProc(false)} className="px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">Cancel</button>

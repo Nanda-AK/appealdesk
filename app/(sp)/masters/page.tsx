@@ -11,7 +11,7 @@ export default async function SpMastersPage() {
   // Fetch only platform-level records (SP cannot add custom records)
   const { data: records } = await supabase
     .from("master_records")
-    .select("*")
+    .select("id, name, type, parent_id, is_active, sort_order")
     .eq("level", "platform")
     .eq("is_active", true)
     .order("sort_order", { ascending: true });
