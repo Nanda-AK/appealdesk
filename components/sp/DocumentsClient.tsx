@@ -458,9 +458,11 @@ export default function DocumentsClient({ forms, templates, canEdit }: Props) {
                   <label className="block text-xs font-medium text-[#6B7280] mb-1">File <span className="text-red-500">*</span></label>
                   <input
                     type="file"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx"
                     onChange={(e) => setTplFile(e.target.files?.[0] ?? null)}
                     className="block w-full text-sm text-[#6B7280] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-[#1E3A5F] file:text-white hover:file:bg-[#162d4a] file:cursor-pointer cursor-pointer"
                   />
+                  <p className="text-xs text-[#9CA3AF] mt-1">Supported: PDF, Word (.doc, .docx), Excel (.xls, .xlsx)</p>
                 </div>
               ) : (
                 <div>
