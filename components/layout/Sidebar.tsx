@@ -149,7 +149,7 @@ const spNav: NavItem[] = [
     ),
   },
   {
-    label: "Trash",
+    label: "Recycle Bin",
     href: "/trash",
     roles: ["sp_admin"],
     icon: (
