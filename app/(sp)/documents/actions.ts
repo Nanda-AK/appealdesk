@@ -25,7 +25,7 @@ export async function addDocument(appealId: string, fileName: string, fileUrl: s
   });
 
   if (error) throw new Error(error.message);
-  revalidatePath(`/appeals/${appealId}`);
+  revalidatePath(`/litigations/${appealId}`);
   revalidatePath("/documents");
 }
 
@@ -37,7 +37,7 @@ export async function deleteDocument(documentId: string, appealId: string): Prom
 
   const { error } = await supabase.from("appeal_documents").delete().eq("id", documentId);
   if (error) throw new Error(error.message);
-  revalidatePath(`/appeals/${appealId}`);
+  revalidatePath(`/litigations/${appealId}`);
   revalidatePath("/documents");
 }
 

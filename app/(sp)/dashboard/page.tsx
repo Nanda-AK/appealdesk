@@ -125,7 +125,7 @@ export default async function DashboardPage() {
 
       {/* Top stat cards */}
       <div className={`grid gap-4 ${isClient ? "grid-cols-2" : "grid-cols-3"}`}>
-        <Link href="/appeals"
+        <Link href="/litigations"
           className="bg-[#1E3A5F] rounded-xl p-6 hover:opacity-90 transition">
           <p className="text-3xl font-bold text-white">{totalAppeals ?? 0}</p>
           <p className="text-sm mt-1 text-white/70">{isClient ? "My Litigations" : "Total Litigations"}</p>
@@ -273,14 +273,14 @@ export default async function DashboardPage() {
       {/* Quick actions (SP only) */}
       {!isClient && (
         <div className="flex items-center gap-3">
-          <Link href="/appeals/new"
+          <Link href="/litigations/new"
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#1E3A5F] hover:bg-[#162d4a] text-white text-sm font-medium rounded-lg transition">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
             New Litigation
           </Link>
-          <Link href="/appeals"
+          <Link href="/litigations"
             className="inline-flex items-center gap-2 px-4 py-2.5 border border-[#E5E7EB] bg-white hover:bg-[#F8F9FA] text-[#1A1A2E] text-sm font-medium rounded-lg transition">
             View All Litigations
           </Link>

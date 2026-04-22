@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createAppeal, AppealInput, ProceedingInput } from "@/app/(sp)/appeals/actions";
+import { createAppeal, AppealInput, ProceedingInput } from "@/app/(sp)/litigations/actions";
 
 interface Props {
   clients: { id: string; name: string }[];
@@ -76,7 +76,7 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
         status: proceedingStatus,
       };
       const id = await createAppeal(appeal, proc);
-      router.push(`/appeals/${id}`);
+      router.push(`/litigations/${id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create litigation.");
       setSaving(false);
@@ -217,7 +217,7 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
       )}
 
       <div className="flex gap-3 justify-end">
-        <button type="button" onClick={() => router.push("/appeals")}
+        <button type="button" onClick={() => router.push("/litigations")}
           className="px-5 py-2.5 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">
           Cancel
         </button>

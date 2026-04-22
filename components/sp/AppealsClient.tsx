@@ -124,7 +124,7 @@ export default function AppealsClient({
       if (k === "sort_dir" && v === "desc") return; // desc is default
       p.set(k, v);
     });
-    router.push(`/appeals${p.toString() ? `?${p.toString()}` : ""}`);
+    router.push(`/litigations${p.toString() ? `?${p.toString()}` : ""}`);
   }
 
   function setFilter(key: string, value: string) {
@@ -133,7 +133,7 @@ export default function AppealsClient({
 
   function clearAll() {
     setSearchInput("");
-    router.push("/appeals");
+    router.push("/litigations");
   }
 
   const hasFilters = currentSearch || currentClient || currentAY || currentImportance || currentAssigned || currentStatus;
@@ -162,7 +162,7 @@ export default function AppealsClient({
         </div>
         {canEdit && (
           <Link
-            href="/appeals/new"
+            href="/litigations/new"
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#1E3A5F] hover:bg-[#162d4a] text-white text-sm font-medium rounded-lg transition"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -312,7 +312,7 @@ export default function AppealsClient({
                         })()}
                       </td>
                       <td className="px-4 py-3">
-                        <Link href={`/appeals/${appeal.id}`} className="text-[#4A6FA5] hover:text-[#1E3A5F] text-xs font-medium">
+                        <Link href={`/litigations/${appeal.id}`} className="text-[#4A6FA5] hover:text-[#1E3A5F] text-xs font-medium">
                           View →
                         </Link>
                       </td>

@@ -93,7 +93,7 @@ export async function createAppeal(appeal: AppealInput, proceeding: ProceedingIn
   const label = [appeal.financial_year, appeal.assessment_year, appeal.act_regulation].filter(Boolean).join(" · ");
   await logAction(supabase, { actorId: user.id, spId: spId!, action: "create", entityType: "appeal", entityLabel: label });
 
-  revalidatePath("/appeals");
+  revalidatePath("/litigations");
   return newAppeal.id;
 }
 
@@ -119,8 +119,8 @@ export async function updateAppeal(appealId: string, appeal: AppealInput): Promi
   const spId = user.service_provider_id ?? user.org_id;
   const label = [appeal.financial_year, appeal.assessment_year, appeal.act_regulation].filter(Boolean).join(" · ");
   await logAction(supabase, { actorId: user.id, spId: spId!, action: "update", entityType: "appeal", entityLabel: label });
-  revalidatePath(`/appeals/${appealId}`);
-  revalidatePath("/appeals");
+  revalidatePath(`/litigations/${appealId}`);
+  revalidatePath("/litigations");
 }
 
 export async function updateProceeding(proceedingId: string, proc: ProceedingInput): Promise<void> {
@@ -135,7 +135,7 @@ export async function updateProceeding(proceedingId: string, proc: ProceedingInp
     .eq("id", proceedingId);
 
   if (error) throw new Error(error.message);
-  revalidatePath("/appeals");
+  revalidatePath("/litigations");
 }
 
 export async function addProceeding(appealId: string, proc: ProceedingInput): Promise<void> {
@@ -152,8 +152,8 @@ export async function addProceeding(appealId: string, proc: ProceedingInput): Pr
   });
 
   if (error) throw new Error(error.message);
-  revalidatePath(`/appeals/${appealId}`);
-  revalidatePath("/appeals");
+  revalidatePath(`/litigations/${appealId}`);
+  revalidatePath("/litigations");
 }
 
 export async function updateEvent(eventId: string, input: EventInput): Promise<void> {
@@ -191,7 +191,7 @@ export async function updateEvent(eventId: string, input: EventInput): Promise<v
     .eq("id", eventId);
 
   if (error) throw new Error(error.message);
-  revalidatePath("/appeals");
+  revalidatePath("/litigations");
 }
 
 export async function addEvent(input: EventInput): Promise<void> {
@@ -213,7 +213,7 @@ export async function addEvent(input: EventInput): Promise<void> {
 
   if (error) throw new Error(error.message);
   await logAction(supabase, { actorId: user.id, spId: spId!, action: "create", entityType: "event", entityLabel: input.category });
-  revalidatePath("/appeals");
+  revalidatePath("/litigations");
 }
 
 export async function deleteEvent(eventId: string): Promise<void> {
@@ -226,7 +226,7 @@ export async function deleteEvent(eventId: string): Promise<void> {
   const { error } = await supabase.from("events").delete().eq("id", eventId);
   if (error) throw new Error(error.message);
   await logAction(supabase, { actorId: user.id, spId: spId!, action: "delete", entityType: "event" });
-  revalidatePath("/appeals");
+  revalidatePath("/litigations");
 }
 
 export async function deleteAppeal(appealId: string): Promise<void> {
@@ -264,6 +264,6 @@ export async function deleteAppeal(appealId: string): Promise<void> {
   if (error) throw new Error("Failed to delete appeal: " + error.message);
 
   await logAction(supabase, { actorId: user.id, spId: spId!, action: "delete", entityType: "appeal", entityLabel: appealId });
-  revalidatePath("/appeals");
-  revalidatePath(`/appeals/${appealId}`);
+  revalidatePath("/litigations");
+  revalidatePath(`/litigations/${appealId}`);
 }

@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 
 export default async function NewAppealPage() {
   const user = await getCurrentUser();
-  if (!user || !["sp_admin", "sp_staff"].includes(user.role)) redirect("/appeals");
+  if (!user || !["sp_admin", "sp_staff"].includes(user.role)) redirect("/litigations");
 
   const supabase = await createClient();
   const spId = user.service_provider_id ?? user.org_id;
@@ -58,7 +58,7 @@ export default async function NewAppealPage() {
   return (
     <div className="p-8 max-w-3xl">
       <div className="mb-6">
-        <Link href="/appeals" className="text-sm text-[#6B7280] hover:text-[#1A1A2E] flex items-center gap-1 mb-3">
+        <Link href="/litigations" className="text-sm text-[#6B7280] hover:text-[#1A1A2E] flex items-center gap-1 mb-3">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>

@@ -7,7 +7,7 @@ import {
   updateAppeal, updateProceeding, addProceeding, addEvent, updateEvent,
   deleteEvent, deleteAppeal,
   AppealInput, ProceedingInput, EventInput,
-} from "@/app/(sp)/appeals/actions";
+} from "@/app/(sp)/litigations/actions";
 import { addDocument, deleteDocument } from "@/app/(sp)/documents/actions";
 
 // ─── Types ───────────────────────────────────────────────────────
@@ -593,7 +593,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
     setDeleteAppealError(null);
     try {
       await deleteAppeal(appeal.id);
-      window.location.href = "/appeals";
+      window.location.href = "/litigations";
     } catch (err) {
       setDeleteAppealError(err instanceof Error ? err.message : "Failed to delete litigation.");
       setDeletingAppeal(false);
