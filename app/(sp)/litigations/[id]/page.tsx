@@ -13,10 +13,14 @@ export default async function AppealDetailPage({ params }: { params: Promise<{ i
   const { data: appeal } = await supabase
     .from("appeals")
     .select(`
-      id, act_regulation, financial_year, assessment_year, status, client_org_id, created_at,
+      id, status, client_org_id, created_at,
+      act_regulation:master_records!act_regulation_id(id, name),
+      financial_year:master_records!financial_year_id(id, name),
+      assessment_year:master_records!assessment_year_id(id, name),
       client_org:organizations!client_org_id(id, name),
       proceedings(
-        id, proceeding_type, authority_type, authority_name,
+        id, authority_type, authority_name,
+        proceeding_type:master_records!proceeding_type_id(id, name),
         jurisdiction, jurisdiction_city, importance, mode, status,
         initiated_on, to_be_completed_by, assigned_to, client_staff_id,
         possible_outcome, is_active, created_at,
@@ -83,10 +87,10 @@ export default async function AppealDetailPage({ params }: { params: Promise<{ i
         </Link>
         <h1 className="text-2xl font-semibold text-[#1A1A2E]">
           {clientOrg?.name ?? "Litigation"}
-          {appeal.assessment_year ? ` — AY ${appeal.assessment_year}` : ""}
+          {(appeal as any).assessment_year?.name ? ` — AY ${(appeal as any).assessment_year.name}` : ""}
         </h1>
-        {appeal.act_regulation && (
-          <p className="text-[#6B7280] text-sm mt-0.5">{appeal.act_regulation}</p>
+        {(appeal as any).act_regulation?.name && (
+          <p className="text-[#6B7280] text-sm mt-0.5">{(appeal as any).act_regulation.name}</p>
         )}
       </div>
       <AppealDetailClient

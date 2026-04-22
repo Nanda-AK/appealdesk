@@ -4,9 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createAppeal, AppealInput, ProceedingInput } from "@/app/(sp)/litigations/actions";
 
-/** Derives AY from FY string like "2020-21" → "2021-22" */
-function deriveAY(fy: string): string {
-  const match = fy.match(/^(\d{4})-(\d{2})$/);
+/** Derives AY name from FY name: "2020-21" → "2021-22" */
+function deriveAYName(fyName: string): string {
+  const match = fyName.match(/^(\d{4})-(\d{2})$/);
   if (!match) return "";
   const ayStart = parseInt(match[1]) + 1;
   const ayEnd = (parseInt(match[2]) + 1).toString().padStart(2, "0");
@@ -14,8 +14,8 @@ function deriveAY(fy: string): string {
 }
 
 /** AY is disabled for FY 2026-27 and beyond (start year ≥ 2026) */
-function isAYDisabled(fy: string): boolean {
-  const match = fy.match(/^(\d{4})/);
+function isAYDisabled(fyName: string): boolean {
+  const match = fyName.match(/^(\d{4})/);
   return !!match && parseInt(match[1]) >= 2026;
 }
 
@@ -44,24 +44,14 @@ function Field({ label, required, children }: { label: string; required?: boolea
 export default function AppealForm({ clients, teamMembers, mastersByType, clientUsersByOrg }: Props) {
   const router = useRouter();
 
-  // Derive filtered proceedings based on selected act
-  function filteredProceedings(actName: string): MasterItem[] {
-    const acts = mastersByType["act_regulation"] ?? [];
-    const allProcs = mastersByType["proceeding_type"] ?? [];
-    if (!actName) return allProcs;
-    const act = acts.find(m => m.name === actName);
-    return act ? allProcs.filter(m => m.parent_id === act.id) : allProcs;
-  }
-
-  // Appeal
+  // All master-linked fields store UUIDs (master_records.id)
   const [clientOrgId, setClientOrgId] = useState("");
-  const [financialYear, setFinancialYear] = useState("");
-  const [assessmentYear, setAssessmentYear] = useState("");
-  const [actRegulation, setActRegulation] = useState("");
+  const [financialYearId, setFinancialYearId] = useState("");
+  const [assessmentYearId, setAssessmentYearId] = useState("");
+  const [actRegulationId, setActRegulationId] = useState("");
   const [appealStatus, setAppealStatus] = useState("open");
 
-  // Proceeding
-  const [proceedingType, setProceedingType] = useState("");
+  const [proceedingTypeId, setProceedingTypeId] = useState("");
   const [authorityType, setAuthorityType] = useState("");
   const [authorityName, setAuthorityName] = useState("");
   const [jurisdiction, setJurisdiction] = useState("");
@@ -78,16 +68,41 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Derive FY name from selected FY ID (for AY auto-fill and disabled check)
+  const selectedFY = (mastersByType["financial_year"] ?? []).find(m => m.id === financialYearId);
+  const fyName = selectedFY?.name ?? "";
+  const ayDisabled = fyName ? isAYDisabled(fyName) : false;
+
+  // Proceedings filtered to children of the selected act
+  const availableProceedings = actRegulationId
+    ? (mastersByType["proceeding_type"] ?? []).filter(m => m.parent_id === actRegulationId)
+    : [];
+
+  function handleFYChange(fyId: string) {
+    setFinancialYearId(fyId);
+    if (!fyId) { setAssessmentYearId(""); return; }
+    const fy = (mastersByType["financial_year"] ?? []).find(m => m.id === fyId);
+    if (!fy || isAYDisabled(fy.name)) { setAssessmentYearId(""); return; }
+    const derivedName = deriveAYName(fy.name);
+    const ayItem = (mastersByType["assessment_year"] ?? []).find(m => m.name === derivedName);
+    setAssessmentYearId(ayItem?.id ?? "");
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!clientOrgId) { setError("Client is required."); return; }
-
     setSaving(true);
     setError(null);
     try {
-      const appeal: AppealInput = { client_org_id: clientOrgId, financial_year: financialYear, assessment_year: assessmentYear, act_regulation: actRegulation, status: appealStatus };
+      const appeal: AppealInput = {
+        client_org_id: clientOrgId,
+        financial_year_id: financialYearId || undefined,
+        assessment_year_id: assessmentYearId || undefined,
+        act_regulation_id: actRegulationId || undefined,
+        status: appealStatus,
+      };
       const proc: ProceedingInput = {
-        proceeding_type: proceedingType,
+        proceeding_type_id: proceedingTypeId || undefined,
         authority_type: authorityType,
         authority_name: authorityName,
         jurisdiction,
@@ -124,41 +139,24 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
             </Field>
           </div>
           <Field label="Financial Year / Tax Year">
-            <select
-              value={financialYear}
-              onChange={(e) => {
-                const fy = e.target.value;
-                setFinancialYear(fy);
-                if (!fy || isAYDisabled(fy)) {
-                  setAssessmentYear("");
-                } else {
-                  const derived = deriveAY(fy);
-                  const ayOptions = (mastersByType["assessment_year"] ?? []).map(m => m.name);
-                  setAssessmentYear(ayOptions.includes(derived) ? derived : "");
-                }
-              }}
-              className={inp}
-            >
+            <select value={financialYearId} onChange={(e) => handleFYChange(e.target.value)} className={inp}>
               <option value="">Select…</option>
-              {(mastersByType["financial_year"] ?? []).map((m) => <option key={m.id} value={m.name}>{m.name}</option>)}
+              {(mastersByType["financial_year"] ?? []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
             </select>
           </Field>
-          <Field label={`Assessment Year${financialYear && isAYDisabled(financialYear) ? " (not applicable)" : ""}`}>
-            <select
-              value={assessmentYear}
-              onChange={(e) => setAssessmentYear(e.target.value)}
-              className={`${inp} ${financialYear && isAYDisabled(financialYear) ? "opacity-50 cursor-not-allowed" : ""}`}
-              disabled={!!(financialYear && isAYDisabled(financialYear))}
-            >
+          <Field label={`Assessment Year${ayDisabled ? " (not applicable)" : ""}`}>
+            <select value={assessmentYearId} onChange={(e) => setAssessmentYearId(e.target.value)}
+              className={`${inp} ${ayDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
+              disabled={ayDisabled}>
               <option value="">Select…</option>
-              {(mastersByType["assessment_year"] ?? []).map((m) => <option key={m.id} value={m.name}>{m.name}</option>)}
+              {(mastersByType["assessment_year"] ?? []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
             </select>
           </Field>
           <div className="col-span-2">
             <Field label="Act / Regulation">
-              <select value={actRegulation} onChange={(e) => { setActRegulation(e.target.value); setProceedingType(""); }} className={inp}>
+              <select value={actRegulationId} onChange={(e) => { setActRegulationId(e.target.value); setProceedingTypeId(""); }} className={inp}>
                 <option value="">Select…</option>
-                {(mastersByType["act_regulation"] ?? []).map((m) => <option key={m.id} value={m.name}>{m.name}</option>)}
+                {(mastersByType["act_regulation"] ?? []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
               </select>
             </Field>
           </div>
@@ -179,10 +177,10 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
           <span className="text-xs text-[#9CA3AF] font-normal ml-2">First or current proceeding</span>
         </h2>
         <div className="grid grid-cols-2 gap-4">
-          <Field label={`Forum${actRegulation ? "" : " (select Act first)"}`}>
-            <select value={proceedingType} onChange={(e) => setProceedingType(e.target.value)} className={inp} disabled={!actRegulation}>
-              <option value="">{actRegulation ? "Select forum…" : "Select Act / Regulation first"}</option>
-              {filteredProceedings(actRegulation).map((m) => <option key={m.id} value={m.name}>{m.name}</option>)}
+          <Field label={`Forum${actRegulationId ? "" : " (select Act first)"}`}>
+            <select value={proceedingTypeId} onChange={(e) => setProceedingTypeId(e.target.value)} className={inp} disabled={!actRegulationId}>
+              <option value="">{actRegulationId ? "Select forum…" : "Select Act / Regulation first"}</option>
+              {availableProceedings.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
             </select>
           </Field>
           <Field label="Authority Type">

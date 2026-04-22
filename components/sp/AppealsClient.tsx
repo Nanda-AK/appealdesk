@@ -7,7 +7,7 @@ import { PER_PAGE_OPTIONS } from "@/lib/constants";
 
 interface Proceeding {
   id: string;
-  proceeding_type: string | null;
+  proceeding_type: { id: string; name: string } | null;
   authority_name: string | null;
   importance: string | null;
   status: string | null;
@@ -20,9 +20,9 @@ interface Proceeding {
 
 interface Appeal {
   id: string;
-  act_regulation: string | null;
-  financial_year: string | null;
-  assessment_year: string | null;
+  act_regulation: { id: string; name: string } | null;
+  financial_year: { id: string; name: string } | null;
+  assessment_year: { id: string; name: string } | null;
   status: string | null;
   created_at: string;
   client_org: { id: string; name: string } | null;
@@ -274,15 +274,15 @@ export default function AppealsClient({
                         {appeal.client_org?.name ?? "—"}
                       </td>
                       <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap text-xs">
-                        {appeal.financial_year && <span>{appeal.financial_year}</span>}
-                        {appeal.financial_year && appeal.assessment_year && <span className="text-[#D1D5DB]"> / </span>}
-                        {appeal.assessment_year && <span>{appeal.assessment_year}</span>}
-                        {!appeal.financial_year && !appeal.assessment_year && "—"}
+                        {appeal.financial_year?.name && <span>{appeal.financial_year.name}</span>}
+                        {appeal.financial_year?.name && appeal.assessment_year?.name && <span className="text-[#D1D5DB]"> / </span>}
+                        {appeal.assessment_year?.name && <span>{appeal.assessment_year.name}</span>}
+                        {!appeal.financial_year?.name && !appeal.assessment_year?.name && "—"}
                       </td>
                       <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap max-w-[140px] truncate">
-                        {appeal.act_regulation ?? "—"}
+                        {appeal.act_regulation?.name ?? "—"}
                       </td>
-                      <td className="px-4 py-3 text-[#1A1A2E] whitespace-nowrap">{proc?.proceeding_type ?? "—"}</td>
+                      <td className="px-4 py-3 text-[#1A1A2E] whitespace-nowrap">{proc?.proceeding_type?.name ?? "—"}</td>
                       <td className="px-4 py-3">
                         {impCfg ? (
                           <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${impCfg.cls}`}>

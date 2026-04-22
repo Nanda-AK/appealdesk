@@ -64,10 +64,14 @@ export default async function DashboardPage() {
       : supabase.from("users").select("*", { count: "exact", head: true })
           .eq("org_id", spId!).eq("is_active", true).in("role", ["sp_admin", "sp_staff"]),
     supabase.from("proceedings").select(`
-      id, importance, possible_outcome, to_be_completed_by, proceeding_type, is_active,
+      id, importance, possible_outcome, to_be_completed_by, is_active,
+      proceeding_type:master_records!proceeding_type_id(name),
       assigned_user:users!assigned_to(first_name, last_name),
       appeal:appeals!appeal_id(
-        id, assessment_year, financial_year, act_regulation,
+        id,
+        financial_year:master_records!financial_year_id(name),
+        assessment_year:master_records!assessment_year_id(name),
+        act_regulation:master_records!act_regulation_id(name),
         client_org:organizations!client_org_id(name)
       )
     `).eq("service_provider_id", spId!)
@@ -220,8 +224,8 @@ export default async function DashboardPage() {
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-[#1A1A2E] truncate">{clientName}</p>
                       <p className="text-xs text-[#6B7280] truncate">
-                        {[appeal?.financial_year, appeal?.assessment_year].filter(Boolean).join(" / ")}
-                        {appeal?.act_regulation ? ` · ${appeal.act_regulation}` : ""}
+                        {[(appeal as any)?.financial_year?.name, (appeal as any)?.assessment_year?.name].filter(Boolean).join(" / ")}
+                        {(appeal as any)?.act_regulation?.name ? ` · ${(appeal as any).act_regulation.name}` : ""}
                       </p>
                       {au && (
                         <p className="text-xs text-[#9CA3AF]">{au.first_name} {au.last_name}</p>

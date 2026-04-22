@@ -7,14 +7,14 @@ import { logAction } from "@/lib/audit";
 
 export interface AppealInput {
   client_org_id: string;
-  financial_year?: string;
-  assessment_year?: string;
-  act_regulation?: string;
+  financial_year_id?: string;
+  assessment_year_id?: string;
+  act_regulation_id?: string;
   status?: string;
 }
 
 export interface ProceedingInput {
-  proceeding_type?: string;
+  proceeding_type_id?: string;
   authority_type?: string;
   authority_name?: string;
   jurisdiction?: string;
@@ -43,7 +43,7 @@ function spOnly(role: string) {
 
 function cleanProceeding(proc: ProceedingInput) {
   return {
-    proceeding_type: proc.proceeding_type || null,
+    proceeding_type_id: proc.proceeding_type_id || null,
     authority_type: proc.authority_type || null,
     authority_name: proc.authority_name || null,
     jurisdiction: proc.jurisdiction || null,
@@ -71,9 +71,9 @@ export async function createAppeal(appeal: AppealInput, proceeding: ProceedingIn
     .insert({
       service_provider_id: spId,
       client_org_id: appeal.client_org_id,
-      financial_year: appeal.financial_year || null,
-      assessment_year: appeal.assessment_year || null,
-      act_regulation: appeal.act_regulation || null,
+      financial_year_id: appeal.financial_year_id || null,
+      assessment_year_id: appeal.assessment_year_id || null,
+      act_regulation_id: appeal.act_regulation_id || null,
       status: appeal.status || "open",
       created_by: user.id,
     })
@@ -90,8 +90,7 @@ export async function createAppeal(appeal: AppealInput, proceeding: ProceedingIn
 
   if (pErr) throw new Error(pErr.message);
 
-  const label = [appeal.financial_year, appeal.assessment_year, appeal.act_regulation].filter(Boolean).join(" · ");
-  await logAction(supabase, { actorId: user.id, spId: spId!, action: "create", entityType: "appeal", entityLabel: label });
+  await logAction(supabase, { actorId: user.id, spId: spId!, action: "create", entityType: "appeal", entityLabel: newAppeal.id });
 
   revalidatePath("/litigations");
   return newAppeal.id;
@@ -107,9 +106,9 @@ export async function updateAppeal(appealId: string, appeal: AppealInput): Promi
     .from("appeals")
     .update({
       client_org_id: appeal.client_org_id,
-      financial_year: appeal.financial_year || null,
-      assessment_year: appeal.assessment_year || null,
-      act_regulation: appeal.act_regulation || null,
+      financial_year_id: appeal.financial_year_id || null,
+      assessment_year_id: appeal.assessment_year_id || null,
+      act_regulation_id: appeal.act_regulation_id || null,
       status: appeal.status || "open",
       updated_at: new Date().toISOString(),
     })
@@ -117,8 +116,7 @@ export async function updateAppeal(appealId: string, appeal: AppealInput): Promi
 
   if (error) throw new Error(error.message);
   const spId = user.service_provider_id ?? user.org_id;
-  const label = [appeal.financial_year, appeal.assessment_year, appeal.act_regulation].filter(Boolean).join(" · ");
-  await logAction(supabase, { actorId: user.id, spId: spId!, action: "update", entityType: "appeal", entityLabel: label });
+  await logAction(supabase, { actorId: user.id, spId: spId!, action: "update", entityType: "appeal", entityLabel: appealId });
   revalidatePath(`/litigations/${appealId}`);
   revalidatePath("/litigations");
 }

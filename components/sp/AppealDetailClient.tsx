@@ -31,7 +31,7 @@ interface AppEvent {
 
 interface Proceeding {
   id: string;
-  proceeding_type: string | null;
+  proceeding_type: { id: string; name: string } | null;
   authority_type: string | null;
   authority_name: string | null;
   jurisdiction: string | null;
@@ -53,9 +53,9 @@ interface Proceeding {
 
 interface Appeal {
   id: string;
-  act_regulation: string | null;
-  financial_year: string | null;
-  assessment_year: string | null;
+  act_regulation: { id: string; name: string } | null;
+  financial_year: { id: string; name: string } | null;
+  assessment_year: { id: string; name: string } | null;
   status: string | null;
   client_org: { id: string; name: string } | null;
   proceedings: Proceeding[];
@@ -326,19 +326,19 @@ function ProceedingFormFields({
   mastersByType: Record<string, MasterItem[]>;
   teamMembers: { id: string; first_name: string; last_name: string }[];
   clientUsers: { id: string; first_name: string; last_name: string }[];
-  actRegulationName?: string;
+  actRegulationId?: string;
 }) {
-  const acts = mastersByType["act_regulation"] ?? [];
   const allProcs = mastersByType["proceeding_type"] ?? [];
-  const selectedAct = actRegulationName ? acts.find(m => m.name === actRegulationName) : null;
-  const availableProcs = selectedAct ? allProcs.filter(m => m.parent_id === selectedAct.id) : allProcs;
+  const availableProcs = actRegulationId
+    ? allProcs.filter(m => m.parent_id === actRegulationId)
+    : allProcs;
 
   return (
     <div className="grid grid-cols-2 gap-4">
       <Field label="Forum">
-        <select value={values.proceeding_type ?? ""} onChange={(e) => onChange("proceeding_type", e.target.value)} className={inp}>
+        <select value={values.proceeding_type_id ?? ""} onChange={(e) => onChange("proceeding_type_id", e.target.value)} className={inp}>
           <option value="">Select…</option>
-          {availableProcs.map((m) => <option key={m.id} value={m.name}>{m.name}</option>)}
+          {availableProcs.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
         </select>
       </Field>
       <Field label="Authority Type">
@@ -437,9 +437,9 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
   // ── Edit Appeal ──
   const [showEditAppeal, setShowEditAppeal] = useState(false);
   const [editClientId, setEditClientId] = useState(clientOrg?.id ?? "");
-  const [editFY, setEditFY] = useState(appeal.financial_year ?? "");
-  const [editAY, setEditAY] = useState(appeal.assessment_year ?? "");
-  const [editAct, setEditAct] = useState(appeal.act_regulation ?? "");
+  const [editFY, setEditFY] = useState(appeal.financial_year?.id ?? "");
+  const [editAY, setEditAY] = useState(appeal.assessment_year?.id ?? "");
+  const [editAct, setEditAct] = useState(appeal.act_regulation?.id ?? "");
   const [editAppealStatus, setEditAppealStatus] = useState(appeal.status ?? "open");
   const [appealSaving, setAppealSaving] = useState(false);
   const [appealError, setAppealError] = useState<string | null>(null);
@@ -449,7 +449,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
     if (!editClientId) { setAppealError("Client is required."); return; }
     setAppealSaving(true); setAppealError(null);
     try {
-      await updateAppeal(appeal.id, { client_org_id: editClientId, financial_year: editFY, assessment_year: editAY, act_regulation: editAct, status: editAppealStatus });
+      await updateAppeal(appeal.id, { client_org_id: editClientId, financial_year_id: editFY, assessment_year_id: editAY, act_regulation_id: editAct, status: editAppealStatus });
       setShowEditAppeal(false);
       router.refresh();
     } catch (err) {
@@ -466,7 +466,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
   function openEditProc(proc: Proceeding) {
     setEditProc(proc);
     setEditProcValues({
-      proceeding_type: proc.proceeding_type ?? "",
+      proceeding_type_id: proc.proceeding_type?.id ?? "",
       authority_type: proc.authority_type ?? "",
       authority_name: proc.authority_name ?? "",
       jurisdiction: proc.jurisdiction ?? "",
@@ -726,15 +726,15 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
       <div className="bg-white border border-[#E5E7EB] rounded-xl p-5 shadow-sm flex items-start justify-between gap-4">
         <div className="grid grid-cols-5 gap-6 flex-1">
           <DetailRow label="Client" value={<span className="font-medium">{clientOrg?.name}</span>} />
-          <DetailRow label="Financial Year" value={appeal.financial_year} />
-          <DetailRow label="Assessment Year" value={appeal.assessment_year} />
-          <DetailRow label="Act / Regulation" value={appeal.act_regulation} />
+          <DetailRow label="Financial Year" value={appeal.financial_year?.name} />
+          <DetailRow label="Assessment Year" value={appeal.assessment_year?.name} />
+          <DetailRow label="Act / Regulation" value={appeal.act_regulation?.name} />
           <DetailRow label="Status" value={(() => { const s = STATUS_CFG[appeal.status ?? "open"]; return s ? <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${s.cls}`}>{s.label}</span> : null; })()} />
         </div>
         {canEdit && (
           <div className="flex items-center gap-2 flex-shrink-0">
             <button
-              onClick={() => { setEditClientId(clientOrg?.id ?? ""); setEditFY(appeal.financial_year ?? ""); setEditAY(appeal.assessment_year ?? ""); setEditAct(appeal.act_regulation ?? ""); setEditAppealStatus(appeal.status ?? "open"); setAppealError(null); setShowEditAppeal(true); }}
+              onClick={() => { setEditClientId(clientOrg?.id ?? ""); setEditFY(appeal.financial_year?.id ?? ""); setEditAY(appeal.assessment_year?.id ?? ""); setEditAct(appeal.act_regulation?.id ?? ""); setEditAppealStatus(appeal.status ?? "open"); setAppealError(null); setShowEditAppeal(true); }}
               className="px-3 py-1.5 text-xs cursor-pointer border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:text-[#1A1A2E] hover:bg-[#F8F9FA] transition"
             >
               Edit Litigation
@@ -788,7 +788,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
 
                   {/* Forum / type */}
                   <span className="font-semibold text-[#1A1A2E] text-sm truncate">
-                    {proc.proceeding_type ?? "—"}
+                    {proc.proceeding_type?.name ?? "—"}
                   </span>
 
                   {/* Authority */}
@@ -1076,7 +1076,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
       {editProc && (
         <Modal title="Edit Proceeding" onClose={() => setEditProc(null)}>
           <form onSubmit={handleSaveProc} className="space-y-4">
-            <ProceedingFormFields values={editProcValues} onChange={proceedingFormChange(setEditProcValues)} mastersByType={mastersByType} teamMembers={teamMembers} clientUsers={clientUsers} actRegulationName={appeal.act_regulation ?? undefined} />
+            <ProceedingFormFields values={editProcValues} onChange={proceedingFormChange(setEditProcValues)} mastersByType={mastersByType} teamMembers={teamMembers} clientUsers={clientUsers} actRegulationId={appeal.act_regulation?.id ?? undefined} />
             {editProcError && <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">{editProcError}</div>}
             <div className="flex gap-3 justify-end pt-2">
               <button type="button" onClick={() => setEditProc(null)} className="px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">Cancel</button>
@@ -1092,7 +1092,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
       {showAddProc && (
         <Modal title="Add Proceeding" onClose={() => setShowAddProc(false)}>
           <form onSubmit={handleAddProc} className="space-y-4">
-            <ProceedingFormFields values={addProcValues} onChange={proceedingFormChange(setAddProcValues)} mastersByType={mastersByType} teamMembers={teamMembers} clientUsers={clientUsers} actRegulationName={appeal.act_regulation ?? undefined} />
+            <ProceedingFormFields values={addProcValues} onChange={proceedingFormChange(setAddProcValues)} mastersByType={mastersByType} teamMembers={teamMembers} clientUsers={clientUsers} actRegulationId={appeal.act_regulation?.id ?? undefined} />
             {addProcError && <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">{addProcError}</div>}
             <div className="flex gap-3 justify-end pt-2">
               <button type="button" onClick={() => setShowAddProc(false)} className="px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">Cancel</button>
