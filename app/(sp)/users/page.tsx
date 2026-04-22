@@ -31,6 +31,7 @@ export default async function UsersPage() {
       organization:organizations!org_id(id, name, type)
     `)
     .in("org_id", orgIdsToFetch)
+    .is("deleted_at", null)
     .order("first_name");
 
   // Supabase returns FK joins as arrays; normalize to objects for the client component

@@ -212,8 +212,12 @@ export async function deleteUser(id: string) {
 
   const supabase = await createServiceClient();
 
-  await supabase.from("users").delete().eq("id", id);
-  await supabase.auth.admin.deleteUser(id);
+  // Soft-delete: mark deleted_at, keep auth user intact
+  const { error } = await supabase
+    .from("users")
+    .update({ deleted_at: new Date().toISOString(), is_active: false })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
 
   revalidatePath("/users");
 }

@@ -224,8 +224,14 @@ export default function EditSpUserForm({ user }: Props) {
 
           <Field label="Mobile">
             <div className="flex gap-2">
-              <input type="text" value={form.mobile_country_code ?? "+91"} onChange={(e) => set("mobile_country_code")(e.target.value)}
-                placeholder="+91" className="px-2 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] w-20 flex-shrink-0" />
+              <div className="flex items-center border-2 border-[#4A6FA5] rounded-lg overflow-hidden flex-shrink-0 w-24 focus-within:ring-2 focus-within:ring-[#1E3A5F]">
+                <span className="px-2 py-2 text-sm text-[#6B7280] bg-[#F3F4F6] border-r border-[#4A6FA5] select-none">+</span>
+                <input type="text" inputMode="numeric"
+                  value={(form.mobile_country_code ?? "+91").replace(/^\+/, "")}
+                  onChange={(e) => set("mobile_country_code")("+" + e.target.value.replace(/\D/g, ""))}
+                  placeholder="91"
+                  className="w-full px-2 py-2 text-sm focus:outline-none bg-white" />
+              </div>
               <input type="tel" value={form.mobile_number ?? ""} onChange={(e) => set("mobile_number")(e.target.value)}
                 placeholder="10-digit number" className={inp} />
             </div>

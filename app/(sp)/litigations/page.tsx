@@ -25,7 +25,7 @@ function emptyResult(
   return Promise.all([
     supabase.from("organizations").select("id, name").eq("parent_sp_id", spId).eq("type", "client").eq("is_active", true).order("name"),
     supabase.from("users").select("id, first_name, last_name").eq("org_id", spId).eq("is_active", true).in("role", ["sp_admin", "sp_staff"]),
-    supabase.from("appeals").select("assessment_year:master_records!assessment_year_id(name)").eq("service_provider_id", spId).not("assessment_year_id", "is", null),
+    supabase.from("appeals").select("assessment_year:master_records!assessment_year_id(name)").eq("service_provider_id", spId).not("assessment_year_id", "is", null).is("deleted_at", null),
   ]).then(([{ data: clients }, { data: teamMembers }, { data: ayRows }]) => ({
     clients: clients ?? [],
     teamMembers: teamMembers ?? [],
@@ -96,7 +96,8 @@ export default async function AppealsPage({
   let appealsQuery = supabase
     .from("appeals")
     .select(APPEAL_SELECT, { count: "exact" })
-    .eq("service_provider_id", spId!);
+    .eq("service_provider_id", spId!)
+    .is("deleted_at", null);
 
   if (isClient) appealsQuery = appealsQuery.eq("client_org_id", user!.org_id!);
   if (filterClient) appealsQuery = appealsQuery.eq("client_org_id", filterClient);
@@ -143,7 +144,7 @@ export default async function AppealsPage({
     appealsQuery,
     supabase.from("organizations").select("id, name").eq("parent_sp_id", spId!).eq("type", "client").eq("is_active", true).order("name"),
     supabase.from("users").select("id, first_name, last_name").eq("org_id", spId!).eq("is_active", true).in("role", ["sp_admin", "sp_staff"]),
-    supabase.from("appeals").select("assessment_year:master_records!assessment_year_id(name)").eq("service_provider_id", spId!).not("assessment_year_id", "is", null),
+    supabase.from("appeals").select("assessment_year:master_records!assessment_year_id(name)").eq("service_provider_id", spId!).not("assessment_year_id", "is", null).is("deleted_at", null),
   ]);
 
   const assessmentYears = [...new Set(

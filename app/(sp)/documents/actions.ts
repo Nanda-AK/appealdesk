@@ -35,7 +35,10 @@ export async function deleteDocument(documentId: string, appealId: string): Prom
   spOnly(user.role);
   const supabase = await createServiceClient();
 
-  const { error } = await supabase.from("appeal_documents").delete().eq("id", documentId);
+  const { error } = await supabase
+    .from("appeal_documents")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", documentId);
   if (error) throw new Error(error.message);
   revalidatePath(`/litigations/${appealId}`);
   revalidatePath("/documents");

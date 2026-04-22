@@ -68,19 +68,33 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Derive FY name from selected FY ID (for AY auto-fill and disabled check)
+  // Derive selected act name
+  const selectedAct = (mastersByType["act_regulation"] ?? []).find(m => m.id === actRegulationId);
+  const isITAct = selectedAct?.name === "The Income-tax Act, 1961";
+
+  // AY is only available for the IT Act; within IT Act it's also disabled for FY 2026-27+
   const selectedFY = (mastersByType["financial_year"] ?? []).find(m => m.id === financialYearId);
   const fyName = selectedFY?.name ?? "";
-  const ayDisabled = fyName ? isAYDisabled(fyName) : false;
+  const ayDisabled = !isITAct || (fyName ? isAYDisabled(fyName) : false);
 
   // Proceedings filtered to children of the selected act
   const availableProceedings = actRegulationId
     ? (mastersByType["proceeding_type"] ?? []).filter(m => m.parent_id === actRegulationId)
     : [];
 
+  function handleActChange(actId: string) {
+    setActRegulationId(actId);
+    setProceedingTypeId("");
+    // If switching away from IT Act, clear AY
+    const act = (mastersByType["act_regulation"] ?? []).find(m => m.id === actId);
+    if (act?.name !== "The Income-tax Act, 1961") {
+      setAssessmentYearId("");
+    }
+  }
+
   function handleFYChange(fyId: string) {
     setFinancialYearId(fyId);
-    if (!fyId) { setAssessmentYearId(""); return; }
+    if (!fyId || !isITAct) { setAssessmentYearId(""); return; }
     const fy = (mastersByType["financial_year"] ?? []).find(m => m.id === fyId);
     if (!fy || isAYDisabled(fy.name)) { setAssessmentYearId(""); return; }
     const derivedName = deriveAYName(fy.name);
@@ -138,28 +152,33 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
               </select>
             </Field>
           </div>
+          <div className="col-span-2">
+            <Field label="Act / Regulation">
+              <select value={actRegulationId} onChange={(e) => handleActChange(e.target.value)} className={inp}>
+                <option value="">Select…</option>
+                {(mastersByType["act_regulation"] ?? []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+              </select>
+            </Field>
+          </div>
           <Field label="Financial Year / Tax Year">
             <select value={financialYearId} onChange={(e) => handleFYChange(e.target.value)} className={inp}>
               <option value="">Select…</option>
               {(mastersByType["financial_year"] ?? []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
             </select>
           </Field>
-          <Field label={`Assessment Year${ayDisabled ? " (not applicable)" : ""}`}>
-            <select value={assessmentYearId} onChange={(e) => setAssessmentYearId(e.target.value)}
-              className={`${inp} ${ayDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
-              disabled={ayDisabled}>
-              <option value="">Select…</option>
-              {(mastersByType["assessment_year"] ?? []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+          <Field label="Assessment Year">
+            <select
+              value={assessmentYearId}
+              onChange={(e) => setAssessmentYearId(e.target.value)}
+              className={`${inp} ${ayDisabled ? "opacity-50 cursor-not-allowed bg-[#F3F4F6]" : ""}`}
+              disabled={ayDisabled}
+            >
+              <option value="">{ayDisabled ? "Not applicable" : "Select…"}</option>
+              {!ayDisabled && (mastersByType["assessment_year"] ?? []).map((m) => (
+                <option key={m.id} value={m.id}>{m.name}</option>
+              ))}
             </select>
           </Field>
-          <div className="col-span-2">
-            <Field label="Act / Regulation">
-              <select value={actRegulationId} onChange={(e) => { setActRegulationId(e.target.value); setProceedingTypeId(""); }} className={inp}>
-                <option value="">Select…</option>
-                {(mastersByType["act_regulation"] ?? []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-              </select>
-            </Field>
-          </div>
           <Field label="Status">
             <select value={appealStatus} onChange={(e) => setAppealStatus(e.target.value)} className={inp}>
               <option value="open">Open</option>
@@ -172,14 +191,11 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
 
       {/* Section 2 */}
       <section className="bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-sm">
-        <h2 className="text-sm font-semibold text-[#1A1A2E] pb-3 border-b border-[#E5E7EB] mb-5">
-          Proceeding / Forum
-          <span className="text-xs text-[#9CA3AF] font-normal ml-2">First or current proceeding</span>
-        </h2>
+        <h2 className="text-sm font-semibold text-[#1A1A2E] pb-3 border-b border-[#E5E7EB] mb-5">Proceeding</h2>
         <div className="grid grid-cols-2 gap-4">
-          <Field label={`Forum${actRegulationId ? "" : " (select Act first)"}`}>
+          <Field label={`Proceeding${actRegulationId ? "" : " (select Act first)"}`}>
             <select value={proceedingTypeId} onChange={(e) => setProceedingTypeId(e.target.value)} className={inp} disabled={!actRegulationId}>
-              <option value="">{actRegulationId ? "Select forum…" : "Select Act / Regulation first"}</option>
+              <option value="">{actRegulationId ? "Select proceeding…" : "Select Act / Regulation first"}</option>
               {availableProceedings.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
             </select>
           </Field>

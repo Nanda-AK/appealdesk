@@ -14,6 +14,7 @@ export default async function ClientsPage() {
     .select("id, name, business_type, city, is_active, created_at")
     .eq("parent_sp_id", spId!)
     .eq("type", "client")
+    .is("deleted_at", null)
     .order("name");
 
   return (

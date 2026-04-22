@@ -17,6 +17,7 @@ interface AppDocument {
   file_url: string;
   file_size: number | null;
   created_at: string;
+  deleted_at?: string | null;
   uploaded_by_user: { first_name: string; last_name: string } | null;
 }
 
@@ -964,7 +965,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
       <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between">
           <div>
-            <p className="text-sm font-semibold text-[#1A1A2E]">Documents ({appeal.documents?.length ?? 0})</p>
+            <p className="text-sm font-semibold text-[#1A1A2E]">Documents ({(appeal.documents ?? []).filter(d => !d.deleted_at).length})</p>
             <p className="text-xs text-[#6B7280] mt-0.5">Files attached to this litigation</p>
           </div>
           {canEdit && (
@@ -979,13 +980,13 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
           )}
         </div>
         {docError && <div className="px-5 py-2 bg-red-50 border-b border-red-100 text-xs text-red-600">{docError}</div>}
-        {(appeal.documents?.length ?? 0) === 0 ? (
+        {(appeal.documents ?? []).filter(d => !d.deleted_at).length === 0 ? (
           <div className="px-5 py-8 text-center text-sm text-[#9CA3AF]">
             No documents attached.{canEdit ? " Upload files using the button above." : ""}
           </div>
         ) : (
           <div className="divide-y divide-[#F3F4F6]">
-            {appeal.documents.map((doc) => (
+            {(appeal.documents ?? []).filter(d => !d.deleted_at).map((doc) => (
               <div key={doc.id} className="px-5 py-3 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2 min-w-0">
                   <svg className="w-4 h-4 text-[#4A6FA5] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

@@ -234,31 +234,26 @@ export async function deleteAppeal(appealId: string): Promise<void> {
   const spId = user.service_provider_id ?? user.org_id;
   const supabase = await createServiceClient();
 
-  // 1. Get all proceeding IDs for this appeal
-  const { data: proceedings, error: procFetchErr } = await supabase
+  const now = new Date().toISOString();
+
+  // Soft-delete all proceedings for this appeal
+  const { data: proceedings } = await supabase
     .from("proceedings")
     .select("id")
-    .eq("appeal_id", appealId);
-
-  if (procFetchErr) throw new Error(procFetchErr.message);
+    .eq("appeal_id", appealId)
+    .is("deleted_at", null);
 
   if (proceedings?.length) {
     const procIds = proceedings.map((p) => p.id);
-
-    // 2. Delete events
-    const { error: evErr } = await supabase.from("events").delete().in("proceeding_id", procIds);
-    if (evErr) throw new Error("Failed to delete events: " + evErr.message);
-
-    // 3. Delete proceedings
-    const { error: prErr } = await supabase.from("proceedings").delete().in("id", procIds);
-    if (prErr) throw new Error("Failed to delete proceedings: " + prErr.message);
+    await supabase.from("events").update({ deleted_at: now }).in("proceeding_id", procIds).is("deleted_at", null);
+    await supabase.from("proceedings").update({ deleted_at: now }).in("id", procIds);
   }
 
-  // 4. Delete documents (ignore error if table doesn't exist yet)
-  await supabase.from("appeal_documents").delete().eq("appeal_id", appealId);
+  // Soft-delete documents
+  await supabase.from("appeal_documents").update({ deleted_at: now }).eq("appeal_id", appealId).is("deleted_at", null);
 
-  // 5. Delete the appeal
-  const { error } = await supabase.from("appeals").delete().eq("id", appealId);
+  // Soft-delete the appeal
+  const { error } = await supabase.from("appeals").update({ deleted_at: now }).eq("id", appealId);
   if (error) throw new Error("Failed to delete appeal: " + error.message);
 
   await logAction(supabase, { actorId: user.id, spId: spId!, action: "delete", entityType: "appeal", entityLabel: appealId });

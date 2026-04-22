@@ -29,7 +29,7 @@ export default async function AppealDetailPage({ params }: { params: Promise<{ i
         events(id, category, event_date, description, details, created_at)
       ),
       documents:appeal_documents(
-        id, file_name, file_url, file_size, created_at,
+        id, file_name, file_url, file_size, created_at, deleted_at,
         uploaded_by_user:users!uploaded_by(first_name, last_name)
       )
     `)

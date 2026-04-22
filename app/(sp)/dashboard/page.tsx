@@ -54,15 +54,15 @@ export default async function DashboardPage() {
     { count: cntDoubtful },
     { count: cntUnfavourable },
   ] = await Promise.all([
-    supabase.from("appeals").select("*", { count: "exact", head: true }).eq(appealFilter.col, appealFilter.val),
+    supabase.from("appeals").select("*", { count: "exact", head: true }).eq(appealFilter.col, appealFilter.val).is("deleted_at", null),
     isClient
       ? Promise.resolve({ count: 0 })
       : supabase.from("organizations").select("*", { count: "exact", head: true })
-          .eq("parent_sp_id", spId!).eq("type", "client").eq("is_active", true),
+          .eq("parent_sp_id", spId!).eq("type", "client").eq("is_active", true).is("deleted_at", null),
     isClient
       ? Promise.resolve({ count: 0 })
       : supabase.from("users").select("*", { count: "exact", head: true })
-          .eq("org_id", spId!).eq("is_active", true).in("role", ["sp_admin", "sp_staff"]),
+          .eq("org_id", spId!).eq("is_active", true).in("role", ["sp_admin", "sp_staff"]).is("deleted_at", null),
     supabase.from("proceedings").select(`
       id, importance, possible_outcome, to_be_completed_by, is_active,
       proceeding_type:master_records!proceeding_type_id(name),
@@ -77,6 +77,7 @@ export default async function DashboardPage() {
     `).eq("service_provider_id", spId!)
       .lte("to_be_completed_by", in30)
       .gte("to_be_completed_by", today)
+      .is("deleted_at", null)
       .order("to_be_completed_by", { ascending: true })
       .limit(10),
     supabase.from("events").select(`
@@ -88,17 +89,18 @@ export default async function DashboardPage() {
         )
       )
     `).eq("service_provider_id", spId!)
+      .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .limit(8),
     // Importance counts — one lightweight count query per value, no rows transferred
-    isClient ? Promise.resolve({ count: 0 }) : supabase.from("proceedings").select("*", { count: "exact", head: true }).eq("service_provider_id", spId!).eq("importance", "critical"),
-    isClient ? Promise.resolve({ count: 0 }) : supabase.from("proceedings").select("*", { count: "exact", head: true }).eq("service_provider_id", spId!).eq("importance", "high"),
-    isClient ? Promise.resolve({ count: 0 }) : supabase.from("proceedings").select("*", { count: "exact", head: true }).eq("service_provider_id", spId!).eq("importance", "medium"),
-    isClient ? Promise.resolve({ count: 0 }) : supabase.from("proceedings").select("*", { count: "exact", head: true }).eq("service_provider_id", spId!).eq("importance", "low"),
+    isClient ? Promise.resolve({ count: 0 }) : supabase.from("proceedings").select("*", { count: "exact", head: true }).eq("service_provider_id", spId!).eq("importance", "critical").is("deleted_at", null),
+    isClient ? Promise.resolve({ count: 0 }) : supabase.from("proceedings").select("*", { count: "exact", head: true }).eq("service_provider_id", spId!).eq("importance", "high").is("deleted_at", null),
+    isClient ? Promise.resolve({ count: 0 }) : supabase.from("proceedings").select("*", { count: "exact", head: true }).eq("service_provider_id", spId!).eq("importance", "medium").is("deleted_at", null),
+    isClient ? Promise.resolve({ count: 0 }) : supabase.from("proceedings").select("*", { count: "exact", head: true }).eq("service_provider_id", spId!).eq("importance", "low").is("deleted_at", null),
     // Outcome counts
-    isClient ? Promise.resolve({ count: 0 }) : supabase.from("proceedings").select("*", { count: "exact", head: true }).eq("service_provider_id", spId!).eq("possible_outcome", "favourable"),
-    isClient ? Promise.resolve({ count: 0 }) : supabase.from("proceedings").select("*", { count: "exact", head: true }).eq("service_provider_id", spId!).eq("possible_outcome", "doubtful"),
-    isClient ? Promise.resolve({ count: 0 }) : supabase.from("proceedings").select("*", { count: "exact", head: true }).eq("service_provider_id", spId!).eq("possible_outcome", "unfavourable"),
+    isClient ? Promise.resolve({ count: 0 }) : supabase.from("proceedings").select("*", { count: "exact", head: true }).eq("service_provider_id", spId!).eq("possible_outcome", "favourable").is("deleted_at", null),
+    isClient ? Promise.resolve({ count: 0 }) : supabase.from("proceedings").select("*", { count: "exact", head: true }).eq("service_provider_id", spId!).eq("possible_outcome", "doubtful").is("deleted_at", null),
+    isClient ? Promise.resolve({ count: 0 }) : supabase.from("proceedings").select("*", { count: "exact", head: true }).eq("service_provider_id", spId!).eq("possible_outcome", "unfavourable").is("deleted_at", null),
   ]);
 
   const importanceCounts = {
