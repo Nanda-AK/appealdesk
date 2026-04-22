@@ -14,6 +14,7 @@ export default async function SpMastersPage() {
     .select("id, name, type, parent_id, is_active, sort_order")
     .eq("level", "platform")
     .eq("is_active", true)
+    .is("deleted_at", null)
     .order("sort_order", { ascending: true });
 
   return (

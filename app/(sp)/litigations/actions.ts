@@ -241,7 +241,7 @@ export async function deleteEvent(eventId: string): Promise<void> {
   const spId = user.service_provider_id ?? user.org_id;
   const supabase = await createServiceClient();
 
-  const { error } = await supabase.from("events").delete().eq("id", eventId);
+  const { error } = await supabase.from("events").update({ deleted_at: new Date().toISOString() }).eq("id", eventId);
   if (error) throw new Error(error.message);
   await logAction(supabase, { actorId: user.id, spId: spId!, action: "delete", entityType: "event" });
   revalidatePath("/litigations");

@@ -26,7 +26,7 @@ export default async function AppealDetailPage({ params }: { params: Promise<{ i
         possible_outcome, is_active, created_at,
         assigned_user:users!assigned_to(first_name, last_name),
         client_staff:users!client_staff_id(first_name, last_name),
-        events(id, category, event_date, description, details, created_at)
+        events(id, category, event_date, description, details, created_at, deleted_at)
       ),
       documents:appeal_documents(
         id, file_name, file_url, file_size, created_at, deleted_at,
@@ -65,6 +65,7 @@ export default async function AppealDetailPage({ params }: { params: Promise<{ i
       .select("id, name, type, parent_id")
       .eq("level", "platform")
       .eq("is_active", true)
+      .is("deleted_at", null)
       .order("sort_order"),
   ]);
 

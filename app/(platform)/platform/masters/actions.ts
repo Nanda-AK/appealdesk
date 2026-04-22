@@ -75,7 +75,9 @@ export async function deleteMasterRecord(id: string) {
   if (!user || user.role !== "super_admin") throw new Error("Unauthorized");
 
   const supabase = await createServiceClient();
-  await supabase.from("master_records").delete().eq("id", id);
+  // Soft-delete: also soft-delete children (proceeding types under this act)
+  await supabase.from("master_records").update({ deleted_at: new Date().toISOString(), is_active: false }).eq("parent_id", id);
+  await supabase.from("master_records").update({ deleted_at: new Date().toISOString(), is_active: false }).eq("id", id);
 
   revalidatePath("/platform/masters");
 }

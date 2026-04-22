@@ -10,17 +10,29 @@ export default async function PlatformRecycleBinPage() {
   const supabase = await createClient();
   const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
-  // Platform users: super_admin, platform_admin, sp_admin — deleted within 30 days
-  const { data: users } = await supabase
-    .from("users")
-    .select(`
-      id, first_name, last_name, email, role, deleted_at,
-      organization:organizations!org_id(name)
-    `)
-    .in("role", ["super_admin", "platform_admin", "sp_admin"])
-    .not("deleted_at", "is", null)
-    .gte("deleted_at", cutoff)
-    .order("deleted_at", { ascending: false });
+  const [{ data: users }, { data: masters }] = await Promise.all([
+    // Platform users: super_admin, platform_admin, sp_admin — deleted within 30 days
+    supabase
+      .from("users")
+      .select(`
+        id, first_name, last_name, email, role, deleted_at,
+        organization:organizations!org_id(name)
+      `)
+      .in("role", ["super_admin", "platform_admin", "sp_admin"])
+      .not("deleted_at", "is", null)
+      .gte("deleted_at", cutoff)
+      .order("deleted_at", { ascending: false }),
+
+    // Deleted master records (top-level only — children are cascade-deleted)
+    supabase
+      .from("master_records")
+      .select("id, name, type, parent_id, deleted_at")
+      .eq("level", "platform")
+      .is("parent_id", null)
+      .not("deleted_at", "is", null)
+      .gte("deleted_at", cutoff)
+      .order("deleted_at", { ascending: false }),
+  ]);
 
   const normalizedUsers = (users ?? []).map((u: any) => ({
     ...u,
@@ -35,7 +47,10 @@ export default async function PlatformRecycleBinPage() {
           Deleted platform items are kept for 30 days, then permanently removed.
         </p>
       </div>
-      <PlatformRecycleBinClient users={normalizedUsers as any} />
+      <PlatformRecycleBinClient
+        users={normalizedUsers as any}
+        masters={(masters ?? []) as any}
+      />
     </div>
   );
 }

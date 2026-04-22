@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { restorePlatformUser, purgePlatformUser } from "@/app/(platform)/platform/recycle-bin/actions";
+import {
+  restorePlatformUser, purgePlatformUser,
+  restoreMasterRecord, purgeMasterRecord,
+} from "@/app/(platform)/platform/recycle-bin/actions";
 
 function daysLeft(deletedAt: string): number {
   const purgeAt = new Date(deletedAt).getTime() + 30 * 24 * 60 * 60 * 1000;
@@ -87,6 +90,46 @@ function RowActions({ onRestore, onPurge }: { onRestore: () => Promise<void>; on
   );
 }
 
+function Section({
+  title,
+  count,
+  children,
+}: {
+  title: string;
+  count: number;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(true);
+  return (
+    <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between hover:bg-[#F8F9FA] transition text-left"
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold text-[#1A1A2E]">{title}</span>
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#F3F4F6] text-[#6B7280]">
+            {count}
+          </span>
+        </div>
+        <svg
+          className={`w-4 h-4 text-[#9CA3AF] transition-transform ${open ? "" : "-rotate-90"}`}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {open && (
+        count === 0 ? (
+          <div className="px-5 py-8 text-center text-sm text-[#9CA3AF]">Nothing here.</div>
+        ) : (
+          children
+        )
+      )}
+    </div>
+  );
+}
+
 interface User {
   id: string;
   first_name: string;
@@ -97,52 +140,84 @@ interface User {
   organization: { name: string } | null;
 }
 
-export default function PlatformRecycleBinClient({ users }: { users: User[] }) {
-  if (users.length === 0) {
+interface MasterRecord {
+  id: string;
+  name: string;
+  type: string;
+  parent_id: string | null;
+  deleted_at: string;
+}
+
+interface Props {
+  users: User[];
+  masters: MasterRecord[];
+}
+
+export default function PlatformRecycleBinClient({ users, masters }: Props) {
+  const total = users.length + masters.length;
+
+  if (total === 0) {
     return (
       <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm px-8 py-16 text-center">
         <svg className="w-10 h-10 text-[#D1D5DB] mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
         </svg>
         <p className="text-sm font-medium text-[#6B7280]">Recycle Bin is empty</p>
-        <p className="text-xs text-[#9CA3AF] mt-1">Deleted platform users appear here for 30 days.</p>
+        <p className="text-xs text-[#9CA3AF] mt-1">Deleted platform items appear here for 30 days.</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
-      <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center gap-2">
-        <span className="text-sm font-semibold text-[#1A1A2E]">Users</span>
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#F3F4F6] text-[#6B7280]">
-          {users.length}
-        </span>
-      </div>
-      <div className="divide-y divide-[#F3F4F6]">
-        {users.map((u) => (
-          <div key={u.id} className="px-5 py-3 flex items-center justify-between gap-4">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-medium text-[#1A1A2E] truncate">
-                  {u.first_name} {u.last_name}
+    <div className="space-y-4">
+      <Section title="Users" count={users.length}>
+        <div className="divide-y divide-[#F3F4F6]">
+          {users.map((u) => (
+            <div key={u.id} className="px-5 py-3 flex items-center justify-between gap-4">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium text-[#1A1A2E] truncate">
+                    {u.first_name} {u.last_name}
+                  </p>
+                  <RoleChip role={u.role} />
+                </div>
+                <p className="text-xs text-[#6B7280] truncate">{u.email}</p>
+                <p className="text-xs text-[#9CA3AF]">
+                  {u.organization?.name ? `${u.organization.name} · ` : ""}Deleted {fmtDate(u.deleted_at)}
                 </p>
-                <RoleChip role={u.role} />
               </div>
-              <p className="text-xs text-[#6B7280] truncate">{u.email}</p>
-              <p className="text-xs text-[#9CA3AF]">
-                {u.organization?.name ? `${u.organization.name} · ` : ""}Deleted {fmtDate(u.deleted_at)}
-              </p>
+              <div className="flex items-center gap-3">
+                <DaysChip deletedAt={u.deleted_at} />
+                <RowActions
+                  onRestore={() => restorePlatformUser(u.id)}
+                  onPurge={() => purgePlatformUser(u.id)}
+                />
+              </div>
             </div>
-            <div className="flex items-center gap-3">
-              <DaysChip deletedAt={u.deleted_at} />
-              <RowActions
-                onRestore={() => restorePlatformUser(u.id)}
-                onPurge={() => purgePlatformUser(u.id)}
-              />
+          ))}
+        </div>
+      </Section>
+
+      <Section title="Masters" count={masters.length}>
+        <div className="divide-y divide-[#F3F4F6]">
+          {masters.map((m) => (
+            <div key={m.id} className="px-5 py-3 flex items-center justify-between gap-4">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-[#1A1A2E] truncate">{m.name}</p>
+                <p className="text-xs text-[#6B7280] truncate capitalize">{m.type.replace(/_/g, " ")}</p>
+                <p className="text-xs text-[#9CA3AF]">Deleted {fmtDate(m.deleted_at)}</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <DaysChip deletedAt={m.deleted_at} />
+                <RowActions
+                  onRestore={() => restoreMasterRecord(m.id)}
+                  onPurge={() => purgeMasterRecord(m.id)}
+                />
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      </Section>
     </div>
   );
 }

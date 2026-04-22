@@ -7,6 +7,8 @@ import {
   restoreClient, purgeClient,
   restoreUser, purgeUser,
   restoreDocument, purgeDocument,
+  restoreProceeding, purgeProceeding,
+  restoreEvent, purgeEvent,
 } from "@/app/(sp)/trash/actions";
 
 function daysLeft(deletedAt: string): number {
@@ -177,10 +179,26 @@ interface Props {
     deleted_at: string;
     appeal: { client_org: { name: string } | null } | null;
   }[];
+  proceedings: {
+    id: string;
+    authority_type: string | null;
+    authority_name: string | null;
+    deleted_at: string;
+    proceeding_type: { name: string } | null;
+    appeal: { client_org: { name: string } | null } | null;
+  }[];
+  events: {
+    id: string;
+    category: string | null;
+    event_date: string | null;
+    description: string | null;
+    deleted_at: string;
+    proceeding: { appeal: { client_org: { name: string } | null } | null } | null;
+  }[];
 }
 
-export default function TrashClient({ appeals, clients, users, documents }: Props) {
-  const total = appeals.length + clients.length + users.length + documents.length;
+export default function TrashClient({ appeals, clients, users, documents, proceedings, events }: Props) {
+  const total = appeals.length + clients.length + users.length + documents.length + proceedings.length + events.length;
 
   if (total === 0) {
     return (
@@ -215,6 +233,61 @@ export default function TrashClient({ appeals, clients, users, documents }: Prop
                 <RowActions
                   onRestore={() => restoreAppeal(a.id)}
                   onPurge={() => purgeAppeal(a.id)}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="Proceedings" count={proceedings.length}>
+        <div className="divide-y divide-[#F3F4F6]">
+          {proceedings.map((p) => (
+            <div key={p.id} className="px-5 py-3 flex items-center justify-between gap-4">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-[#1A1A2E] truncate">
+                  {p.authority_name ?? p.proceeding_type?.name ?? "—"}
+                </p>
+                <p className="text-xs text-[#6B7280] truncate">
+                  {p.proceeding_type?.name ?? ""}
+                  {(p as any).appeal?.client_org?.name ? ` · ${(p as any).appeal.client_org.name}` : ""}
+                </p>
+                <p className="text-xs text-[#9CA3AF]">Deleted {fmtDate(p.deleted_at)}</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <DaysChip deletedAt={p.deleted_at} />
+                <RowActions
+                  onRestore={() => restoreProceeding(p.id)}
+                  onPurge={() => purgeProceeding(p.id)}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="Events" count={events.length}>
+        <div className="divide-y divide-[#F3F4F6]">
+          {events.map((e) => (
+            <div key={e.id} className="px-5 py-3 flex items-center justify-between gap-4">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-[#1A1A2E] truncate">
+                  {e.category ?? "Event"}
+                  {e.event_date ? ` — ${fmtDate(e.event_date)}` : ""}
+                </p>
+                <p className="text-xs text-[#6B7280] truncate">
+                  {e.description ?? ""}
+                  {(e as any).proceeding?.appeal?.client_org?.name
+                    ? ` · ${(e as any).proceeding.appeal.client_org.name}`
+                    : ""}
+                </p>
+                <p className="text-xs text-[#9CA3AF]">Deleted {fmtDate(e.deleted_at)}</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <DaysChip deletedAt={e.deleted_at} />
+                <RowActions
+                  onRestore={() => restoreEvent(e.id)}
+                  onPurge={() => purgeEvent(e.id)}
                 />
               </div>
             </div>

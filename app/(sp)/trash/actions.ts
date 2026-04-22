@@ -88,6 +88,55 @@ export async function restoreUser(userId: string): Promise<void> {
   revalidatePath("/users");
 }
 
+export async function restoreProceeding(proceedingId: string): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+  adminOnly(user.role);
+  const supabase = await createServiceClient();
+
+  // Restore the proceeding and all its events (cascade restore)
+  await supabase.from("events").update({ deleted_at: null }).eq("proceeding_id", proceedingId);
+  await supabase.from("proceedings").update({ deleted_at: null }).eq("id", proceedingId);
+
+  revalidatePath("/trash");
+  revalidatePath("/litigations");
+}
+
+export async function purgeProceeding(proceedingId: string): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+  adminOnly(user.role);
+  const supabase = await createServiceClient();
+
+  await supabase.from("events").delete().eq("proceeding_id", proceedingId);
+  await supabase.from("proceedings").delete().eq("id", proceedingId);
+
+  revalidatePath("/trash");
+}
+
+export async function restoreEvent(eventId: string): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+  adminOnly(user.role);
+  const supabase = await createServiceClient();
+
+  await supabase.from("events").update({ deleted_at: null }).eq("id", eventId);
+
+  revalidatePath("/trash");
+  revalidatePath("/litigations");
+}
+
+export async function purgeEvent(eventId: string): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+  adminOnly(user.role);
+  const supabase = await createServiceClient();
+
+  await supabase.from("events").delete().eq("id", eventId);
+
+  revalidatePath("/trash");
+}
+
 export async function restoreDocument(documentId: string): Promise<void> {
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");

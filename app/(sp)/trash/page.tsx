@@ -23,11 +23,33 @@ export default async function TrashPage() {
   const clientOrgIds = (clientOrgs ?? []).map((o) => o.id);
   const allOrgIds = [spId!, ...clientOrgIds];
 
+  // Get active appeal IDs for this SP (to scope proceedings/events to this SP)
+  const { data: activeAppeals } = await supabase
+    .from("appeals")
+    .select("id")
+    .eq("service_provider_id", spId!)
+    .is("deleted_at", null);
+
+  const activeAppealIds = (activeAppeals ?? []).map((a) => a.id);
+
+  // Get active proceeding IDs (to scope deleted events)
+  const { data: activeProceedings } = activeAppealIds.length
+    ? await supabase
+        .from("proceedings")
+        .select("id")
+        .in("appeal_id", activeAppealIds)
+        .is("deleted_at", null)
+    : { data: [] };
+
+  const activeProceedingIds = (activeProceedings ?? []).map((p) => p.id);
+
   const [
     { data: appeals },
     { data: clients },
     { data: users },
     { data: documents },
+    { data: proceedings },
+    { data: events },
   ] = await Promise.all([
     // Deleted litigations
     supabase
@@ -79,6 +101,41 @@ export default async function TrashPage() {
       .not("deleted_at", "is", null)
       .gte("deleted_at", cutoff)
       .order("deleted_at", { ascending: false }),
+
+    // Deleted proceedings (only from active/non-deleted appeals)
+    activeAppealIds.length
+      ? supabase
+          .from("proceedings")
+          .select(`
+            id, authority_type, authority_name, deleted_at,
+            proceeding_type:master_records!proceeding_type_id(name),
+            appeal:appeals!appeal_id(
+              client_org:organizations!client_org_id(name)
+            )
+          `)
+          .in("appeal_id", activeAppealIds)
+          .not("deleted_at", "is", null)
+          .gte("deleted_at", cutoff)
+          .order("deleted_at", { ascending: false })
+      : Promise.resolve({ data: [] }),
+
+    // Deleted events (only from active/non-deleted proceedings)
+    activeProceedingIds.length
+      ? supabase
+          .from("events")
+          .select(`
+            id, category, event_date, description, deleted_at,
+            proceeding:proceedings!proceeding_id(
+              appeal:appeals!appeal_id(
+                client_org:organizations!client_org_id(name)
+              )
+            )
+          `)
+          .in("proceeding_id", activeProceedingIds)
+          .not("deleted_at", "is", null)
+          .gte("deleted_at", cutoff)
+          .order("deleted_at", { ascending: false })
+      : Promise.resolve({ data: [] }),
   ]);
 
   // Normalize FK joins that Supabase may return as arrays
@@ -100,6 +157,8 @@ export default async function TrashPage() {
         clients={(clients ?? []) as any}
         users={normalizedUsers as any}
         documents={(documents ?? []) as any}
+        proceedings={(proceedings ?? []) as any}
+        events={(events ?? []) as any}
       />
     </div>
   );

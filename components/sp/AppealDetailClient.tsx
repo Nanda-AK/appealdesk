@@ -28,6 +28,7 @@ interface AppEvent {
   description: string | null;
   details: Record<string, string> | null;
   created_at: string;
+  deleted_at?: string | null;
 }
 
 interface Proceeding {
@@ -776,9 +777,9 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
             const outCfg = proc.possible_outcome ? OUTCOME[proc.possible_outcome] : null;
             const au = proc.assigned_user ?? null;
             const cs = proc.client_staff ?? null;
-            const sortedEvents = [...(proc.events ?? [])].sort(
-              (a, b) => (b.event_date ?? b.created_at).localeCompare(a.event_date ?? a.created_at)
-            );
+            const sortedEvents = [...(proc.events ?? [])]
+              .filter((e) => !e.deleted_at)
+              .sort((a, b) => (b.event_date ?? b.created_at).localeCompare(a.event_date ?? a.created_at));
             const procStatusCfg = STATUS_CFG[proc.status ?? "open"];
             const isExpanded = expandedProcs.has(proc.id);
 

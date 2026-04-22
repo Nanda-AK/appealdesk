@@ -10,6 +10,7 @@ export default async function MastersPage() {
     .from("master_records")
     .select("id, name, type, parent_id, is_active, sort_order")
     .eq("level", "platform")
+    .is("deleted_at", null)
     .order("sort_order", { ascending: true });
 
   return (

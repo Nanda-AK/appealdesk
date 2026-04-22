@@ -30,6 +30,7 @@ export default async function NewAppealPage() {
       .select("id, name, type, parent_id")
       .eq("level", "platform")
       .eq("is_active", true)
+      .is("deleted_at", null)
       .order("sort_order"),
   ]);
 

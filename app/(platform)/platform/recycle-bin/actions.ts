@@ -34,3 +34,31 @@ export async function purgePlatformUser(id: string): Promise<void> {
   revalidatePath("/platform/users");
   revalidatePath("/platform/providers");
 }
+
+export async function restoreMasterRecord(id: string): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+  platformOnly(user.role);
+
+  const supabase = await createServiceClient();
+  // Restore children first, then the record itself
+  await supabase.from("master_records").update({ deleted_at: null, is_active: true }).eq("parent_id", id);
+  await supabase.from("master_records").update({ deleted_at: null, is_active: true }).eq("id", id);
+
+  revalidatePath("/platform/recycle-bin");
+  revalidatePath("/platform/masters");
+}
+
+export async function purgeMasterRecord(id: string): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+  platformOnly(user.role);
+
+  const supabase = await createServiceClient();
+  // Delete children first, then the record
+  await supabase.from("master_records").delete().eq("parent_id", id);
+  await supabase.from("master_records").delete().eq("id", id);
+
+  revalidatePath("/platform/recycle-bin");
+  revalidatePath("/platform/masters");
+}
