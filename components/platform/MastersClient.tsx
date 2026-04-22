@@ -7,6 +7,7 @@ const MASTER_TYPES = [
   { key: "business_type", label: "Business Types" },
   { key: "proceeding_type", label: "Proceeding Types" },
   { key: "act_regulation", label: "Act / Regulation" },
+  { key: "financial_year", label: "Financial Years" },
   { key: "assessment_year", label: "Assessment Years" },
 ];
 

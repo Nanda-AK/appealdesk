@@ -4,6 +4,21 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createAppeal, AppealInput, ProceedingInput } from "@/app/(sp)/litigations/actions";
 
+/** Derives AY from FY string like "2020-21" → "2021-22" */
+function deriveAY(fy: string): string {
+  const match = fy.match(/^(\d{4})-(\d{2})$/);
+  if (!match) return "";
+  const ayStart = parseInt(match[1]) + 1;
+  const ayEnd = (parseInt(match[2]) + 1).toString().padStart(2, "0");
+  return `${ayStart}-${ayEnd}`;
+}
+
+/** AY is disabled for FY 2026-27 and beyond (start year ≥ 2026) */
+function isAYDisabled(fy: string): boolean {
+  const match = fy.match(/^(\d{4})/);
+  return !!match && parseInt(match[1]) >= 2026;
+}
+
 interface Props {
   clients: { id: string; name: string }[];
   teamMembers: { id: string; first_name: string; last_name: string }[];
@@ -98,13 +113,32 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
             </Field>
           </div>
           <Field label="Financial Year / Tax Year">
-            <select value={financialYear} onChange={(e) => setFinancialYear(e.target.value)} className={inp}>
+            <select
+              value={financialYear}
+              onChange={(e) => {
+                const fy = e.target.value;
+                setFinancialYear(fy);
+                if (!fy || isAYDisabled(fy)) {
+                  setAssessmentYear("");
+                } else {
+                  const derived = deriveAY(fy);
+                  const ayOptions = mastersByType["assessment_year"] ?? [];
+                  setAssessmentYear(ayOptions.includes(derived) ? derived : "");
+                }
+              }}
+              className={inp}
+            >
               <option value="">Select…</option>
               {(mastersByType["financial_year"] ?? []).map((v) => <option key={v} value={v}>{v}</option>)}
             </select>
           </Field>
-          <Field label="Assessment Year">
-            <select value={assessmentYear} onChange={(e) => setAssessmentYear(e.target.value)} className={inp}>
+          <Field label={`Assessment Year${financialYear && isAYDisabled(financialYear) ? " (not applicable)" : ""}`}>
+            <select
+              value={assessmentYear}
+              onChange={(e) => setAssessmentYear(e.target.value)}
+              className={`${inp} ${financialYear && isAYDisabled(financialYear) ? "opacity-50 cursor-not-allowed" : ""}`}
+              disabled={!!(financialYear && isAYDisabled(financialYear))}
+            >
               <option value="">Select…</option>
               {(mastersByType["assessment_year"] ?? []).map((v) => <option key={v} value={v}>{v}</option>)}
             </select>
