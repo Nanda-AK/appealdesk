@@ -172,7 +172,7 @@ export default function DocumentsClient({ forms, templates, canEdit }: Props) {
         const path = `templates/${Date.now()}-${tplFile!.name}`;
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from("org-files")
-          .upload(path, tplFile!, { upsert: false });
+          .upload(path, tplFile!, { upsert: false, contentType: tplFile!.type || "application/octet-stream" });
         if (uploadError) throw new Error(uploadError.message);
         const { data: urlData } = supabase.storage.from("org-files").getPublicUrl(uploadData.path);
 
