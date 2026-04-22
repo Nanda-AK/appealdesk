@@ -171,11 +171,12 @@ export async function deleteSpAdmin(userId: string, spId: string) {
 
   const supabase = await createServiceClient();
 
-  // Delete from public users table first
-  await supabase.from("users").delete().eq("id", userId).eq("org_id", spId).eq("role", "sp_admin");
-
-  // Delete from Supabase Auth
-  await supabase.auth.admin.deleteUser(userId);
+  // Soft-delete: mark deleted_at, keep auth user intact
+  await supabase.from("users")
+    .update({ deleted_at: new Date().toISOString(), is_active: false })
+    .eq("id", userId)
+    .eq("org_id", spId)
+    .eq("role", "sp_admin");
 
   revalidatePath("/platform/providers");
 }

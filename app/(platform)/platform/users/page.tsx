@@ -11,11 +11,13 @@ export default async function UsersPage() {
       .from("users")
       .select("id, first_name, middle_name, last_name, email, role, is_active, created_at")
       .in("role", ["super_admin", "platform_admin"])
+      .is("deleted_at", null)
       .order("first_name"),
     supabase
       .from("users")
       .select("id, first_name, middle_name, last_name, email, designation, is_active, created_at, org_id, organizations(id, name)")
       .eq("role", "sp_admin")
+      .is("deleted_at", null)
       .order("first_name"),
     supabase
       .from("organizations")
