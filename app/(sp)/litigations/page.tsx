@@ -29,7 +29,7 @@ function emptyResult(
   ]).then(([{ data: clients }, { data: teamMembers }, { data: ayRows }]) => ({
     clients: clients ?? [],
     teamMembers: teamMembers ?? [],
-    assessmentYears: [...new Set((ayRows ?? []).map((a: any) => a.assessment_year?.name as string).filter(Boolean))].sort().reverse(),
+    assessmentYears: [...new Set((ayRows ?? []).map((a: any) => a.assessment_year?.name as string).filter((n): n is string => Boolean(n)))].sort().reverse(),
   }));
 }
 
@@ -148,7 +148,7 @@ export default async function AppealsPage({
   ]);
 
   const assessmentYears = [...new Set(
-    (ayRows ?? []).map((a: any) => a.assessment_year?.name as string).filter(Boolean)
+    (ayRows ?? []).map((a: any) => a.assessment_year?.name as string).filter((n): n is string => Boolean(n))
   )].sort().reverse();
 
   return (
