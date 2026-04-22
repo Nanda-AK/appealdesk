@@ -166,10 +166,10 @@ export default async function DashboardPage() {
             <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide mb-3">By Importance</p>
             <div className="grid grid-cols-4 gap-3">
               {[
-                { key: "critical", label: "Critical", bg: "bg-red-50", text: "text-red-700", dot: "bg-red-500" },
-                { key: "high", label: "High", bg: "bg-orange-50", text: "text-orange-700", dot: "bg-orange-500" },
-                { key: "medium", label: "Medium", bg: "bg-yellow-50", text: "text-yellow-700", dot: "bg-yellow-500" },
-                { key: "low", label: "Low", bg: "bg-green-50", text: "text-green-700", dot: "bg-green-500" },
+                { key: "critical" as const, label: "Critical", bg: "bg-red-50", text: "text-red-700", dot: "bg-red-500" },
+                { key: "high" as const, label: "High", bg: "bg-orange-50", text: "text-orange-700", dot: "bg-orange-500" },
+                { key: "medium" as const, label: "Medium", bg: "bg-yellow-50", text: "text-yellow-700", dot: "bg-yellow-500" },
+                { key: "low" as const, label: "Low", bg: "bg-green-50", text: "text-green-700", dot: "bg-green-500" },
               ].map(({ key, label, bg, text, dot }) => (
                 <div key={key} className={`${bg} rounded-lg p-3 text-center`}>
                   <p className={`text-2xl font-bold ${text}`}>{importanceCounts[key]}</p>
@@ -187,9 +187,9 @@ export default async function DashboardPage() {
             <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide mb-3">By Outcome</p>
             <div className="grid grid-cols-3 gap-3">
               {[
-                { key: "favourable", label: "Favourable", bg: "bg-green-50", text: "text-green-700", dot: "bg-green-500" },
-                { key: "doubtful", label: "Doubtful", bg: "bg-yellow-50", text: "text-yellow-700", dot: "bg-yellow-500" },
-                { key: "unfavourable", label: "Unfavourable", bg: "bg-red-50", text: "text-red-700", dot: "bg-red-500" },
+                { key: "favourable" as const, label: "Favourable", bg: "bg-green-50", text: "text-green-700", dot: "bg-green-500" },
+                { key: "doubtful" as const, label: "Doubtful", bg: "bg-yellow-50", text: "text-yellow-700", dot: "bg-yellow-500" },
+                { key: "unfavourable" as const, label: "Unfavourable", bg: "bg-red-50", text: "text-red-700", dot: "bg-red-500" },
               ].map(({ key, label, bg, text, dot }) => (
                 <div key={key} className={`${bg} rounded-lg p-3 text-center`}>
                   <p className={`text-2xl font-bold ${text}`}>{outcomeCounts[key]}</p>
