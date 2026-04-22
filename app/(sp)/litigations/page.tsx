@@ -29,7 +29,7 @@ function emptyResult(
   ]).then(([{ data: clients }, { data: teamMembers }, { data: ayRows }]) => ({
     clients: clients ?? [],
     teamMembers: teamMembers ?? [],
-    assessmentYears: [...new Set((ayRows ?? []).map((a: any) => a.assessment_year?.name as string | undefined).filter((n): n is string => !!n))].sort().reverse(),
+    assessmentYears: [...new Set<string>((ayRows ?? []).map((a: any): string | undefined => a.assessment_year?.name).filter((n): n is string => typeof n === "string"))].sort().reverse(),
   }));
 }
 
@@ -147,8 +147,8 @@ export default async function AppealsPage({
     supabase.from("appeals").select("assessment_year:master_records!assessment_year_id(name)").eq("service_provider_id", spId!).not("assessment_year_id", "is", null).is("deleted_at", null),
   ]);
 
-  const assessmentYears = [...new Set(
-    (ayRows ?? []).map((a: any) => a.assessment_year?.name as string | undefined).filter((n): n is string => !!n)
+  const assessmentYears = [...new Set<string>(
+    (ayRows ?? []).map((a: any): string | undefined => a.assessment_year?.name).filter((n): n is string => typeof n === "string")
   )].sort().reverse();
 
   return (
