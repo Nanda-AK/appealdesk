@@ -320,7 +320,7 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 
 // ─── Proceeding Form Fields ────────────────────────────────────────
 function ProceedingFormFields({
-  values, onChange, mastersByType, teamMembers, clientUsers, actRegulationName,
+  values, onChange, mastersByType, teamMembers, clientUsers, actRegulationId,
 }: {
   values: ProceedingInput;
   onChange: (field: keyof ProceedingInput, value: string) => void;
