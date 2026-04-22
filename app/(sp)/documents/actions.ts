@@ -137,6 +137,7 @@ export async function createTemplate(input: TemplateInput) {
 
   const { error } = await supabase.from("templates").insert({
     service_provider_id: spId,
+    created_by: user.id,
     name: input.name,
     description: input.description || null,
     file_url: input.file_url,
