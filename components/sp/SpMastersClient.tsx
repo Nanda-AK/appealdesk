@@ -28,9 +28,7 @@ export default function SpMastersClient({ records }: Props) {
   const [activeTab, setActiveTab] = useState("business_type");
   const [search, setSearch] = useState("");
   const [sortAsc, setSortAsc] = useState(true);
-  const [expandedActs, setExpandedActs] = useState<Set<string>>(new Set(
-    records.filter(r => r.type === "act_regulation").map(r => r.id)
-  ));
+  const [expandedActs, setExpandedActs] = useState<Set<string>>(new Set());
 
   const q = search.toLowerCase();
   const filtered = records

@@ -45,9 +45,7 @@ export default function MastersClient({ records, isSuperAdmin }: Props) {
   const [flatError, setFlatError] = useState<string | null>(null);
 
   // Acts & Proceedings state
-  const [expandedActs, setExpandedActs] = useState<Set<string>>(new Set(
-    records.filter(r => r.type === "act_regulation").map(r => r.id)
-  ));
+  const [expandedActs, setExpandedActs] = useState<Set<string>>(new Set());
   const [addingActForm, setAddingActForm] = useState(false);
   const [newActName, setNewActName] = useState("");
   const [addingUnderActId, setAddingUnderActId] = useState<string | null>(null);
