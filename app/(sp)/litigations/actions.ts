@@ -160,7 +160,6 @@ export async function updateEvent(eventId: string, input: EventInput): Promise<v
   spOnly(user.role);
   const supabase = await createServiceClient();
 
-  // Derive primary event_date from category-specific fields
   const PRIMARY_DATE: Record<string, string> = {
     notice_from_authority: "date_of_notice",
     response_to_notice: "response_submitted_on",
@@ -223,10 +222,21 @@ export async function deleteProceeding(proceedingId: string): Promise<void> {
 
   const now = new Date().toISOString();
 
-  // Soft-delete events under this proceeding
-  await supabase.from("events").update({ deleted_at: now }).eq("proceeding_id", proceedingId).is("deleted_at", null);
+  // Get event IDs for cascade
+  const { data: events } = await supabase
+    .from("events")
+    .select("id")
+    .eq("proceeding_id", proceedingId)
+    .is("deleted_at", null);
 
-  // Soft-delete the proceeding
+  if (events?.length) {
+    const evtIds = events.map((e) => e.id);
+    await supabase.from("event_documents").update({ deleted_at: now }).in("event_id", evtIds).is("deleted_at", null);
+    await supabase.from("events").update({ deleted_at: now }).in("id", evtIds);
+  }
+
+  await supabase.from("proceeding_documents").update({ deleted_at: now }).eq("proceeding_id", proceedingId).is("deleted_at", null);
+
   const { error } = await supabase.from("proceedings").update({ deleted_at: now }).eq("id", proceedingId);
   if (error) throw new Error(error.message);
 
@@ -241,7 +251,10 @@ export async function deleteEvent(eventId: string): Promise<void> {
   const spId = user.service_provider_id ?? user.org_id;
   const supabase = await createServiceClient();
 
-  const { error } = await supabase.from("events").update({ deleted_at: new Date().toISOString() }).eq("id", eventId);
+  const now = new Date().toISOString();
+  await supabase.from("event_documents").update({ deleted_at: now }).eq("event_id", eventId).is("deleted_at", null);
+
+  const { error } = await supabase.from("events").update({ deleted_at: now }).eq("id", eventId);
   if (error) throw new Error(error.message);
   await logAction(supabase, { actorId: user.id, spId: spId!, action: "delete", entityType: "event" });
   revalidatePath("/litigations");
@@ -256,7 +269,6 @@ export async function deleteAppeal(appealId: string): Promise<void> {
 
   const now = new Date().toISOString();
 
-  // Soft-delete all proceedings for this appeal
   const { data: proceedings } = await supabase
     .from("proceedings")
     .select("id")
@@ -265,18 +277,114 @@ export async function deleteAppeal(appealId: string): Promise<void> {
 
   if (proceedings?.length) {
     const procIds = proceedings.map((p) => p.id);
-    await supabase.from("events").update({ deleted_at: now }).in("proceeding_id", procIds).is("deleted_at", null);
+
+    const { data: events } = await supabase
+      .from("events")
+      .select("id")
+      .in("proceeding_id", procIds)
+      .is("deleted_at", null);
+
+    if (events?.length) {
+      const evtIds = events.map((e) => e.id);
+      await supabase.from("event_documents").update({ deleted_at: now }).in("event_id", evtIds).is("deleted_at", null);
+      await supabase.from("events").update({ deleted_at: now }).in("id", evtIds);
+    }
+
+    await supabase.from("proceeding_documents").update({ deleted_at: now }).in("proceeding_id", procIds).is("deleted_at", null);
     await supabase.from("proceedings").update({ deleted_at: now }).in("id", procIds);
   }
 
-  // Soft-delete documents
+  // Legacy appeal_documents (kept for any existing data)
   await supabase.from("appeal_documents").update({ deleted_at: now }).eq("appeal_id", appealId).is("deleted_at", null);
 
-  // Soft-delete the appeal
   const { error } = await supabase.from("appeals").update({ deleted_at: now }).eq("id", appealId);
   if (error) throw new Error("Failed to delete appeal: " + error.message);
 
   await logAction(supabase, { actorId: user.id, spId: spId!, action: "delete", entityType: "appeal", entityLabel: appealId });
   revalidatePath("/litigations");
   revalidatePath(`/litigations/${appealId}`);
+}
+
+// ── Proceeding Documents ─────────────────────────────────────────
+
+export async function uploadProceedingDocument(
+  proceedingId: string,
+  fileName: string,
+  fileUrl: string,
+  fileSize: number,
+): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+  spOnly(user.role);
+  const spId = user.service_provider_id ?? user.org_id;
+  const supabase = await createServiceClient();
+
+  const { error } = await supabase.from("proceeding_documents").insert({
+    proceeding_id: proceedingId,
+    service_provider_id: spId,
+    file_name: fileName,
+    file_url: fileUrl,
+    file_size: fileSize,
+    uploaded_by: user.id,
+  });
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/litigations");
+}
+
+export async function deleteProceedingDocument(docId: string): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+  spOnly(user.role);
+  const supabase = await createServiceClient();
+
+  const { error } = await supabase
+    .from("proceeding_documents")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", docId);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/litigations");
+}
+
+// ── Event Documents ──────────────────────────────────────────────
+
+export async function uploadEventDocument(
+  eventId: string,
+  fileName: string,
+  fileUrl: string,
+  fileSize: number,
+): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+  spOnly(user.role);
+  const spId = user.service_provider_id ?? user.org_id;
+  const supabase = await createServiceClient();
+
+  const { error } = await supabase.from("event_documents").insert({
+    event_id: eventId,
+    service_provider_id: spId,
+    file_name: fileName,
+    file_url: fileUrl,
+    file_size: fileSize,
+    uploaded_by: user.id,
+  });
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/litigations");
+}
+
+export async function deleteEventDocument(docId: string): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+  spOnly(user.role);
+  const supabase = await createServiceClient();
+
+  const { error } = await supabase
+    .from("event_documents")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", docId);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/litigations");
 }

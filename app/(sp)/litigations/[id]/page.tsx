@@ -26,11 +26,11 @@ export default async function AppealDetailPage({ params }: { params: Promise<{ i
         possible_outcome, is_active, created_at,
         assigned_user:users!assigned_to(first_name, last_name),
         client_staff:users!client_staff_id(first_name, last_name),
-        events(id, category, event_date, description, details, created_at, deleted_at)
-      ),
-      documents:appeal_documents(
-        id, file_name, file_url, file_size, created_at, deleted_at,
-        uploaded_by_user:users!uploaded_by(first_name, last_name)
+        events(
+          id, category, event_date, description, details, created_at, deleted_at,
+          event_documents(id, file_name, file_url, file_size, created_at, deleted_at)
+        ),
+        proceeding_documents(id, file_name, file_url, file_size, created_at, deleted_at)
       )
     `)
     .eq("id", id)

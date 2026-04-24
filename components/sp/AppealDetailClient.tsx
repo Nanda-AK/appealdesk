@@ -6,19 +6,19 @@ import { createClient } from "@/lib/supabase/client";
 import {
   updateAppeal, updateProceeding, addProceeding, addEvent, updateEvent,
   deleteEvent, deleteAppeal, deleteProceeding,
+  uploadProceedingDocument, deleteProceedingDocument,
+  uploadEventDocument, deleteEventDocument,
   AppealInput, ProceedingInput, EventInput,
 } from "@/app/(sp)/litigations/actions";
-import { addDocument, deleteDocument } from "@/app/(sp)/documents/actions";
 
 // ─── Types ───────────────────────────────────────────────────────
-interface AppDocument {
+interface AttachedFile {
   id: string;
   file_name: string;
   file_url: string;
   file_size: number | null;
   created_at: string;
   deleted_at?: string | null;
-  uploaded_by_user: { first_name: string; last_name: string } | null;
 }
 
 interface AppEvent {
@@ -29,6 +29,7 @@ interface AppEvent {
   details: Record<string, string> | null;
   created_at: string;
   deleted_at?: string | null;
+  event_documents?: AttachedFile[];
 }
 
 interface Proceeding {
@@ -51,6 +52,7 @@ interface Proceeding {
   assigned_user: { first_name: string; last_name: string } | null;
   client_staff: { first_name: string; last_name: string } | null;
   events: AppEvent[];
+  proceeding_documents?: AttachedFile[];
 }
 
 interface Appeal {
@@ -61,7 +63,6 @@ interface Appeal {
   status: string | null;
   client_org: { id: string; name: string } | null;
   proceedings: Proceeding[];
-  documents: AppDocument[];
 }
 
 type MasterItem = { id: string; name: string; type: string; parent_id: string | null };
@@ -104,7 +105,6 @@ const CATEGORY_FIELDS: Record<string, FieldDef[]> = {
     { key: "personal_hearing_date", label: "Personal Hearing Date", type: "datetime" },
     { key: "target_date", label: "Target Date", type: "datetime" },
     { key: "notice_status", label: "Notice Status", type: "select", options: NOTICE_STATUS_OPTS, fullWidth: true },
-    { key: "attachment", label: "Attachment", type: "file", fullWidth: true },
   ],
   response_to_notice: [
     { key: "response_against_notice_dated", label: "Response Against Notice Dated", type: "datetime" },
@@ -319,6 +319,234 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
   );
 }
 
+// ─── Attachment Panels ────────────────────────────────────────────
+function AttachmentRow({ doc, onDelete, canEdit }: { doc: AttachedFile; onDelete: () => void; canEdit: boolean }) {
+  return (
+    <div className="px-4 py-2.5 flex items-center justify-between gap-3">
+      <div className="flex items-center gap-2 min-w-0">
+        <svg className="w-3.5 h-3.5 text-[#4A6FA5] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        <span className="text-xs font-medium text-[#1A1A2E] truncate">{doc.file_name}</span>
+        {doc.file_size && <span className="text-xs text-[#9CA3AF] flex-shrink-0">{(doc.file_size / 1024).toFixed(0)} KB</span>}
+      </div>
+      <div className="flex items-center gap-3 flex-shrink-0">
+        <a href={doc.file_url} target="_blank" rel="noopener noreferrer"
+          className="text-xs font-medium text-[#4A6FA5] hover:text-[#1E3A5F]">View</a>
+        <a href={doc.file_url} download={doc.file_name}
+          className="text-xs font-medium text-[#6B7280] hover:text-[#1A1A2E]">Download</a>
+        {canEdit && (
+          <button onClick={onDelete} className="text-xs font-medium text-red-400 hover:text-red-600">Delete</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ProceedingAttachments({ proceedingId, docs, canEdit }: {
+  proceedingId: string;
+  docs: AttachedFile[];
+  canEdit: boolean;
+}) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<AttachedFile | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const activeDocs = docs.filter((d) => !d.deleted_at);
+
+  async function handleUpload(file: File) {
+    setUploading(true); setError(null);
+    const supabase = createClient();
+    const path = `proceeding-docs/${proceedingId}/${Date.now()}-${file.name}`;
+    const { data, error: upErr } = await supabase.storage.from("org-files").upload(path, file, { upsert: true });
+    if (upErr || !data) { setError("Upload failed. Please try again."); setUploading(false); return; }
+    const { data: urlData } = supabase.storage.from("org-files").getPublicUrl(data.path);
+    try {
+      await uploadProceedingDocument(proceedingId, file.name, urlData.publicUrl, file.size);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save attachment.");
+    } finally { setUploading(false); }
+  }
+
+  async function handleDelete() {
+    if (!confirmDelete) return;
+    setDeleting(true);
+    try {
+      await deleteProceedingDocument(confirmDelete.id);
+      setConfirmDelete(null);
+      router.refresh();
+    } catch { /* swallow */ } finally { setDeleting(false); }
+  }
+
+  return (
+    <div className="px-5 pb-4 pt-1">
+      <div className="border border-[#E5E7EB] rounded-lg overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="w-full px-4 py-2 bg-[#F8F9FA] flex items-center justify-between hover:bg-[#F3F4F6] transition text-left"
+        >
+          <div className="flex items-center gap-2">
+            <svg className={`w-3.5 h-3.5 text-[#9CA3AF] transition-transform duration-200 ${open ? "rotate-90" : ""}`}
+              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+            <span className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Attachments ({activeDocs.length})</span>
+          </div>
+          {canEdit && (
+            <label
+              onClick={(e) => { e.stopPropagation(); if (!open) setOpen(true); }}
+              className={`cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium border border-[#E5E7EB] bg-white rounded-lg text-[#6B7280] hover:bg-white transition ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              {uploading ? "Uploading…" : "Upload"}
+              <input type="file" className="hidden" disabled={uploading}
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f); e.target.value = ""; }} />
+            </label>
+          )}
+        </button>
+        {open && (
+          <>
+            {error && <div className="px-4 py-1.5 bg-red-50 border-b border-red-100 text-xs text-red-600">{error}</div>}
+            {activeDocs.length === 0 ? (
+              <div className="px-4 py-3 text-center text-xs text-[#9CA3AF] border-t border-[#E5E7EB]">
+                No attachments.{canEdit ? " Use Upload to add files." : ""}
+              </div>
+            ) : (
+              <div className="divide-y divide-[#F3F4F6] border-t border-[#E5E7EB]">
+                {activeDocs.map((doc) => (
+                  <AttachmentRow key={doc.id} doc={doc} canEdit={canEdit} onDelete={() => setConfirmDelete(doc)} />
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl border border-[#E5E7EB] w-full max-w-sm p-6">
+            <h3 className="text-base font-semibold text-[#1A1A2E] mb-2">Delete Attachment?</h3>
+            <p className="text-sm text-[#6B7280] mb-5">Delete <strong>"{confirmDelete.file_name}"</strong>? This will move it to trash.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmDelete(null)} disabled={deleting}
+                className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">Cancel</button>
+              <button onClick={handleDelete} disabled={deleting}
+                className="flex-1 px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition disabled:opacity-60">
+                {deleting ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EventAttachments({ eventId, docs, canEdit }: {
+  eventId: string;
+  docs: AttachedFile[];
+  canEdit: boolean;
+}) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<AttachedFile | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const activeDocs = docs.filter((d) => !d.deleted_at);
+
+  async function handleUpload(file: File) {
+    setUploading(true); setError(null);
+    const supabase = createClient();
+    const path = `event-docs/${eventId}/${Date.now()}-${file.name}`;
+    const { data, error: upErr } = await supabase.storage.from("org-files").upload(path, file, { upsert: true });
+    if (upErr || !data) { setError("Upload failed. Please try again."); setUploading(false); return; }
+    const { data: urlData } = supabase.storage.from("org-files").getPublicUrl(data.path);
+    try {
+      await uploadEventDocument(eventId, file.name, urlData.publicUrl, file.size);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save attachment.");
+    } finally { setUploading(false); }
+  }
+
+  async function handleDelete() {
+    if (!confirmDelete) return;
+    setDeleting(true);
+    try {
+      await deleteEventDocument(confirmDelete.id);
+      setConfirmDelete(null);
+      router.refresh();
+    } catch { /* swallow */ } finally { setDeleting(false); }
+  }
+
+  return (
+    <div className="mt-2">
+      <div className="border border-[#E5E7EB] rounded-lg overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="w-full px-3 py-1.5 bg-[#F8F9FA] flex items-center justify-between hover:bg-[#F3F4F6] transition text-left"
+        >
+          <div className="flex items-center gap-2">
+            <svg className={`w-3 h-3 text-[#9CA3AF] transition-transform duration-200 ${open ? "rotate-90" : ""}`}
+              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+            <span className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Files ({activeDocs.length})</span>
+          </div>
+          {canEdit && (
+            <label
+              onClick={(e) => { e.stopPropagation(); if (!open) setOpen(true); }}
+              className={`cursor-pointer inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium border border-[#E5E7EB] bg-white rounded text-[#6B7280] hover:bg-white transition ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              {uploading ? "Uploading…" : "Upload"}
+              <input type="file" className="hidden" disabled={uploading}
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f); e.target.value = ""; }} />
+            </label>
+          )}
+        </button>
+        {open && (
+          <>
+            {error && <div className="px-3 py-1 bg-red-50 border-b border-red-100 text-xs text-red-600">{error}</div>}
+            {activeDocs.length === 0 ? (
+              <div className="px-3 py-2 text-center text-xs text-[#9CA3AF] border-t border-[#E5E7EB]">No files attached.</div>
+            ) : (
+              <div className="divide-y divide-[#F3F4F6] border-t border-[#E5E7EB]">
+                {activeDocs.map((doc) => (
+                  <AttachmentRow key={doc.id} doc={doc} canEdit={canEdit} onDelete={() => setConfirmDelete(doc)} />
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl border border-[#E5E7EB] w-full max-w-sm p-6">
+            <h3 className="text-base font-semibold text-[#1A1A2E] mb-2">Delete File?</h3>
+            <p className="text-sm text-[#6B7280] mb-5">Delete <strong>"{confirmDelete.file_name}"</strong>? This will move it to trash.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmDelete(null)} disabled={deleting}
+                className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">Cancel</button>
+              <button onClick={handleDelete} disabled={deleting}
+                className="flex-1 px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition disabled:opacity-60">
+                {deleting ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Proceeding Form Fields ────────────────────────────────────────
 function ProceedingFormFields({
   values, onChange, mastersByType, teamMembers, clientUsers, actRegulationId,
@@ -337,7 +565,7 @@ function ProceedingFormFields({
 
   return (
     <div className="grid grid-cols-2 gap-4">
-      <Field label="Forum">
+      <Field label="Proceeding">
         <select value={values.proceeding_type_id ?? ""} onChange={(e) => onChange("proceeding_type_id", e.target.value)} className={inp}>
           <option value="">Select…</option>
           {availableProcs.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
@@ -521,7 +749,6 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
   const [eventDescription, setEventDescription] = useState("");
   const [eventSaving, setEventSaving] = useState(false);
   const [eventError, setEventError] = useState<string | null>(null);
-  const [attachmentUploading, setAttachmentUploading] = useState(false);
 
   // ── View Event ──
   const [viewEvent, setViewEvent] = useState<AppEvent | null>(null);
@@ -533,7 +760,6 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
   const [editEventDescription, setEditEventDescription] = useState("");
   const [editEventSaving, setEditEventSaving] = useState(false);
   const [editEventError, setEditEventError] = useState<string | null>(null);
-  const [editAttachmentUploading, setEditAttachmentUploading] = useState(false);
 
   function openEditEvent(ev: AppEvent) {
     setEditEvent(ev);
@@ -545,18 +771,6 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
 
   function setEditDetail(key: string, value: string) {
     setEditEventDetails((prev) => ({ ...prev, [key]: value }));
-  }
-
-  async function handleEditAttachmentUpload(file: File) {
-    setEditAttachmentUploading(true);
-    const supabase = createClient();
-    const path = `events/${Date.now()}-${file.name}`;
-    const { data, error } = await supabase.storage.from("org-files").upload(path, file, { upsert: true });
-    if (!error && data) {
-      const { data: urlData } = supabase.storage.from("org-files").getPublicUrl(data.path);
-      setEditDetail("attachment", urlData.publicUrl);
-    }
-    setEditAttachmentUploading(false);
   }
 
   async function handleSaveEvent(e: React.FormEvent) {
@@ -640,18 +854,6 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
     setEventDetails((prev) => ({ ...prev, [key]: value }));
   }
 
-  async function handleAttachmentUpload(file: File) {
-    setAttachmentUploading(true);
-    const supabase = createClient();
-    const path = `events/${Date.now()}-${file.name}`;
-    const { data, error } = await supabase.storage.from("org-files").upload(path, file, { upsert: true });
-    if (!error && data) {
-      const { data: urlData } = supabase.storage.from("org-files").getPublicUrl(data.path);
-      setDetail("attachment", urlData.publicUrl);
-    }
-    setAttachmentUploading(false);
-  }
-
   async function handleAddEvent(e: React.FormEvent) {
     e.preventDefault();
     if (!addEventProcId || !eventCategory) { setEventError("Category is required."); return; }
@@ -676,37 +878,6 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
     } catch (err) {
       setEventError(err instanceof Error ? err.message : "Failed to add event.");
     } finally { setEventSaving(false); }
-  }
-
-  // ── Documents ──
-  const [docUploading, setDocUploading] = useState(false);
-  const [docError, setDocError] = useState<string | null>(null);
-  const [confirmDeleteDoc, setConfirmDeleteDoc] = useState<AppDocument | null>(null);
-  const [deletingDoc, setDeletingDoc] = useState(false);
-
-  async function handleDocUpload(file: File) {
-    setDocUploading(true); setDocError(null);
-    const supabase = createClient();
-    const path = `appeal-docs/${appeal.id}/${Date.now()}-${file.name}`;
-    const { data, error } = await supabase.storage.from("org-files").upload(path, file, { upsert: true });
-    if (error || !data) { setDocError("Upload failed. Please try again."); setDocUploading(false); return; }
-    const { data: urlData } = supabase.storage.from("org-files").getPublicUrl(data.path);
-    try {
-      await addDocument(appeal.id, file.name, urlData.publicUrl, file.size);
-      router.refresh();
-    } catch (err) {
-      setDocError(err instanceof Error ? err.message : "Failed to save document.");
-    } finally { setDocUploading(false); }
-  }
-
-  async function handleDeleteDoc() {
-    if (!confirmDeleteDoc) return;
-    setDeletingDoc(true);
-    try {
-      await deleteDocument(confirmDeleteDoc.id, appeal.id);
-      setConfirmDeleteDoc(null);
-      router.refresh();
-    } catch { /* swallow */ } finally { setDeletingDoc(false); }
   }
 
   const proceedingFormChange = (setter: React.Dispatch<React.SetStateAction<ProceedingInput>>) =>
@@ -857,6 +1028,13 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                       )}
                     </div>
 
+                    {/* Proceeding Attachments */}
+                    <ProceedingAttachments
+                      proceedingId={proc.id}
+                      docs={proc.proceeding_documents ?? []}
+                      canEdit={canEdit}
+                    />
+
                     {/* Events */}
                     <div className="px-5 py-4">
                       <div className="flex items-center justify-between mb-3">
@@ -956,16 +1134,18 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                                     {ev.description && <p className="text-xs text-[#9CA3AF] italic mb-1.5">{ev.description}</p>}
                                     {attachmentUrl && (
                                       <a href={attachmentUrl} target="_blank" rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-1 text-xs text-[#4A6FA5] hover:underline">
+                                        className="inline-flex items-center gap-1 text-xs text-[#4A6FA5] hover:underline mb-2">
                                         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                           <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                                         </svg>
                                         View Attachment
                                       </a>
                                     )}
-                                    {!summary && !ev.description && !attachmentUrl && (
-                                      <p className="text-xs text-[#9CA3AF]">No additional details.</p>
-                                    )}
+                                    <EventAttachments
+                                      eventId={ev.id}
+                                      docs={ev.event_documents ?? []}
+                                      canEdit={canEdit}
+                                    />
                                   </div>
                                 )}
                               </div>
@@ -981,59 +1161,6 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
           })}
         </div>
       )}
-
-      {/* Documents Section */}
-      <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between">
-          <div>
-            <p className="text-sm font-semibold text-[#1A1A2E]">Documents ({(appeal.documents ?? []).filter(d => !d.deleted_at).length})</p>
-            <p className="text-xs text-[#6B7280] mt-0.5">Files attached to this litigation</p>
-          </div>
-          {canEdit && (
-            <label className={`cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F8F9FA] transition ${docUploading ? "opacity-50 pointer-events-none" : ""}`}>
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-              {docUploading ? "Uploading…" : "Upload File"}
-              <input type="file" className="hidden" disabled={docUploading}
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleDocUpload(f); }} />
-            </label>
-          )}
-        </div>
-        {docError && <div className="px-5 py-2 bg-red-50 border-b border-red-100 text-xs text-red-600">{docError}</div>}
-        {(appeal.documents ?? []).filter(d => !d.deleted_at).length === 0 ? (
-          <div className="px-5 py-8 text-center text-sm text-[#9CA3AF]">
-            No documents attached.{canEdit ? " Upload files using the button above." : ""}
-          </div>
-        ) : (
-          <div className="divide-y divide-[#F3F4F6]">
-            {(appeal.documents ?? []).filter(d => !d.deleted_at).map((doc) => (
-              <div key={doc.id} className="px-5 py-3 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-2 min-w-0">
-                  <svg className="w-4 h-4 text-[#4A6FA5] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-[#1A1A2E] truncate">{doc.file_name}</p>
-                    <p className="text-xs text-[#9CA3AF]">
-                      {doc.uploaded_by_user ? `${doc.uploaded_by_user.first_name} ${doc.uploaded_by_user.last_name} · ` : ""}
-                      {new Date(doc.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <a href={doc.file_url} target="_blank" rel="noopener noreferrer"
-                    className="text-xs font-medium text-[#4A6FA5] hover:text-[#1E3A5F]">View</a>
-                  {canEdit && (
-                    <button onClick={() => setConfirmDeleteDoc(doc)}
-                      className="text-xs font-medium text-red-400 hover:text-red-600">Delete</button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
 
       {/* Add Proceeding */}
       {canEdit && (
@@ -1060,19 +1187,19 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
               <Field label="Financial Year / Tax Year">
                 <select value={editFY} onChange={(e) => setEditFY(e.target.value)} className={inp}>
                   <option value="">Select…</option>
-                  {(mastersByType["financial_year"] ?? []).map((m) => <option key={m.id} value={m.name}>{m.name}</option>)}
+                  {(mastersByType["financial_year"] ?? []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
                 </select>
               </Field>
               <Field label="Assessment Year">
                 <select value={editAY} onChange={(e) => setEditAY(e.target.value)} className={inp}>
                   <option value="">Select…</option>
-                  {(mastersByType["assessment_year"] ?? []).map((m) => <option key={m.id} value={m.name}>{m.name}</option>)}
+                  {(mastersByType["assessment_year"] ?? []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
                 </select>
               </Field>
               <Field label="Act / Regulation" fullWidth>
                 <select value={editAct} onChange={(e) => setEditAct(e.target.value)} className={inp}>
                   <option value="">Select…</option>
-                  {(mastersByType["act_regulation"] ?? []).map((m) => <option key={m.id} value={m.name}>{m.name}</option>)}
+                  {(mastersByType["act_regulation"] ?? []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
                 </select>
               </Field>
               <Field label="Status">
@@ -1142,13 +1269,6 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                     } else if (field.type === "select") {
                       const opt = field.options?.find((o) => o.value === rawVal);
                       display = opt?.label ?? rawVal;
-                    } else if (field.type === "file") {
-                      display = (
-                        <a href={rawVal} target="_blank" rel="noopener noreferrer"
-                          className="text-[#4A6FA5] hover:underline text-sm">
-                          View File
-                        </a>
-                      );
                     } else {
                       display = rawVal;
                     }
@@ -1230,29 +1350,6 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                         ))}
                       </select>
                     )}
-                    {field.type === "file" && (
-                      <div className="flex items-center gap-3">
-                        {editEventDetails[field.key] ? (
-                          <>
-                            <a href={editEventDetails[field.key]} target="_blank" rel="noopener noreferrer"
-                              className="text-xs text-[#4A6FA5] hover:underline truncate max-w-[200px]">
-                              View uploaded file
-                            </a>
-                            <button type="button" onClick={() => setEditDetail(field.key, "")}
-                              className="text-xs text-red-500 hover:text-red-700">Remove</button>
-                          </>
-                        ) : (
-                          <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F8F9FA] transition">
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                            </svg>
-                            {editAttachmentUploading ? "Uploading…" : "Upload File"}
-                            <input type="file" className="hidden" disabled={editAttachmentUploading}
-                              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleEditAttachmentUpload(f); }} />
-                          </label>
-                        )}
-                      </div>
-                    )}
                   </Field>
                 ))}
               </div>
@@ -1276,7 +1373,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                 className="px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">
                 Cancel
               </button>
-              <button type="submit" disabled={editEventSaving || editAttachmentUploading}
+              <button type="submit" disabled={editEventSaving}
                 className="px-4 py-2 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60">
                 {editEventSaving ? "Saving…" : "Save Changes"}
               </button>
@@ -1330,29 +1427,6 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                         ))}
                       </select>
                     )}
-                    {field.type === "file" && (
-                      <div className="flex items-center gap-3">
-                        {eventDetails[field.key] ? (
-                          <>
-                            <a href={eventDetails[field.key]} target="_blank" rel="noopener noreferrer"
-                              className="text-xs text-[#4A6FA5] hover:underline truncate max-w-[200px]">
-                              View uploaded file
-                            </a>
-                            <button type="button" onClick={() => setDetail(field.key, "")}
-                              className="text-xs text-red-500 hover:text-red-700">Remove</button>
-                          </>
-                        ) : (
-                          <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F8F9FA] transition">
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                            </svg>
-                            {attachmentUploading ? "Uploading…" : "Upload File"}
-                            <input type="file" className="hidden" disabled={attachmentUploading}
-                              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleAttachmentUpload(f); }} />
-                          </label>
-                        )}
-                      </div>
-                    )}
                   </Field>
                 ))}
               </div>
@@ -1376,7 +1450,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                 className="px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">
                 Cancel
               </button>
-              <button type="submit" disabled={eventSaving || attachmentUploading}
+              <button type="submit" disabled={eventSaving}
                 className="px-4 py-2 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60">
                 {eventSaving ? "Adding…" : "Add Event"}
               </button>
@@ -1436,28 +1510,6 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                 className="flex-1 px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition disabled:opacity-60"
               >
                 {deletingEvent ? "Deleting…" : "Delete"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Confirm Delete Document ── */}
-      {confirmDeleteDoc && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl border border-[#E5E7EB] w-full max-w-sm p-6">
-            <h3 className="text-base font-semibold text-[#1A1A2E] mb-2">Delete Document?</h3>
-            <p className="text-sm text-[#6B7280] mb-5">
-              Delete <strong>"{confirmDeleteDoc.file_name}"</strong>? This cannot be undone.
-            </p>
-            <div className="flex gap-3">
-              <button onClick={() => setConfirmDeleteDoc(null)} disabled={deletingDoc}
-                className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">
-                Cancel
-              </button>
-              <button onClick={handleDeleteDoc} disabled={deletingDoc}
-                className="flex-1 px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition disabled:opacity-60">
-                {deletingDoc ? "Deleting…" : "Delete"}
               </button>
             </div>
           </div>

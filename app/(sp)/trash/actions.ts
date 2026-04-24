@@ -16,7 +16,6 @@ export async function restoreAppeal(appealId: string): Promise<void> {
   adminOnly(user.role);
   const supabase = await createServiceClient();
 
-  // Restore proceeding cascade
   const { data: proceedings } = await supabase
     .from("proceedings")
     .select("id")
@@ -24,7 +23,15 @@ export async function restoreAppeal(appealId: string): Promise<void> {
 
   if (proceedings?.length) {
     const procIds = proceedings.map((p) => p.id);
-    await supabase.from("events").update({ deleted_at: null }).in("proceeding_id", procIds);
+
+    const { data: events } = await supabase.from("events").select("id").in("proceeding_id", procIds);
+    if (events?.length) {
+      const evtIds = events.map((e) => e.id);
+      await supabase.from("event_documents").update({ deleted_at: null }).in("event_id", evtIds);
+      await supabase.from("events").update({ deleted_at: null }).in("id", evtIds);
+    }
+
+    await supabase.from("proceeding_documents").update({ deleted_at: null }).in("proceeding_id", procIds);
     await supabase.from("proceedings").update({ deleted_at: null }).in("id", procIds);
   }
 
@@ -59,7 +66,13 @@ export async function restoreClient(orgId: string): Promise<void> {
 
     if (proceedings?.length) {
       const procIds = proceedings.map((p) => p.id);
-      await supabase.from("events").update({ deleted_at: null }).in("proceeding_id", procIds);
+      const { data: events } = await supabase.from("events").select("id").in("proceeding_id", procIds);
+      if (events?.length) {
+        const evtIds = events.map((e) => e.id);
+        await supabase.from("event_documents").update({ deleted_at: null }).in("event_id", evtIds);
+        await supabase.from("events").update({ deleted_at: null }).in("id", evtIds);
+      }
+      await supabase.from("proceeding_documents").update({ deleted_at: null }).in("proceeding_id", procIds);
       await supabase.from("proceedings").update({ deleted_at: null }).in("id", procIds);
     }
 
@@ -94,8 +107,13 @@ export async function restoreProceeding(proceedingId: string): Promise<void> {
   adminOnly(user.role);
   const supabase = await createServiceClient();
 
-  // Restore the proceeding and all its events (cascade restore)
-  await supabase.from("events").update({ deleted_at: null }).eq("proceeding_id", proceedingId);
+  const { data: events } = await supabase.from("events").select("id").eq("proceeding_id", proceedingId);
+  if (events?.length) {
+    const evtIds = events.map((e) => e.id);
+    await supabase.from("event_documents").update({ deleted_at: null }).in("event_id", evtIds);
+    await supabase.from("events").update({ deleted_at: null }).in("id", evtIds);
+  }
+  await supabase.from("proceeding_documents").update({ deleted_at: null }).eq("proceeding_id", proceedingId);
   await supabase.from("proceedings").update({ deleted_at: null }).eq("id", proceedingId);
 
   revalidatePath("/trash");
@@ -108,7 +126,13 @@ export async function purgeProceeding(proceedingId: string): Promise<void> {
   adminOnly(user.role);
   const supabase = await createServiceClient();
 
-  await supabase.from("events").delete().eq("proceeding_id", proceedingId);
+  const { data: events } = await supabase.from("events").select("id").eq("proceeding_id", proceedingId);
+  if (events?.length) {
+    const evtIds = events.map((e) => e.id);
+    await supabase.from("event_documents").delete().in("event_id", evtIds);
+    await supabase.from("events").delete().in("id", evtIds);
+  }
+  await supabase.from("proceeding_documents").delete().eq("proceeding_id", proceedingId);
   await supabase.from("proceedings").delete().eq("id", proceedingId);
 
   revalidatePath("/trash");
@@ -120,6 +144,7 @@ export async function restoreEvent(eventId: string): Promise<void> {
   adminOnly(user.role);
   const supabase = await createServiceClient();
 
+  await supabase.from("event_documents").update({ deleted_at: null }).eq("event_id", eventId);
   await supabase.from("events").update({ deleted_at: null }).eq("id", eventId);
 
   revalidatePath("/trash");
@@ -132,6 +157,7 @@ export async function purgeEvent(eventId: string): Promise<void> {
   adminOnly(user.role);
   const supabase = await createServiceClient();
 
+  await supabase.from("event_documents").delete().eq("event_id", eventId);
   await supabase.from("events").delete().eq("id", eventId);
 
   revalidatePath("/trash");
@@ -166,7 +192,13 @@ export async function purgeAppeal(appealId: string): Promise<void> {
 
   if (proceedings?.length) {
     const procIds = proceedings.map((p) => p.id);
-    await supabase.from("events").delete().in("proceeding_id", procIds);
+    const { data: events } = await supabase.from("events").select("id").in("proceeding_id", procIds);
+    if (events?.length) {
+      const evtIds = events.map((e) => e.id);
+      await supabase.from("event_documents").delete().in("event_id", evtIds);
+      await supabase.from("events").delete().in("id", evtIds);
+    }
+    await supabase.from("proceeding_documents").delete().in("proceeding_id", procIds);
     await supabase.from("proceedings").delete().in("id", procIds);
   }
 
@@ -199,7 +231,13 @@ export async function purgeClient(orgId: string): Promise<void> {
 
     if (proceedings?.length) {
       const procIds = proceedings.map((p) => p.id);
-      await supabase.from("events").delete().in("proceeding_id", procIds);
+      const { data: events } = await supabase.from("events").select("id").in("proceeding_id", procIds);
+      if (events?.length) {
+        const evtIds = events.map((e) => e.id);
+        await supabase.from("event_documents").delete().in("event_id", evtIds);
+        await supabase.from("events").delete().in("id", evtIds);
+      }
+      await supabase.from("proceeding_documents").delete().in("proceeding_id", procIds);
       await supabase.from("proceedings").delete().in("id", procIds);
     }
 
