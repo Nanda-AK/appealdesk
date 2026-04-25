@@ -341,11 +341,11 @@ export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
               <table className="min-w-full text-sm">
                 <thead>
                   <tr className="border-b border-[#E5E7EB] bg-white">
-                    <th className="text-left px-4 py-2.5 font-medium text-[#6B7280] whitespace-nowrap w-36">ID Type</th>
-                    <th className="text-left px-4 py-2.5 font-medium text-[#6B7280] min-w-[180px]">ID</th>
-                    <th className="text-left px-4 py-2.5 font-medium text-[#6B7280] min-w-[180px]">Login ID</th>
-                    <th className="text-left px-4 py-2.5 font-medium text-[#6B7280] min-w-[180px]">Password</th>
-                    <th className="text-left px-4 py-2.5 font-medium text-[#6B7280] w-36">Attachment</th>
+                    <th className="text-left px-4 py-3 font-medium text-[#6B7280] whitespace-nowrap w-36">ID Type</th>
+                    <th className="text-left px-4 py-3 font-medium text-[#6B7280] min-w-[180px]">ID</th>
+                    <th className="text-left px-4 py-3 font-medium text-[#6B7280] min-w-[180px]">Login ID</th>
+                    <th className="text-left px-4 py-3 font-medium text-[#6B7280] min-w-[180px]">Password</th>
+                    <th className="text-left px-4 py-3 font-medium text-[#6B7280] w-36">Attachment</th>
                     <th className="w-8" />
                   </tr>
                 </thead>
@@ -455,7 +455,7 @@ export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
                   {/* Add Row */}
                   {!ro && (
                     <tr className="bg-[#FAFAFA]">
-                      <td colSpan={6} className="px-4 py-2.5">
+                      <td colSpan={6} className="px-4 py-3">
                         <button type="button" onClick={addExtraRow} className="inline-flex items-center gap-1.5 text-xs text-[#4A6FA5] hover:text-[#1E3A5F] transition font-medium">
                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -475,7 +475,7 @@ export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
               {profileError && <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{profileError}</div>}
               {profileSuccess && <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">Profile saved successfully.</div>}
               <div className="flex justify-end">
-                <button type="submit" disabled={profileSaving} className="px-5 py-2.5 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60">
+                <button type="submit" disabled={profileSaving} className="px-5 py-3 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60">
                   {profileSaving ? "Saving…" : "Save Profile"}
                 </button>
               </div>

@@ -261,7 +261,7 @@ export default function DocumentsClient({ forms, templates, canEdit }: Props) {
       {/* ── TAB: FORMS (Income Tax Rules) ── */}
       {activeTab === "forms" && (
         <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
-          <div className="px-6 py-3 border-b-2 border-[#B0BDD0] bg-[#D1D9E6]">
+          <div className="px-4 py-3 border-b-2 border-[#B0BDD0] bg-[#D1D9E6]">
             <p className="text-[#1A1A2E] font-semibold text-sm">Forms</p>
           </div>
           <div className="overflow-x-auto">
@@ -327,7 +327,7 @@ export default function DocumentsClient({ forms, templates, canEdit }: Props) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-[#F8F9FA] border-b border-[#E5E7EB]">
-                  <th className="text-left px-6 py-3 font-medium text-[#6B7280]">Template Name</th>
+                  <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Template Name</th>
                   <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Description</th>
                   <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Type</th>
                   <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Size</th>
@@ -344,7 +344,7 @@ export default function DocumentsClient({ forms, templates, canEdit }: Props) {
                       onClick={() => window.open(t.file_url, "_blank")}
                       className={`border-b border-[#E5E7EB] last:border-0 ${i % 2 === 0 ? "bg-white" : "bg-[#F8F9FA]"} hover:bg-[#EEF2FF] transition-colors cursor-pointer`}
                     >
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className={`w-9 h-9 rounded-lg ${badge.bg} flex items-center justify-center flex-shrink-0`}>
                             <span className={`text-xs font-bold ${badge.text}`}>{badge.label}</span>
@@ -352,17 +352,17 @@ export default function DocumentsClient({ forms, templates, canEdit }: Props) {
                           <span className="font-medium text-[#1A1A2E]">{t.name}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-4 text-[#6B7280] max-w-[200px] truncate">{t.description ?? "—"}</td>
-                      <td className="px-4 py-4">
+                      <td className="px-4 py-3 text-[#6B7280] max-w-[200px] truncate">{t.description ?? "—"}</td>
+                      <td className="px-4 py-3">
                         {t.file_type && (
                           <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}>
                             {t.file_type}
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-4 text-[#6B7280]">{fmtSize(t.file_size)}</td>
-                      <td className="px-4 py-4 text-[#6B7280] whitespace-nowrap">{fmtDate(t.created_at)}</td>
-                      <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
+                      <td className="px-4 py-3 text-[#6B7280]">{fmtSize(t.file_size)}</td>
+                      <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">{fmtDate(t.created_at)}</td>
+                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center gap-3">
                           <a href={t.file_url} target="_blank" rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-xs font-medium text-[#4A6FA5] hover:text-[#1E3A5F]">
