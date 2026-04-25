@@ -942,7 +942,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
       {sortedProceedings.length === 0 ? (
         <div className="bg-white border border-[#E5E7EB] rounded-xl p-8 text-center text-[#6B7280] text-sm">No proceedings yet.</div>
       ) : (
-        <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
+        <div className="space-y-3">
           {sortedProceedings.map((proc, idx) => {
             const impCfg = proc.importance ? IMPORTANCE[proc.importance] : null;
             const outCfg = proc.possible_outcome ? OUTCOME[proc.possible_outcome] : null;
@@ -955,11 +955,11 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
             const isExpanded = expandedProcs.has(proc.id);
 
             return (
-              <div key={proc.id} className={`${idx > 0 ? "border-t border-[#E5E7EB]" : ""}`}>
+              <div key={proc.id} className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
 
                 {/* ── Collapsed summary row (always visible) ── */}
                 <div
-                  className="px-5 py-3.5 flex items-center gap-3 cursor-pointer hover:bg-[#F8F9FA] transition-colors select-none"
+                  className="px-5 py-3.5 flex items-center gap-3 cursor-pointer bg-[#EEF2FF] hover:bg-[#E4EBFA] transition-colors select-none"
                   onClick={() => toggleProc(proc.id)}
                 >
                   {/* Chevron */}
@@ -1002,7 +1002,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
 
                 {/* ── Expanded content ── */}
                 {isExpanded && (
-                  <div className="border-t border-[#F3F4F6]">
+                  <div className="border-t border-[#E5E7EB]">
                     {/* Proceeding details */}
                     <div className="px-5 py-4 grid grid-cols-3 gap-x-6 gap-y-4 border-b border-[#F3F4F6] bg-[#FAFAFA]">
                       <DetailRow label="Authority" value={[proc.authority_type, proc.authority_name].filter(Boolean).join(" · ")} />
@@ -1052,7 +1052,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                       {sortedEvents.length === 0 ? (
                         <p className="text-xs text-[#9CA3AF]">No events recorded yet.</p>
                       ) : (
-                        <div className="border border-[#F3F4F6] rounded-lg overflow-hidden">
+                        <div className="space-y-2">
                           {sortedEvents.map((ev, evIdx) => {
                             const summary = getEventSummary(ev.category, ev.details);
                             const attachmentUrl = ev.details?.attachment;
@@ -1064,7 +1064,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                               : ev.event_date ? fmtDateTime(ev.event_date) : null;
 
                             return (
-                              <div key={ev.id} className={`${evIdx > 0 ? "border-t border-[#F3F4F6]" : ""}`}>
+                              <div key={ev.id} className="border border-[#E5E7EB] rounded-lg overflow-hidden bg-white">
                                 {/* Collapsed summary row */}
                                 <div
                                   className="flex items-center gap-2 px-3 py-2.5 cursor-pointer hover:bg-[#F8F9FA] transition-colors select-none"
