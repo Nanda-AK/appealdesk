@@ -1,8 +1,11 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import LoginForm from "./LoginForm";
 
+export const dynamic = "force-dynamic";
+
 export default async function LoginPage() {
-  let platformName = "AppealDesk";
+  let platformName = "TaxVeteran";
+  let description: string | null = "Your AI Tax Attorney";
   let logoUrl: string | null = null;
   let supportEmail: string | null = null;
 
@@ -10,11 +13,12 @@ export default async function LoginPage() {
     const supabase = await createServiceClient();
     const { data: settings } = await supabase
       .from("platform_settings")
-      .select("platform_name, logo_url, support_email")
+      .select("platform_name, description, logo_url, support_email")
       .single();
 
     if (settings) {
-      platformName = settings.platform_name ?? "AppealDesk";
+      platformName = settings.platform_name ?? "TaxVeteran";
+      description = settings.description ?? null;
       logoUrl = settings.logo_url ?? null;
       supportEmail = settings.support_email ?? null;
     }
@@ -25,6 +29,7 @@ export default async function LoginPage() {
   return (
     <LoginForm
       platformName={platformName}
+      description={description}
       logoUrl={logoUrl}
       supportEmail={supportEmail}
     />

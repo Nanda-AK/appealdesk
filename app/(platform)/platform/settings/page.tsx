@@ -23,7 +23,7 @@ export default async function PlatformSettingsPage() {
       </div>
 
       <PlatformSettingsClient
-        settings={settings ?? { platform_name: "AppealDesk", logo_url: null, support_email: null }}
+        settings={settings ?? { platform_name: "TaxVeteran", description: null, logo_url: null, support_email: null }}
         isSuperAdmin={user?.role === "super_admin"}
       />
     </div>

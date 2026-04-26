@@ -7,11 +7,12 @@ import Image from "next/image";
 
 interface Props {
   platformName: string;
+  description: string | null;
   logoUrl: string | null;
   supportEmail: string | null;
 }
 
-export default function LoginForm({ platformName, logoUrl, supportEmail }: Props) {
+export default function LoginForm({ platformName, description, logoUrl, supportEmail }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -74,19 +75,19 @@ export default function LoginForm({ platformName, logoUrl, supportEmail }: Props
       <div className="w-full max-w-md">
         {/* Brand */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-3 mb-3">
+          <div className="flex flex-col items-center gap-3 mb-3">
             {logoUrl ? (
               <Image
                 src={logoUrl}
                 alt={platformName}
-                width={40}
-                height={40}
-                className="w-10 h-10 rounded-xl object-contain"
+                width={128}
+                height={128}
+                className="w-32 h-32 rounded-2xl object-contain"
                 unoptimized
               />
             ) : (
-              <div className="w-10 h-10 rounded-xl bg-[#1E3A5F] flex items-center justify-center flex-shrink-0">
-                <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" xmlns="http://www.w3.org/2000/svg">
+              <div className="w-28 h-28 rounded-2xl bg-[#1E3A5F] flex items-center justify-center flex-shrink-0">
+                <svg viewBox="0 0 24 24" fill="none" className="w-14 h-14" xmlns="http://www.w3.org/2000/svg">
                   <path d="M9 12h6M9 16h4M7 4H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V8l-5-4H7z" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                   <path d="M14 4v4h4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
@@ -94,7 +95,7 @@ export default function LoginForm({ platformName, logoUrl, supportEmail }: Props
             )}
             <span className="text-2xl font-bold text-[#1A1A2E] tracking-tight">{platformName}</span>
           </div>
-          <p className="text-[#6B7280] text-sm">Your AI Tax Attorney</p>
+          {description && <p className="text-[#6B7280] text-sm">{description}</p>}
         </div>
 
         {/* Card */}

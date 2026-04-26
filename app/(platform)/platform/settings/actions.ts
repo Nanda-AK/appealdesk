@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 
 export interface SettingsInput {
   platform_name: string;
+  description?: string;
   logo_url?: string;
   support_email?: string;
 }
@@ -20,6 +21,7 @@ export async function updatePlatformSettings(input: SettingsInput) {
     .from("platform_settings")
     .update({
       platform_name: input.platform_name.trim(),
+      description: input.description?.trim() || null,
       logo_url: input.logo_url || null,
       support_email: input.support_email?.trim() || null,
       updated_at: new Date().toISOString(),
@@ -28,6 +30,7 @@ export async function updatePlatformSettings(input: SettingsInput) {
 
   if (error) throw new Error(error.message);
 
+  revalidatePath("/login");
   revalidatePath("/platform/settings");
   revalidatePath("/platform/dashboard");
 }

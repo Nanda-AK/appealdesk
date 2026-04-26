@@ -6,6 +6,7 @@ import { updatePlatformSettings } from "@/app/(platform)/platform/settings/actio
 
 interface Settings {
   platform_name: string;
+  description: string | null;
   logo_url: string | null;
   support_email: string | null;
 }
@@ -18,6 +19,7 @@ interface Props {
 export default function PlatformSettingsClient({ settings, isSuperAdmin }: Props) {
   // Branding state
   const [platformName, setPlatformName] = useState(settings.platform_name);
+  const [description, setDescription] = useState(settings.description ?? "");
   const [logoUrl, setLogoUrl] = useState(settings.logo_url ?? "");
   const [logoUploading, setLogoUploading] = useState(false);
   const [supportEmail, setSupportEmail] = useState(settings.support_email ?? "");
@@ -54,6 +56,7 @@ export default function PlatformSettingsClient({ settings, isSuperAdmin }: Props
     try {
       await updatePlatformSettings({
         platform_name: platformName,
+        description: description || undefined,
         logo_url: logoUrl || undefined,
         support_email: supportEmail || undefined,
       });
@@ -150,6 +153,21 @@ export default function PlatformSettingsClient({ settings, isSuperAdmin }: Props
               className={fieldClass(!isSuperAdmin)}
               placeholder="e.g. AppealDesk"
             />
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Tagline / Description</label>
+            <input
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              disabled={!isSuperAdmin}
+              className={fieldClass(!isSuperAdmin)}
+              placeholder="e.g. Your AI Tax Attorney"
+            />
+            <p className="text-xs text-[#9CA3AF] mt-1">
+              Shown below the platform name on the login page.
+            </p>
           </div>
 
           {/* Support Email */}
