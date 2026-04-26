@@ -28,9 +28,9 @@ export default async function AppealDetailPage({ params }: { params: Promise<{ i
         client_staff:users!client_staff_id(first_name, last_name),
         events(
           id, category, event_date, description, details, created_at, deleted_at,
-          event_documents(id, file_name, file_url, file_size, created_at, deleted_at)
+          event_documents(id, file_name, file_url, file_size, description, created_at, deleted_at)
         ),
-        proceeding_documents(id, file_name, file_url, file_size, created_at, deleted_at)
+        proceeding_documents(id, file_name, file_url, file_size, description, created_at, deleted_at)
       )
     `)
     .eq("id", id)

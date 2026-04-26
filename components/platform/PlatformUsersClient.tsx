@@ -232,8 +232,13 @@ export default function PlatformUsersClient({ platformUsers, spAdmins, currentUs
                             <button
                               onClick={() => setPConfirm({ id: u.id, name, activate: !u.is_active })}
                               disabled={pToggling === u.id}
-                              className={`text-xs font-medium disabled:opacity-50 ${u.is_active ? "text-red-500 hover:text-red-700" : "text-green-600 hover:text-green-800"}`}>
-                              {u.is_active ? "Deactivate" : "Activate"}
+                              title={u.is_active ? "Deactivate user" : "Activate user"}
+                              className={`p-1.5 rounded hover:bg-[#F3F4F6] transition-colors disabled:opacity-50 inline-flex ${u.is_active ? "text-amber-500 hover:text-amber-700" : "text-green-600 hover:text-green-800"}`}>
+                              {u.is_active ? (
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                              ) : (
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                              )}
                             </button>
                           )}
                         </td>
@@ -295,17 +300,21 @@ export default function PlatformUsersClient({ platformUsers, spAdmins, currentUs
                       </td>
                       {isSuperAdmin && (
                         <td className="px-4 py-3">
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-0.5">
                             <button
                               onClick={() => setSConfirmToggle({ id: u.id, name, activate: !u.is_active })}
                               disabled={sToggling === u.id}
-                              className={`text-xs font-medium disabled:opacity-50 ${u.is_active ? "text-amber-600 hover:text-amber-800" : "text-green-600 hover:text-green-800"}`}>
-                              {u.is_active ? "Deactivate" : "Activate"}
+                              title={u.is_active ? "Deactivate user" : "Activate user"}
+                              className={`p-1.5 rounded hover:bg-[#F3F4F6] transition-colors disabled:opacity-50 inline-flex ${u.is_active ? "text-amber-500 hover:text-amber-700" : "text-green-600 hover:text-green-800"}`}>
+                              {u.is_active ? (
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                              ) : (
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                              )}
                             </button>
-                            <button
-                              onClick={() => setSConfirmDelete({ id: u.id, name })}
-                              className="text-xs font-medium text-red-500 hover:text-red-700">
-                              Delete
+                            <button onClick={() => setSConfirmDelete({ id: u.id, name })} title="Delete user"
+                              className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-red-500 hover:text-red-700 inline-flex">
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                             </button>
                           </div>
                         </td>

@@ -229,6 +229,7 @@ export default function ProviderForm({ mode, providerId, initialData, initialCom
       {/* Basic Information */}
       <section className="bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-sm">
         <h2 className="text-sm font-semibold text-[#1A1A2E] mb-4 pb-3 border-b border-[#E5E7EB]">Basic Information</h2>
+        <div className="max-w-2xl">
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
             <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Service Provider Name <span className="text-red-500">*</span></label>
@@ -238,7 +239,7 @@ export default function ProviderForm({ mode, providerId, initialData, initialCom
             <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Business Type <span className="text-red-500">*</span></label>
             <select value={businessType} onChange={(e) => setBusinessType(e.target.value)} className="w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]">
               <option value="">Select type</option>
-              {BUSINESS_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+              {[...BUSINESS_TYPES].sort().map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
           <div>
@@ -261,11 +262,13 @@ export default function ProviderForm({ mode, providerId, initialData, initialCom
             </div>
           </div>
         </div>
+        </div>
       </section>
 
       {/* Address */}
       <section className="bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-sm">
         <h2 className="text-sm font-semibold text-[#1A1A2E] mb-4 pb-3 border-b border-[#E5E7EB]">Address</h2>
+        <div className="max-w-2xl">
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
             <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Address Line 1 <span className="text-[#9CA3AF]">(Building, Road)</span></label>
@@ -305,6 +308,7 @@ export default function ProviderForm({ mode, providerId, initialData, initialCom
             <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Country</label>
             <input value={country} onChange={(e) => setCountry(e.target.value)} className="w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]" />
           </div>
+        </div>
         </div>
       </section>
 
@@ -374,7 +378,7 @@ export default function ProviderForm({ mode, providerId, initialData, initialCom
                 <tr key={row.rowId} className="hover:bg-[#FAFAFA]">
                   <td className="px-4 py-3">
                     <select value={row.type} onChange={(e) => updateExtraRow(row.rowId, "type", e.target.value)} className={`${inp} text-xs`}>
-                      {EXTRA_ID_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                      {[...EXTRA_ID_TYPES].sort().map((t) => <option key={t} value={t}>{t}</option>)}
                     </select>
                   </td>
                   <td className="px-4 py-3">

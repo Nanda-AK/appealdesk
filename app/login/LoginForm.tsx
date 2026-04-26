@@ -94,7 +94,7 @@ export default function LoginForm({ platformName, logoUrl, supportEmail }: Props
             )}
             <span className="text-2xl font-bold text-[#1A1A2E] tracking-tight">{platformName}</span>
           </div>
-          <p className="text-[#6B7280] text-sm">Litigation Management Platform</p>
+          <p className="text-[#6B7280] text-sm">Your AI Tax Attorney</p>
         </div>
 
         {/* Card */}

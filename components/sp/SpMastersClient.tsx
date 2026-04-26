@@ -31,10 +31,11 @@ export default function SpMastersClient({ records }: Props) {
   const [expandedActs, setExpandedActs] = useState<Set<string>>(new Set());
 
   const q = search.toLowerCase();
+  const isFYorAY = activeTab === "financial_year" || activeTab === "assessment_year";
   const filtered = records
     .filter(r => r.type === activeTab && r.parent_id === null)
     .filter(r => r.name.toLowerCase().includes(q) || (r.is_active ? "active" : "inactive").includes(q))
-    .sort((a, b) => sortAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name));
+    .sort((a, b) => (isFYorAY ? true : !sortAsc) ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name));
 
   const acts = records.filter(r => r.type === "act_regulation").sort((a, b) => a.sort_order - b.sort_order);
   const procsByAct = records

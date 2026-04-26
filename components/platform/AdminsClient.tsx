@@ -148,9 +148,14 @@ export default function AdminsClient({ admins, currentUserId, isSuperAdmin }: Pr
                           <button
                             onClick={() => setConfirm({ id: admin.id, name: fullName, activate: !admin.is_active })}
                             disabled={toggling === admin.id}
-                            className={`text-xs font-medium disabled:opacity-50 ${admin.is_active ? "text-red-500 hover:text-red-700" : "text-green-600 hover:text-green-800"}`}
+                            title={admin.is_active ? "Deactivate admin" : "Activate admin"}
+                            className={`p-1.5 rounded hover:bg-[#F3F4F6] transition-colors disabled:opacity-50 inline-flex ${admin.is_active ? "text-amber-500 hover:text-amber-700" : "text-green-600 hover:text-green-800"}`}
                           >
-                            {admin.is_active ? "Deactivate" : "Activate"}
+                            {admin.is_active ? (
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                            ) : (
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            )}
                           </button>
                         )}
                       </td>

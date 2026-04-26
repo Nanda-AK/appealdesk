@@ -11,12 +11,26 @@ import {
   AppealInput, ProceedingInput, EventInput,
 } from "@/app/(sp)/litigations/actions";
 
+// ─── AY helpers (mirrors AppealForm.tsx) ─────────────────────────
+function deriveAYName(fyName: string): string {
+  const match = fyName.match(/^(\d{4})-(\d{2})$/);
+  if (!match) return "";
+  const ayStart = parseInt(match[1]) + 1;
+  const ayEnd = (parseInt(match[2]) + 1).toString().padStart(2, "0");
+  return `${ayStart}-${ayEnd}`;
+}
+function isAYDisabled(fyName: string): boolean {
+  const match = fyName.match(/^(\d{4})/);
+  return !!match && parseInt(match[1]) >= 2026;
+}
+
 // ─── Types ───────────────────────────────────────────────────────
 interface AttachedFile {
   id: string;
   file_name: string;
   file_url: string;
   file_size: number | null;
+  description?: string | null;
   created_at: string;
   deleted_at?: string | null;
 }
@@ -322,21 +336,32 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 // ─── Attachment Panels ────────────────────────────────────────────
 function AttachmentRow({ doc, onDelete, canEdit }: { doc: AttachedFile; onDelete: () => void; canEdit: boolean }) {
   return (
-    <div className="px-4 py-2.5 flex items-center justify-between gap-3">
-      <div className="flex items-center gap-2 min-w-0">
-        <svg className="w-3.5 h-3.5 text-[#4A6FA5] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <div className="px-4 py-2.5 flex items-start justify-between gap-3">
+      <div className="flex items-start gap-2 min-w-0">
+        <svg className="w-3.5 h-3.5 text-[#4A6FA5] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
-        <span className="text-xs font-medium text-[#1A1A2E] truncate">{doc.file_name}</span>
-        {doc.file_size && <span className="text-xs text-[#9CA3AF] flex-shrink-0">{(doc.file_size / 1024).toFixed(0)} KB</span>}
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-[#1A1A2E] truncate">{doc.file_name}</span>
+            {doc.file_size && <span className="text-xs text-[#9CA3AF] flex-shrink-0">{(doc.file_size / 1024).toFixed(0)} KB</span>}
+          </div>
+          {doc.description && <p className="text-xs text-[#6B7280] mt-0.5">{doc.description}</p>}
+        </div>
       </div>
-      <div className="flex items-center gap-3 flex-shrink-0">
-        <a href={doc.file_url} target="_blank" rel="noopener noreferrer"
-          className="text-xs font-medium text-[#4A6FA5] hover:text-[#1E3A5F]">View</a>
-        <a href={doc.file_url} download={doc.file_name}
-          className="text-xs font-medium text-[#6B7280] hover:text-[#1A1A2E]">Download</a>
+      <div className="flex items-center gap-0.5 flex-shrink-0">
+        <a href={doc.file_url} target="_blank" rel="noopener noreferrer" title="View file"
+          className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] inline-flex">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+        </a>
+        <a href={doc.file_url} download={doc.file_name} title="Download file"
+          className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#6B7280] hover:text-[#1A1A2E] inline-flex">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+        </a>
         {canEdit && (
-          <button onClick={onDelete} className="text-xs font-medium text-red-400 hover:text-red-600">Delete</button>
+          <button onClick={onDelete} title="Delete file" className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-red-400 hover:text-red-600 inline-flex">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+          </button>
         )}
       </div>
     </div>
@@ -350,21 +375,25 @@ function ProceedingAttachments({ proceedingId, docs, canEdit }: {
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingDesc, setPendingDesc] = useState("");
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<AttachedFile | null>(null);
   const [deleting, setDeleting] = useState(false);
   const activeDocs = docs.filter((d) => !d.deleted_at);
 
-  async function handleUpload(file: File) {
+  async function handleUpload() {
+    if (!pendingFile) return;
     setUploading(true); setError(null);
     const supabase = createClient();
-    const path = `proceeding-docs/${proceedingId}/${Date.now()}-${file.name}`;
-    const { data, error: upErr } = await supabase.storage.from("org-files").upload(path, file, { upsert: true });
+    const path = `proceeding-docs/${proceedingId}/${Date.now()}-${pendingFile.name}`;
+    const { data, error: upErr } = await supabase.storage.from("org-files").upload(path, pendingFile, { upsert: true });
     if (upErr || !data) { setError("Upload failed. Please try again."); setUploading(false); return; }
     const { data: urlData } = supabase.storage.from("org-files").getPublicUrl(data.path);
     try {
-      await uploadProceedingDocument(proceedingId, file.name, urlData.publicUrl, file.size);
+      await uploadProceedingDocument(proceedingId, pendingFile.name, urlData.publicUrl, pendingFile.size, pendingDesc.trim() || undefined);
+      setPendingFile(null); setPendingDesc("");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save attachment.");
@@ -399,30 +428,52 @@ function ProceedingAttachments({ proceedingId, docs, canEdit }: {
           {canEdit && (
             <label
               onClick={(e) => { e.stopPropagation(); if (!open) setOpen(true); }}
-              className={`cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium border border-[#E5E7EB] bg-white rounded-lg text-[#6B7280] hover:bg-white transition ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
+              className="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium border border-[#E5E7EB] bg-white rounded-lg text-[#6B7280] hover:bg-white transition">
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
-              {uploading ? "Uploading…" : "Upload"}
-              <input type="file" className="hidden" disabled={uploading}
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f); e.target.value = ""; }} />
+              Choose File
+              <input type="file" className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) { setPendingFile(f); if (!open) setOpen(true); } e.target.value = ""; }} />
             </label>
           )}
         </button>
         {open && (
           <>
             {error && <div className="px-4 py-1.5 bg-red-50 border-b border-red-100 text-xs text-red-600">{error}</div>}
-            {activeDocs.length === 0 ? (
-              <div className="px-4 py-3 text-center text-xs text-[#9CA3AF] border-t border-[#E5E7EB]">
-                No attachments.{canEdit ? " Use Upload to add files." : ""}
+            {pendingFile && (
+              <div className="px-4 py-3 border-t border-[#E5E7EB] bg-[#F8F9FA] space-y-2">
+                <p className="text-xs text-[#6B7280]">File: <span className="font-medium text-[#1A1A2E]">{pendingFile.name}</span></p>
+                <input
+                  type="text"
+                  placeholder="Description (optional)"
+                  value={pendingDesc}
+                  onChange={(e) => setPendingDesc(e.target.value)}
+                  className="w-full px-3 py-1.5 text-xs border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1E3A5F]"
+                />
+                <div className="flex gap-2">
+                  <button onClick={handleUpload} disabled={uploading}
+                    className="px-3 py-1 text-xs bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium disabled:opacity-50">
+                    {uploading ? "Uploading…" : "Attach"}
+                  </button>
+                  <button onClick={() => { setPendingFile(null); setPendingDesc(""); setError(null); }}
+                    className="px-3 py-1 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-white">
+                    Cancel
+                  </button>
+                </div>
               </div>
-            ) : (
+            )}
+            {activeDocs.length === 0 && !pendingFile ? (
+              <div className="px-4 py-3 text-center text-xs text-[#9CA3AF] border-t border-[#E5E7EB]">
+                No attachments.{canEdit ? " Use Choose File to add files." : ""}
+              </div>
+            ) : activeDocs.length > 0 ? (
               <div className="divide-y divide-[#F3F4F6] border-t border-[#E5E7EB]">
                 {activeDocs.map((doc) => (
                   <AttachmentRow key={doc.id} doc={doc} canEdit={canEdit} onDelete={() => setConfirmDelete(doc)} />
                 ))}
               </div>
-            )}
+            ) : null}
           </>
         )}
       </div>
@@ -453,21 +504,25 @@ function EventAttachments({ eventId, docs, canEdit }: {
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingDesc, setPendingDesc] = useState("");
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<AttachedFile | null>(null);
   const [deleting, setDeleting] = useState(false);
   const activeDocs = docs.filter((d) => !d.deleted_at);
 
-  async function handleUpload(file: File) {
+  async function handleUpload() {
+    if (!pendingFile) return;
     setUploading(true); setError(null);
     const supabase = createClient();
-    const path = `event-docs/${eventId}/${Date.now()}-${file.name}`;
-    const { data, error: upErr } = await supabase.storage.from("org-files").upload(path, file, { upsert: true });
+    const path = `event-docs/${eventId}/${Date.now()}-${pendingFile.name}`;
+    const { data, error: upErr } = await supabase.storage.from("org-files").upload(path, pendingFile, { upsert: true });
     if (upErr || !data) { setError("Upload failed. Please try again."); setUploading(false); return; }
     const { data: urlData } = supabase.storage.from("org-files").getPublicUrl(data.path);
     try {
-      await uploadEventDocument(eventId, file.name, urlData.publicUrl, file.size);
+      await uploadEventDocument(eventId, pendingFile.name, urlData.publicUrl, pendingFile.size, pendingDesc.trim() || undefined);
+      setPendingFile(null); setPendingDesc("");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save attachment.");
@@ -502,28 +557,50 @@ function EventAttachments({ eventId, docs, canEdit }: {
           {canEdit && (
             <label
               onClick={(e) => { e.stopPropagation(); if (!open) setOpen(true); }}
-              className={`cursor-pointer inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium border border-[#E5E7EB] bg-white rounded text-[#6B7280] hover:bg-white transition ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
+              className="cursor-pointer inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium border border-[#E5E7EB] bg-white rounded text-[#6B7280] hover:bg-white transition">
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
-              {uploading ? "Uploading…" : "Upload"}
-              <input type="file" className="hidden" disabled={uploading}
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f); e.target.value = ""; }} />
+              Choose File
+              <input type="file" className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) { setPendingFile(f); if (!open) setOpen(true); } e.target.value = ""; }} />
             </label>
           )}
         </button>
         {open && (
           <>
             {error && <div className="px-3 py-1 bg-red-50 border-b border-red-100 text-xs text-red-600">{error}</div>}
-            {activeDocs.length === 0 ? (
+            {pendingFile && (
+              <div className="px-3 py-2.5 border-t border-[#E5E7EB] bg-[#F8F9FA] space-y-2">
+                <p className="text-xs text-[#6B7280]">File: <span className="font-medium text-[#1A1A2E]">{pendingFile.name}</span></p>
+                <input
+                  type="text"
+                  placeholder="Description (optional)"
+                  value={pendingDesc}
+                  onChange={(e) => setPendingDesc(e.target.value)}
+                  className="w-full px-2.5 py-1 text-xs border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1E3A5F]"
+                />
+                <div className="flex gap-2">
+                  <button onClick={handleUpload} disabled={uploading}
+                    className="px-2.5 py-1 text-xs bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium disabled:opacity-50">
+                    {uploading ? "Uploading…" : "Attach"}
+                  </button>
+                  <button onClick={() => { setPendingFile(null); setPendingDesc(""); setError(null); }}
+                    className="px-2.5 py-1 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-white">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+            {activeDocs.length === 0 && !pendingFile ? (
               <div className="px-3 py-2 text-center text-xs text-[#9CA3AF] border-t border-[#E5E7EB]">No files attached.</div>
-            ) : (
+            ) : activeDocs.length > 0 ? (
               <div className="divide-y divide-[#F3F4F6] border-t border-[#E5E7EB]">
                 {activeDocs.map((doc) => (
                   <AttachmentRow key={doc.id} doc={doc} canEdit={canEdit} onDelete={() => setConfirmDelete(doc)} />
                 ))}
               </div>
-            )}
+            ) : null}
           </>
         )}
       </div>
@@ -568,7 +645,7 @@ function ProceedingFormFields({
       <Field label="Proceeding">
         <select value={values.proceeding_type_id ?? ""} onChange={(e) => onChange("proceeding_type_id", e.target.value)} className={inp}>
           <option value="">Select…</option>
-          {availableProcs.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+          {[...availableProcs].sort((a, b) => a.name.localeCompare(b.name)).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
         </select>
       </Field>
       <Field label="Authority Type">
@@ -612,13 +689,13 @@ function ProceedingFormFields({
       <Field label="Assigned To">
         <select value={values.assigned_to ?? ""} onChange={(e) => onChange("assigned_to", e.target.value)} className={inp}>
           <option value="">Unassigned</option>
-          {teamMembers.map((m) => <option key={m.id} value={m.id}>{m.first_name} {m.last_name}</option>)}
+          {[...teamMembers].sort((a, b) => `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`)).map((m) => <option key={m.id} value={m.id}>{m.first_name} {m.last_name}</option>)}
         </select>
       </Field>
       <Field label="Client Staff">
         <select value={values.client_staff_id ?? ""} onChange={(e) => onChange("client_staff_id", e.target.value)} className={inp}>
           <option value="">None</option>
-          {clientUsers.map((u) => <option key={u.id} value={u.id}>{u.first_name} {u.last_name}</option>)}
+          {[...clientUsers].sort((a, b) => `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`)).map((u) => <option key={u.id} value={u.id}>{u.first_name} {u.last_name}</option>)}
         </select>
       </Field>
       <Field label="Possible Outcome">
@@ -673,6 +750,25 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
   const [editAppealStatus, setEditAppealStatus] = useState(appeal.status ?? "open");
   const [appealSaving, setAppealSaving] = useState(false);
   const [appealError, setAppealError] = useState<string | null>(null);
+
+  // Derive AY state for edit modal
+  const editActObj = (mastersByType["act_regulation"] ?? []).find(m => m.id === editAct);
+  const editIsITAct = editActObj?.name === "The Income-tax Act, 1961";
+  const editFYObj = (mastersByType["financial_year"] ?? []).find(m => m.id === editFY);
+  const editFYName = editFYObj?.name ?? "";
+  const editAYDisabled = !editIsITAct || (editFYName ? isAYDisabled(editFYName) : false);
+  const editAYName = editAYDisabled ? "Not applicable"
+    : ((mastersByType["assessment_year"] ?? []).find(m => m.id === editAY)?.name ?? "—");
+
+  function handleEditFYChange(fyId: string) {
+    setEditFY(fyId);
+    if (!fyId || !editIsITAct) { setEditAY(""); return; }
+    const fy = (mastersByType["financial_year"] ?? []).find(m => m.id === fyId);
+    if (!fy || isAYDisabled(fy.name)) { setEditAY(""); return; }
+    const derivedName = deriveAYName(fy.name);
+    const ayItem = (mastersByType["assessment_year"] ?? []).find(m => m.name === derivedName);
+    setEditAY(ayItem?.id ?? "");
+  }
 
   async function handleSaveAppeal(e: React.FormEvent) {
     e.preventDefault();
@@ -1004,7 +1100,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                 {isExpanded && (
                   <div className="border-t border-[#E5E7EB]">
                     {/* Proceeding details */}
-                    <div className="px-5 py-4 grid grid-cols-3 gap-x-6 gap-y-4 border-b border-[#F3F4F6] bg-[#FAFAFA]">
+                    <div className="px-5 py-4 grid grid-cols-3 gap-x-6 gap-y-4 border-b border-[#D1D9E6] bg-[#EBF1F9]">
                       <DetailRow label="Authority" value={[proc.authority_type, proc.authority_name].filter(Boolean).join(" · ")} />
                       <DetailRow label="Jurisdiction" value={[proc.jurisdiction_city, proc.jurisdiction].filter(Boolean).join(", ")} />
                       <DetailRow label="Assigned To" value={au ? `${au.first_name} ${au.last_name}` : null} />
@@ -1036,7 +1132,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                     />
 
                     {/* Events */}
-                    <div className="px-5 py-4">
+                    <div className="px-5 py-4 bg-[#EBF1F9]">
                       <div className="flex items-center justify-between mb-3">
                         <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Events ({sortedEvents.length})</p>
                         {canEdit && (
@@ -1101,26 +1197,29 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                                   )}
 
                                   {/* Actions */}
-                                  <div className="ml-auto flex items-center gap-3 flex-shrink-0">
+                                  <div className="ml-auto flex items-center gap-0.5 flex-shrink-0">
                                     <button
                                       onClick={(e) => { e.stopPropagation(); setViewEvent(ev); }}
-                                      className="text-xs text-[#4A6FA5] hover:text-[#1E3A5F] font-medium"
+                                      title="Quick view event"
+                                      className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] inline-flex"
                                     >
-                                      Quick View
+                                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                                     </button>
                                     {canEdit && (
                                       <>
                                         <button
                                           onClick={(e) => { e.stopPropagation(); openEditEvent(ev); }}
-                                          className="text-xs text-[#6B7280] hover:text-[#1A1A2E] font-medium"
+                                          title="Edit event"
+                                          className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#6B7280] hover:text-[#1A1A2E] inline-flex"
                                         >
-                                          Edit
+                                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                                         </button>
                                         <button
                                           onClick={(e) => { e.stopPropagation(); setConfirmDeleteEvent(ev); }}
-                                          className="text-xs text-red-400 hover:text-red-600 font-medium"
+                                          title="Delete event"
+                                          className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-red-400 hover:text-red-600 inline-flex"
                                         >
-                                          Delete
+                                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                         </button>
                                       </>
                                     )}
@@ -1129,7 +1228,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
 
                                 {/* Expanded details */}
                                 {isEvExpanded && (
-                                  <div className="border-t border-[#F3F4F6] bg-[#FAFAFA] px-4 py-3">
+                                  <div className="border-t border-[#D1D9E6] bg-[#EBF1F9] px-4 py-3">
                                     {summary && <p className="text-xs text-[#6B7280] mb-1.5">{summary}</p>}
                                     {ev.description && <p className="text-xs text-[#9CA3AF] italic mb-1.5">{ev.description}</p>}
                                     {attachmentUrl && (
@@ -1180,27 +1279,26 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
             <Field label="Client Organisation">
               <select value={editClientId} onChange={(e) => setEditClientId(e.target.value)} className={inp}>
                 <option value="">Select client…</option>
-                {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                {[...clients].sort((a, b) => a.name.localeCompare(b.name)).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </Field>
             <div className="grid grid-cols-2 gap-4">
-              <Field label="Financial Year / Tax Year">
-                <select value={editFY} onChange={(e) => setEditFY(e.target.value)} className={inp}>
-                  <option value="">Select…</option>
-                  {(mastersByType["financial_year"] ?? []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-                </select>
-              </Field>
-              <Field label="Assessment Year">
-                <select value={editAY} onChange={(e) => setEditAY(e.target.value)} className={inp}>
-                  <option value="">Select…</option>
-                  {(mastersByType["assessment_year"] ?? []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-                </select>
-              </Field>
               <Field label="Act / Regulation" fullWidth>
                 <select value={editAct} onChange={(e) => setEditAct(e.target.value)} className={inp}>
                   <option value="">Select…</option>
-                  {(mastersByType["act_regulation"] ?? []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  {[...(mastersByType["act_regulation"] ?? [])].sort((a, b) => a.name.localeCompare(b.name)).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
                 </select>
+              </Field>
+              <Field label="Financial Year / Tax Year">
+                <select value={editFY} onChange={(e) => handleEditFYChange(e.target.value)} className={inp}>
+                  <option value="">Select…</option>
+                  {[...(mastersByType["financial_year"] ?? [])].sort((a, b) => b.name.localeCompare(a.name)).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                </select>
+              </Field>
+              <Field label="Assessment Year">
+                <div className="w-full px-3 py-2 text-sm border-2 rounded-lg bg-[#F3F4F6] border-[#E5E7EB] text-[#6B7280] cursor-not-allowed">
+                  {editAYName}
+                </div>
               </Field>
               <Field label="Status">
                 <select value={editAppealStatus} onChange={(e) => setEditAppealStatus(e.target.value)} className={inp}>

@@ -66,10 +66,11 @@ export default function MastersClient({ records, isSuperAdmin }: Props) {
   // ─── Flat tab helpers ─────────────────────────────────────────────────────
   const currentLabel = FLAT_TABS.find(t => t.key === activeTab)?.label ?? "";
   const q = search.toLowerCase();
+  const isFYorAY = activeTab === "financial_year" || activeTab === "assessment_year";
   const filtered = records
     .filter(r => r.type === activeTab && r.parent_id === null)
     .filter(r => r.name.toLowerCase().includes(q) || (r.is_active ? "active" : "inactive").includes(q))
-    .sort((a, b) => sortAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name));
+    .sort((a, b) => (isFYorAY ? true : !sortAsc) ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name));
 
   async function handleFlatAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -218,17 +219,28 @@ export default function MastersClient({ records, isSuperAdmin }: Props) {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-0.5">
                       {editingId !== rec.id && (
-                        <button onClick={() => startEdit(rec.id, rec.name)} className="text-xs font-medium text-[#4A6FA5] hover:text-[#1E3A5F]">Edit</button>
+                        <button onClick={() => startEdit(rec.id, rec.name)} title="Edit"
+                          className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] inline-flex">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                        </button>
                       )}
                       <button onClick={() => handleToggle(rec.id, rec.is_active)} disabled={toggling === rec.id}
-                        className={`text-xs font-medium disabled:opacity-50 ${rec.is_active ? "text-amber-600 hover:text-amber-800" : "text-green-600 hover:text-green-800"}`}>
-                        {rec.is_active ? "Disable" : "Enable"}
+                        title={rec.is_active ? "Disable" : "Enable"}
+                        className={`p-1.5 rounded hover:bg-[#F3F4F6] transition-colors disabled:opacity-50 inline-flex ${rec.is_active ? "text-amber-500 hover:text-amber-700" : "text-green-600 hover:text-green-800"}`}>
+                        {rec.is_active ? (
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                        ) : (
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        )}
                       </button>
                       {isSuperAdmin && (
                         <button onClick={() => setConfirmDelete({ id: rec.id, name: rec.name })} disabled={deleting === rec.id}
-                          className="text-xs font-medium text-red-500 hover:text-red-700 disabled:opacity-50">Delete</button>
+                          title="Delete"
+                          className="p-1.5 rounded hover:bg-red-50 transition-colors text-red-500 hover:text-red-700 disabled:opacity-50 inline-flex">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
                       )}
                     </div>
                   </td>
@@ -280,17 +292,27 @@ export default function MastersClient({ records, isSuperAdmin }: Props) {
                   </div>
 
                   {editingId !== act.id && (
-                    <div className="flex items-center gap-3 flex-shrink-0">
+                    <div className="flex items-center gap-0.5 flex-shrink-0">
                       <button onClick={() => { setAddingUnderActId(act.id); setNewProcName(""); setExpandedActs(prev => new Set(prev).add(act.id)); }}
-                        className="text-xs font-medium text-[#4A6FA5] hover:text-[#1E3A5F]">+ Add Proceeding</button>
-                      <button onClick={() => startEdit(act.id, act.name)} className="text-xs font-medium text-[#4A6FA5] hover:text-[#1E3A5F]">Edit</button>
+                        className="text-xs font-medium text-[#4A6FA5] hover:text-[#1E3A5F] px-2 py-1">+ Add Proceeding</button>
+                      <button onClick={() => startEdit(act.id, act.name)} title="Edit"
+                        className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] inline-flex">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                      </button>
                       <button onClick={() => handleToggle(act.id, act.is_active)} disabled={toggling === act.id}
-                        className={`text-xs font-medium disabled:opacity-50 ${act.is_active ? "text-amber-600 hover:text-amber-800" : "text-green-600 hover:text-green-800"}`}>
-                        {act.is_active ? "Disable" : "Enable"}
+                        title={act.is_active ? "Disable" : "Enable"}
+                        className={`p-1.5 rounded hover:bg-[#F3F4F6] transition-colors disabled:opacity-50 inline-flex ${act.is_active ? "text-amber-500 hover:text-amber-700" : "text-green-600 hover:text-green-800"}`}>
+                        {act.is_active ? (
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                        ) : (
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        )}
                       </button>
                       {isSuperAdmin && procs.length === 0 && (
-                        <button onClick={() => setConfirmDelete({ id: act.id, name: act.name })}
-                          className="text-xs font-medium text-red-500 hover:text-red-700">Delete</button>
+                        <button onClick={() => setConfirmDelete({ id: act.id, name: act.name })} title="Delete"
+                          className="p-1.5 rounded hover:bg-red-50 transition-colors text-red-500 hover:text-red-700 inline-flex">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
                       )}
                     </div>
                   )}
@@ -323,15 +345,25 @@ export default function MastersClient({ records, isSuperAdmin }: Props) {
                           {proc.is_active ? "Active" : "Inactive"}
                         </span>
                         {editingId !== proc.id && (
-                          <div className="flex items-center gap-3 flex-shrink-0">
-                            <button onClick={() => startEdit(proc.id, proc.name)} className="text-xs font-medium text-[#4A6FA5] hover:text-[#1E3A5F]">Edit</button>
+                          <div className="flex items-center gap-0.5 flex-shrink-0">
+                            <button onClick={() => startEdit(proc.id, proc.name)} title="Edit"
+                              className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] inline-flex">
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                            </button>
                             <button onClick={() => handleToggle(proc.id, proc.is_active)} disabled={toggling === proc.id}
-                              className={`text-xs font-medium disabled:opacity-50 ${proc.is_active ? "text-amber-600 hover:text-amber-800" : "text-green-600 hover:text-green-800"}`}>
-                              {proc.is_active ? "Disable" : "Enable"}
+                              title={proc.is_active ? "Disable" : "Enable"}
+                              className={`p-1.5 rounded hover:bg-[#F3F4F6] transition-colors disabled:opacity-50 inline-flex ${proc.is_active ? "text-amber-500 hover:text-amber-700" : "text-green-600 hover:text-green-800"}`}>
+                              {proc.is_active ? (
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                              ) : (
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                              )}
                             </button>
                             {isSuperAdmin && (
-                              <button onClick={() => setConfirmDelete({ id: proc.id, name: proc.name })}
-                                className="text-xs font-medium text-red-500 hover:text-red-700">Delete</button>
+                              <button onClick={() => setConfirmDelete({ id: proc.id, name: proc.name })} title="Delete"
+                                className="p-1.5 rounded hover:bg-red-50 transition-colors text-red-500 hover:text-red-700 inline-flex">
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                              </button>
                             )}
                           </div>
                         )}

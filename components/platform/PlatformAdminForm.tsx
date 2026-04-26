@@ -236,7 +236,7 @@ export default function PlatformAdminForm() {
               <input type={showConfirm ? "text" : "password"} value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Re-enter password"
                 autoComplete="new-password"
-                className={`w-full px-3 py-2 pr-9 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] ${confirmPassword && confirmPassword !== form.password ? "border-red-400" : "border-[#E5E7EB]"}`} />
+                className={`w-full px-3 py-2 pr-9 text-sm border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] ${confirmPassword && confirmPassword !== form.password ? "border-red-400" : "border-[#4A6FA5]"}`} />
               <EyeBtn visible={showConfirm} toggle={() => setShowConfirm(!showConfirm)} />
             </div>
             {confirmPassword && confirmPassword !== form.password && (

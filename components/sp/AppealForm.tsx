@@ -148,7 +148,7 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
             <Field label="Client Organisation" required>
               <select value={clientOrgId} onChange={(e) => setClientOrgId(e.target.value)} className={inp}>
                 <option value="">Select client…</option>
-                {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                {[...clients].sort((a, b) => a.name.localeCompare(b.name)).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </Field>
           </div>
@@ -156,28 +156,22 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
             <Field label="Act / Regulation">
               <select value={actRegulationId} onChange={(e) => handleActChange(e.target.value)} className={inp}>
                 <option value="">Select…</option>
-                {(mastersByType["act_regulation"] ?? []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                {[...(mastersByType["act_regulation"] ?? [])].sort((a, b) => a.name.localeCompare(b.name)).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
               </select>
             </Field>
           </div>
           <Field label="Financial Year / Tax Year">
             <select value={financialYearId} onChange={(e) => handleFYChange(e.target.value)} className={inp}>
               <option value="">Select…</option>
-              {(mastersByType["financial_year"] ?? []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+              {[...(mastersByType["financial_year"] ?? [])].sort((a, b) => b.name.localeCompare(a.name)).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
             </select>
           </Field>
           <Field label="Assessment Year">
-            <select
-              value={assessmentYearId}
-              onChange={(e) => setAssessmentYearId(e.target.value)}
-              className={`${inp} ${ayDisabled ? "opacity-50 cursor-not-allowed bg-[#F3F4F6]" : ""}`}
-              disabled={ayDisabled}
-            >
-              <option value="">{ayDisabled ? "Not applicable" : "Select…"}</option>
-              {!ayDisabled && (mastersByType["assessment_year"] ?? []).map((m) => (
-                <option key={m.id} value={m.id}>{m.name}</option>
-              ))}
-            </select>
+            <div className={`w-full px-3 py-2 text-sm border-2 rounded-lg bg-[#F3F4F6] border-[#E5E7EB] text-[#6B7280] cursor-not-allowed`}>
+              {ayDisabled
+                ? "Not applicable"
+                : (mastersByType["assessment_year"] ?? []).find(m => m.id === assessmentYearId)?.name ?? "—"}
+            </div>
           </Field>
           <Field label="Status">
             <select value={appealStatus} onChange={(e) => setAppealStatus(e.target.value)} className={inp}>
@@ -196,7 +190,7 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
           <Field label={`Proceeding${actRegulationId ? "" : " (select Act first)"}`}>
             <select value={proceedingTypeId} onChange={(e) => setProceedingTypeId(e.target.value)} className={inp} disabled={!actRegulationId}>
               <option value="">{actRegulationId ? "Select proceeding…" : "Select Act / Regulation first"}</option>
-              {availableProceedings.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+              {[...availableProceedings].sort((a, b) => a.name.localeCompare(b.name)).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
             </select>
           </Field>
           <Field label="Authority Type">
@@ -242,13 +236,13 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
           <Field label="Assigned To">
             <select value={assignedTo} onChange={(e) => setAssignedTo(e.target.value)} className={inp}>
               <option value="">Unassigned</option>
-              {teamMembers.map((m) => <option key={m.id} value={m.id}>{m.first_name} {m.last_name}</option>)}
+              {[...teamMembers].sort((a, b) => `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`)).map((m) => <option key={m.id} value={m.id}>{m.first_name} {m.last_name}</option>)}
             </select>
           </Field>
           <Field label="Client Staff">
             <select value={clientStaff} onChange={(e) => setClientStaff(e.target.value)} className={inp} disabled={!clientOrgId}>
               <option value="">{clientOrgId ? "Select client contact…" : "Select client first"}</option>
-              {(clientUsersByOrg[clientOrgId] ?? []).map((u) => (
+              {[...(clientUsersByOrg[clientOrgId] ?? [])].sort((a, b) => `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`)).map((u) => (
                 <option key={u.id} value={u.id}>{u.first_name} {u.last_name}</option>
               ))}
             </select>

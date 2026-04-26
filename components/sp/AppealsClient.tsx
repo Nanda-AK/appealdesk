@@ -184,7 +184,7 @@ export default function AppealsClient({
         />
         <select value={currentClient} onChange={(e) => setFilter("client", e.target.value)} className={selCls}>
           <option value="">All Clients</option>
-          {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          {[...clients].sort((a, b) => a.name.localeCompare(b.name)).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
         <select value={currentAY} onChange={(e) => setFilter("ay", e.target.value)} className={selCls}>
           <option value="">All Years</option>
@@ -234,7 +234,7 @@ export default function AppealsClient({
       {/* Table */}
       <div className="bg-white border border-[#E5E7EB] rounded-xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="border-b-2 border-[#B0BDD0] bg-[#D1D9E6]">
                 <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] w-10">#</th>
@@ -250,7 +250,7 @@ export default function AppealsClient({
                 <th className="px-4 py-3 w-16"></th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-[#E5E7EB]">
               {appeals.length === 0 ? (
                 <tr>
                   <td colSpan={11} className="px-4 py-16 text-center text-[#6B7280]">
@@ -268,7 +268,7 @@ export default function AppealsClient({
                   const outCfg = proc?.possible_outcome ? OUTCOME[proc.possible_outcome] : null;
                   const au = proc?.assigned_user ?? null;
                   return (
-                    <tr key={appeal.id} className="border-b border-[#E5E7EB] last:border-0 hover:bg-[#F8F9FA] transition-colors">
+                    <tr key={appeal.id} className="hover:bg-[#F8F9FA] transition-colors">
                       <td className="px-4 py-3 text-[#9CA3AF] text-xs">{rowOffset + i + 1}</td>
                       <td className="px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap max-w-[180px] truncate">
                         {appeal.client_org?.name ?? "—"}
@@ -312,8 +312,8 @@ export default function AppealsClient({
                         })()}
                       </td>
                       <td className="px-4 py-3">
-                        <Link href={`/litigations/${appeal.id}`} className="text-[#4A6FA5] hover:text-[#1E3A5F] text-xs font-medium">
-                          View →
+                        <Link href={`/litigations/${appeal.id}`} title="View litigation" className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] inline-flex">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                         </Link>
                       </td>
                     </tr>

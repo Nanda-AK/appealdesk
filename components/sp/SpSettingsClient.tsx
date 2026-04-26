@@ -278,7 +278,7 @@ export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
               <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Business Type</label>
               <select value={businessType} onChange={(e) => setBusinessType(e.target.value)} disabled={ro} className={fieldClass}>
                 <option value="">Select type</option>
-                {BUSINESS_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                {[...BUSINESS_TYPES].sort().map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
             <div>
@@ -401,7 +401,7 @@ export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
                           <span className="font-medium text-[#1A1A2E]">{row.type}</span>
                         ) : (
                           <select value={row.type} onChange={(e) => updateExtraRow(row.rowId, "type", e.target.value)} className={`${cellInp} text-xs`}>
-                            {EXTRA_ID_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                            {[...EXTRA_ID_TYPES].sort().map((t) => <option key={t} value={t}>{t}</option>)}
                           </select>
                         )}
                       </td>

@@ -134,33 +134,38 @@ export default function ClientsClient({ clients, isAdmin }: Props) {
                       })}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-0.5">
                         <Link
                           href={`/clients/${client.id}`}
-                          className="text-[#4A6FA5] hover:text-[#1E3A5F] text-xs font-medium"
+                          title={isAdmin ? "Edit client" : "View client"}
+                          className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] inline-flex"
                         >
-                          {isAdmin ? "Edit" : "View"}
+                          {isAdmin ? (
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                          )}
                         </Link>
                         {isAdmin && (
                           <>
                             <button
-                              onClick={() =>
-                                setConfirm({ id: client.id, name: client.name, activate: !client.is_active })
-                              }
+                              onClick={() => setConfirm({ id: client.id, name: client.name, activate: !client.is_active })}
                               disabled={loading === client.id}
-                              className={`text-xs font-medium cursor-pointer disabled:opacity-50 ${
-                                client.is_active
-                                  ? "text-orange-500 hover:text-orange-700"
-                                  : "text-green-600 hover:text-green-800"
-                              }`}
+                              title={client.is_active ? "Deactivate client" : "Activate client"}
+                              className={`p-1.5 rounded hover:bg-[#F3F4F6] transition-colors disabled:opacity-50 inline-flex ${client.is_active ? "text-amber-500 hover:text-amber-700" : "text-green-600 hover:text-green-800"}`}
                             >
-                              {client.is_active ? "Deactivate" : "Activate"}
+                              {client.is_active ? (
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                              ) : (
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                              )}
                             </button>
                             <button
                               onClick={() => { setDeleteError(null); setDeleteConfirm({ id: client.id, name: client.name }); }}
-                              className="text-xs font-medium cursor-pointer text-red-500 hover:text-red-700"
+                              title="Delete client"
+                              className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-red-500 hover:text-red-700 inline-flex"
                             >
-                              Delete
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                             </button>
                           </>
                         )}

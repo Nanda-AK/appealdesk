@@ -189,7 +189,7 @@ export default function ClientUserForm({ clientOrgs }: Props) {
               <input type={showConfirm ? "text" : "password"} value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Re-enter password"
                 autoComplete="new-password"
-                className={`w-full px-3 py-2 pr-9 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] ${confirmPassword && confirmPassword !== form.password ? "border-red-400" : "border-[#E5E7EB]"}`} />
+                className={`w-full px-3 py-2 pr-9 text-sm border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] ${confirmPassword && confirmPassword !== form.password ? "border-red-400" : "border-[#4A6FA5]"}`} />
               <button type="button" onClick={() => setShowConfirm(!showConfirm)}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#6B7280]">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -208,7 +208,7 @@ export default function ClientUserForm({ clientOrgs }: Props) {
           <Field label="Client Organisation" required full>
             <select value={form.client_org_id ?? ""} onChange={(e) => set("client_org_id")(e.target.value)} className={inp}>
               <option value="">Select organisation…</option>
-              {clientOrgs.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+              {[...clientOrgs].sort((a, b) => a.name.localeCompare(b.name)).map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
             </select>
           </Field>
 

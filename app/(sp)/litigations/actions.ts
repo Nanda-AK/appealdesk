@@ -312,6 +312,7 @@ export async function uploadProceedingDocument(
   fileName: string,
   fileUrl: string,
   fileSize: number,
+  description?: string,
 ): Promise<void> {
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
@@ -326,6 +327,7 @@ export async function uploadProceedingDocument(
     file_url: fileUrl,
     file_size: fileSize,
     uploaded_by: user.id,
+    description: description || null,
   });
 
   if (error) throw new Error(error.message);
@@ -354,6 +356,7 @@ export async function uploadEventDocument(
   fileName: string,
   fileUrl: string,
   fileSize: number,
+  description?: string,
 ): Promise<void> {
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
@@ -368,6 +371,7 @@ export async function uploadEventDocument(
     file_url: fileUrl,
     file_size: fileSize,
     uploaded_by: user.id,
+    description: description || null,
   });
 
   if (error) throw new Error(error.message);

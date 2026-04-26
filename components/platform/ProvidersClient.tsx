@@ -116,21 +116,22 @@ export default function ProvidersClient({ providers, userRole }: Props) {
                       {new Date(sp.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <Link
-                          href={`/platform/providers/${sp.id}`}
-                          className="text-[#4A6FA5] hover:text-[#1E3A5F] text-xs font-medium"
-                        >
-                          Edit
+                      <div className="flex items-center gap-0.5">
+                        <Link href={`/platform/providers/${sp.id}`} title="Edit service provider"
+                          className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] inline-flex">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                         </Link>
                         <button
                           onClick={() => setConfirm({ id: sp.id, name: sp.name, activate: !sp.is_active })}
                           disabled={loading === sp.id}
-                          className={`text-xs font-medium disabled:opacity-50 ${
-                            sp.is_active ? "text-red-500 hover:text-red-700" : "text-green-600 hover:text-green-800"
-                          }`}
+                          title={sp.is_active ? "Deactivate provider" : "Activate provider"}
+                          className={`p-1.5 rounded hover:bg-[#F3F4F6] transition-colors disabled:opacity-50 inline-flex ${sp.is_active ? "text-amber-500 hover:text-amber-700" : "text-green-600 hover:text-green-800"}`}
                         >
-                          {sp.is_active ? "Deactivate" : "Activate"}
+                          {sp.is_active ? (
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                          )}
                         </button>
                       </div>
                     </td>
