@@ -130,6 +130,14 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
     setCompliance((prev) => ({ ...prev, [type]: { ...prev[type], [field]: value } }));
   }
 
+  function clearComplianceAttachment(type: string) {
+    updateCompliance(type, "attachment_url", "");
+  }
+
+  function clearExtraAttachment(rowId: string) {
+    updateExtraRow(rowId, "attachment_url", "");
+  }
+
   function addExtraRow() {
     setExtraRows((prev) => [
       ...prev,
@@ -276,7 +284,7 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
               value={fileNumber}
               onChange={(e) => setFileNumber(e.target.value)}
               disabled={readOnly}
-              placeholder="e.g. MSSV/2024/001"
+
               className={fieldClass}
             />
           </div>
@@ -421,23 +429,28 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-0.5">
                       {compliance[key].attachment_url && (
-                        <a href={compliance[key].attachment_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-[#4A6FA5] hover:underline">
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                          View
+                        <a href={compliance[key].attachment_url} target="_blank" rel="noopener noreferrer" title="View attachment"
+                          className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] inline-flex">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                         </a>
                       )}
                       {!readOnly && (
-                        <label className="cursor-pointer inline-flex items-center gap-1 px-2 py-1 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F8F9FA] transition whitespace-nowrap">
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                          </svg>
-                          {compliance[key].uploading ? "Uploading…" : compliance[key].attachment_url ? "Replace" : "Upload"}
+                        <label title={compliance[key].attachment_url ? "Replace attachment" : "Upload attachment"}
+                          className="cursor-pointer p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#6B7280] hover:text-[#1A1A2E] inline-flex">
+                          {compliance[key].uploading
+                            ? <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                            : <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                          }
                           <input type="file" accept=".pdf,image/jpeg,image/png" className="hidden" onChange={(e) => handleAttachmentUpload(key, e)} disabled={compliance[key].uploading} />
                         </label>
+                      )}
+                      {!readOnly && compliance[key].attachment_url && (
+                        <button type="button" onClick={() => clearComplianceAttachment(key)} title="Remove attachment"
+                          className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-red-400 hover:text-red-600 inline-flex">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
                       )}
                     </div>
                   </td>
@@ -472,23 +485,28 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-0.5">
                       {row.attachment_url && (
-                        <a href={row.attachment_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-[#4A6FA5] hover:underline">
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                          View
+                        <a href={row.attachment_url} target="_blank" rel="noopener noreferrer" title="View attachment"
+                          className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] inline-flex">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                         </a>
                       )}
                       {!readOnly && (
-                        <label className="cursor-pointer inline-flex items-center gap-1 px-2 py-1 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F8F9FA] transition whitespace-nowrap">
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                          </svg>
-                          {row.uploading ? "Uploading…" : row.attachment_url ? "Replace" : "Upload"}
+                        <label title={row.attachment_url ? "Replace attachment" : "Upload attachment"}
+                          className="cursor-pointer p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#6B7280] hover:text-[#1A1A2E] inline-flex">
+                          {row.uploading
+                            ? <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                            : <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                          }
                           <input type="file" accept=".pdf,image/jpeg,image/png" className="hidden" onChange={(e) => handleExtraAttachmentUpload(row.rowId, row.type, e)} disabled={row.uploading} />
                         </label>
+                      )}
+                      {!readOnly && row.attachment_url && (
+                        <button type="button" onClick={() => clearExtraAttachment(row.rowId)} title="Remove attachment"
+                          className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-red-400 hover:text-red-600 inline-flex">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
                       )}
                     </div>
                   </td>
