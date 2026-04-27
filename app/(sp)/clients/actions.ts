@@ -15,6 +15,7 @@ export interface ComplianceInput {
 
 export interface ClientInput {
   name: string;
+  file_number?: string;
   business_type?: string;
   date_of_incorporation?: string;
   logo_url?: string;
@@ -39,6 +40,7 @@ export async function createClientOrg(input: ClientInput) {
       name: input.name,
       type: "client",
       parent_sp_id: user.org_id,
+      file_number: input.file_number || null,
       business_type: input.business_type || null,
       date_of_incorporation: input.date_of_incorporation || null,
       logo_url: input.logo_url || null,
@@ -82,6 +84,7 @@ export async function updateClientOrg(id: string, input: ClientInput) {
     .from("organizations")
     .update({
       name: input.name,
+      file_number: input.file_number || null,
       business_type: input.business_type || null,
       date_of_incorporation: input.date_of_incorporation || null,
       logo_url: input.logo_url || null,

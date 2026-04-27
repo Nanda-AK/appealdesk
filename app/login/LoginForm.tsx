@@ -83,6 +83,8 @@ export default function LoginForm({ platformName, description, logoUrl, supportE
                 width={128}
                 height={128}
                 className="w-32 h-32 rounded-2xl object-contain"
+                loading="eager"
+                priority
                 unoptimized
               />
             ) : (

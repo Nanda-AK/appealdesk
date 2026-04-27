@@ -91,7 +91,7 @@ interface Props {
 }
 
 // ─── Event Category Field Config ─────────────────────────────────
-type FieldType = "datetime" | "text" | "select" | "file";
+type FieldType = "datetime" | "text" | "select" | "proceeding_select" | "file";
 
 interface FieldDef {
   key: string;
@@ -174,6 +174,16 @@ const CATEGORY_FIELDS: Record<string, FieldDef[]> = {
     { key: "appellate_authority", label: "Appellate Authority", type: "text" },
     { key: "appellate_authority_jurisdiction", label: "Appellate Authority Jurisdiction", type: "text" },
   ],
+  filing_of_appeal: [
+    { key: "appeal_against_proceeding", label: "Appeal Against Proceeding", type: "proceeding_select", fullWidth: true },
+    { key: "order_date", label: "Order Date", type: "datetime" },
+    { key: "due_date_filing", label: "Due Date for Filing Appeal", type: "datetime" },
+    { key: "target_date_filing", label: "Target Date for Filing Appeal", type: "datetime" },
+    { key: "appeal_filed_on", label: "Appeal Filed On", type: "datetime" },
+  ],
+  others: [
+    { key: "date", label: "Date", type: "datetime" },
+  ],
 };
 
 // Primary date field per category (used as event_date for sorting)
@@ -187,6 +197,8 @@ const PRIMARY_DATE: Record<string, string> = {
   assessment_order: "date_of_order",
   notice_of_penalty: "date_of_notice",
   penalty_order: "date_of_order",
+  filing_of_appeal: "order_date",
+  others: "date",
 };
 
 // ─── Other Constants ──────────────────────────────────────────────
@@ -216,6 +228,8 @@ const EVENT_LABELS: Record<string, string> = {
   assessment_order: "Assessment Order",
   notice_of_penalty: "Notice of Penalty",
   penalty_order: "Penalty Order",
+  filing_of_appeal: "Filing of Appeal",
+  others: "Others",
 };
 const NOTICE_STATUS_LABEL: Record<string, string> = {
   open: "Open", in_progress: "In Progress", closed: "Closed",
@@ -649,11 +663,7 @@ function ProceedingFormFields({
         </select>
       </Field>
       <Field label="Authority Type">
-        <select value={values.authority_type ?? ""} onChange={(e) => onChange("authority_type", e.target.value)} className={inp}>
-          <option value="">Select…</option>
-          <option value="assessing">Assessing</option>
-          <option value="appellate">Appellate</option>
-        </select>
+        <input value={values.authority_type ?? ""} onChange={(e) => onChange("authority_type", e.target.value)} className={inp} />
       </Field>
       <Field label="Authority Name">
         <input value={values.authority_name ?? ""} onChange={(e) => onChange("authority_name", e.target.value)} placeholder="e.g. ACIT, Circle 1(1)" className={inp} />
@@ -1367,6 +1377,9 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                     } else if (field.type === "select") {
                       const opt = field.options?.find((o) => o.value === rawVal);
                       display = opt?.label ?? rawVal;
+                    } else if (field.type === "proceeding_select") {
+                      const proc = (mastersByType["proceeding_type"] ?? []).find((m) => m.id === rawVal);
+                      display = proc?.name ?? rawVal;
                     } else {
                       display = rawVal;
                     }
@@ -1448,6 +1461,19 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                         ))}
                       </select>
                     )}
+                    {field.type === "proceeding_select" && (
+                      <select
+                        value={editEventDetails[field.key] ?? ""}
+                        onChange={(e) => setEditDetail(field.key, e.target.value)}
+                        className={inp}
+                      >
+                        <option value="">Select…</option>
+                        {[...(mastersByType["proceeding_type"] ?? [])]
+                          .filter((m) => m.parent_id === (appeal.act_regulation as any)?.id)
+                          .sort((a, b) => a.name.localeCompare(b.name))
+                          .map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                      </select>
+                    )}
                   </Field>
                 ))}
               </div>
@@ -1523,6 +1549,19 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                         {field.options?.map((o) => (
                           <option key={o.value} value={o.value}>{o.label}</option>
                         ))}
+                      </select>
+                    )}
+                    {field.type === "proceeding_select" && (
+                      <select
+                        value={eventDetails[field.key] ?? ""}
+                        onChange={(e) => setDetail(field.key, e.target.value)}
+                        className={inp}
+                      >
+                        <option value="">Select…</option>
+                        {[...(mastersByType["proceeding_type"] ?? [])]
+                          .filter((m) => m.parent_id === (appeal.act_regulation as any)?.id)
+                          .sort((a, b) => a.name.localeCompare(b.name))
+                          .map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
                       </select>
                     )}
                   </Field>

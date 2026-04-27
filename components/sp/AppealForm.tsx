@@ -194,11 +194,7 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
             </select>
           </Field>
           <Field label="Authority Type">
-            <select value={authorityType} onChange={(e) => setAuthorityType(e.target.value)} className={inp}>
-              <option value="">Select…</option>
-              <option value="assessing">Assessing</option>
-              <option value="appellate">Appellate</option>
-            </select>
+            <input value={authorityType} onChange={(e) => setAuthorityType(e.target.value)} className={inp} />
           </Field>
           <Field label="Authority Name">
             <input value={authorityName} onChange={(e) => setAuthorityName(e.target.value)} placeholder="e.g. ACIT, Circle 1(1)" className={inp} />

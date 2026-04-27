@@ -241,7 +241,6 @@ export default function AppealsClient({
                 <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">Client</th>
                 <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">FY / AY</th>
                 <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">Act</th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">Forum</th>
                 <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">Importance</th>
                 <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">Assigned To</th>
                 <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">Deadline</th>
@@ -253,7 +252,7 @@ export default function AppealsClient({
             <tbody className="divide-y divide-[#E5E7EB]">
               {appeals.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="px-4 py-16 text-center text-[#6B7280]">
+                  <td colSpan={10} className="px-4 py-16 text-center text-[#6B7280]">
                     {hasFilters
                       ? "No litigations match your filters."
                       : canEdit
@@ -282,7 +281,6 @@ export default function AppealsClient({
                       <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap max-w-[140px] truncate">
                         {appeal.act_regulation?.name ?? "—"}
                       </td>
-                      <td className="px-4 py-3 text-[#1A1A2E] whitespace-nowrap">{proc?.proceeding_type?.name ?? "—"}</td>
                       <td className="px-4 py-3">
                         {impCfg ? (
                           <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${impCfg.cls}`}>

@@ -78,6 +78,7 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
   const router = useRouter();
 
   const [name, setName] = useState(initialData?.name ?? "");
+  const [fileNumber, setFileNumber] = useState(initialData?.file_number ?? "");
   const [businessType, setBusinessType] = useState(initialData?.business_type ?? "");
   const [dateOfIncorporation, setDateOfIncorporation] = useState(initialData?.date_of_incorporation ?? "");
   const [logoUrl, setLogoUrl] = useState(initialData?.logo_url ?? "");
@@ -209,6 +210,7 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
       if (mode === "create") {
         await createClientOrg({
           name,
+          file_number: fileNumber || undefined,
           business_type: businessType || undefined,
           date_of_incorporation: dateOfIncorporation || undefined,
           logo_url: logoUrl || undefined,
@@ -223,6 +225,7 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
       } else {
         await updateClientOrg(clientId!, {
           name,
+          file_number: fileNumber || undefined,
           business_type: businessType || undefined,
           date_of_incorporation: dateOfIncorporation || undefined,
           logo_url: logoUrl || undefined,
@@ -264,6 +267,16 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
               onChange={(e) => setName(e.target.value)}
               disabled={readOnly}
               placeholder="e.g. ABC Pvt Ltd"
+              className={fieldClass}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Client File Number</label>
+            <input
+              value={fileNumber}
+              onChange={(e) => setFileNumber(e.target.value)}
+              disabled={readOnly}
+              placeholder="e.g. MSSV/2024/001"
               className={fieldClass}
             />
           </div>
