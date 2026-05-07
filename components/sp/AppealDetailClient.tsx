@@ -388,26 +388,41 @@ function ProceedingAttachments({ proceedingId, docs, canEdit }: {
   canEdit: boolean;
 }) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const [pendingFile, setPendingFile] = useState<File | null>(null);
-  const [pendingDesc, setPendingDesc] = useState("");
+  const [pendingFiles, setPendingFiles] = useState<{ file: File; desc: string }[]>([]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<AttachedFile | null>(null);
   const [deleting, setDeleting] = useState(false);
   const activeDocs = docs.filter((d) => !d.deleted_at);
 
-  async function handleUpload() {
-    if (!pendingFile) return;
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    setPendingFiles((prev) => [...prev, ...files.map((f) => ({ file: f, desc: "" }))]);
+    e.target.value = "";
+  }
+
+  function updateDesc(idx: number, desc: string) {
+    setPendingFiles((prev) => prev.map((p, i) => i === idx ? { ...p, desc } : p));
+  }
+
+  function removePending(idx: number) {
+    setPendingFiles((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  async function handleUploadAll() {
+    if (!pendingFiles.length) return;
     setUploading(true); setError(null);
     const supabase = createClient();
-    const path = `proceeding-docs/${proceedingId}/${Date.now()}-${pendingFile.name}`;
-    const { data, error: upErr } = await supabase.storage.from("org-files").upload(path, pendingFile, { upsert: true });
-    if (upErr || !data) { setError("Upload failed. Please try again."); setUploading(false); return; }
-    const { data: urlData } = supabase.storage.from("org-files").getPublicUrl(data.path);
     try {
-      await uploadProceedingDocument(proceedingId, pendingFile.name, urlData.publicUrl, pendingFile.size, pendingDesc.trim() || undefined);
-      setPendingFile(null); setPendingDesc("");
+      for (const { file, desc } of pendingFiles) {
+        const path = `proceeding-docs/${proceedingId}/${Date.now()}-${file.name}`;
+        const { data, error: upErr } = await supabase.storage.from("org-files").upload(path, file, { upsert: true });
+        if (upErr || !data) throw new Error(`Upload failed for ${file.name}`);
+        const { data: urlData } = supabase.storage.from("org-files").getPublicUrl(data.path);
+        await uploadProceedingDocument(proceedingId, file.name, urlData.publicUrl, file.size, desc.trim() || undefined);
+      }
+      setPendingFiles([]);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save attachment.");
@@ -427,68 +442,69 @@ function ProceedingAttachments({ proceedingId, docs, canEdit }: {
   return (
     <div className="px-5 pb-4 pt-1">
       <div className="border border-[#E5E7EB] rounded-lg overflow-hidden">
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          className="w-full px-4 py-2 bg-[#F8F9FA] flex items-center justify-between hover:bg-[#F3F4F6] transition text-left"
-        >
-          <div className="flex items-center gap-2">
-            <svg className={`w-3.5 h-3.5 text-[#9CA3AF] transition-transform duration-200 ${open ? "rotate-90" : ""}`}
-              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
-            <span className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Attachments ({activeDocs.length})</span>
-          </div>
+        {/* Header */}
+        <div className="px-4 py-2 bg-[#F8F9FA] flex items-center justify-between border-b border-[#E5E7EB]">
+          <span className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Attachments ({activeDocs.length})</span>
           {canEdit && (
-            <label
-              onClick={(e) => { e.stopPropagation(); if (!open) setOpen(true); }}
-              className="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium border border-[#E5E7EB] bg-white rounded-lg text-[#6B7280] hover:bg-white transition">
+            <label className="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium border border-[#E5E7EB] bg-white rounded-lg text-[#6B7280] hover:bg-[#F8F9FA] transition">
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
-              Choose File
-              <input type="file" className="hidden"
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) { setPendingFile(f); if (!open) setOpen(true); } e.target.value = ""; }} />
+              Choose Files
+              <input type="file" multiple className="hidden" onChange={handleFileSelect} />
             </label>
           )}
-        </button>
-        {open && (
-          <>
-            {error && <div className="px-4 py-1.5 bg-red-50 border-b border-red-100 text-xs text-red-600">{error}</div>}
-            {pendingFile && (
-              <div className="px-4 py-3 border-t border-[#E5E7EB] bg-[#F8F9FA] space-y-2">
-                <p className="text-xs text-[#6B7280]">File: <span className="font-medium text-[#1A1A2E]">{pendingFile.name}</span></p>
+        </div>
+
+        {/* Existing files */}
+        {activeDocs.length === 0 && pendingFiles.length === 0 ? (
+          <div className="px-4 py-3 text-center text-xs text-[#9CA3AF]">
+            No attachments.{canEdit ? " Use Choose Files to add files." : ""}
+          </div>
+        ) : activeDocs.length > 0 ? (
+          <div className="divide-y divide-[#F3F4F6]">
+            {activeDocs.map((doc) => (
+              <AttachmentRow key={doc.id} doc={doc} canEdit={canEdit} onDelete={() => setConfirmDelete(doc)} />
+            ))}
+          </div>
+        ) : null}
+
+        {/* Pending files with description inputs */}
+        {pendingFiles.length > 0 && (
+          <div className="border-t border-[#E5E7EB] bg-[#F8F9FA] px-4 py-3 space-y-3">
+            {error && <div className="text-xs text-red-600 bg-red-50 border border-red-100 rounded px-3 py-1.5">{error}</div>}
+            {pendingFiles.map(({ file, desc }, idx) => (
+              <div key={idx} className="flex items-center gap-3">
+                <svg className="w-3.5 h-3.5 text-[#4A6FA5] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span className="text-xs text-[#1A1A2E] font-medium truncate w-32 flex-shrink-0">{file.name}</span>
                 <input
                   type="text"
                   placeholder="Description (optional)"
-                  value={pendingDesc}
-                  onChange={(e) => setPendingDesc(e.target.value)}
-                  className="w-full px-3 py-1.5 text-xs border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1E3A5F]"
+                  value={desc}
+                  onChange={(e) => updateDesc(idx, e.target.value)}
+                  className="flex-1 px-2.5 py-1 text-xs border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1E3A5F] bg-white"
                 />
-                <div className="flex gap-2">
-                  <button onClick={handleUpload} disabled={uploading}
-                    className="px-3 py-1 text-xs bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium disabled:opacity-50">
-                    {uploading ? "Uploading…" : "Attach"}
-                  </button>
-                  <button onClick={() => { setPendingFile(null); setPendingDesc(""); setError(null); }}
-                    className="px-3 py-1 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-white">
-                    Cancel
-                  </button>
-                </div>
+                <button type="button" onClick={() => removePending(idx)}
+                  className="p-1 text-[#9CA3AF] hover:text-red-500 transition flex-shrink-0">
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-            )}
-            {activeDocs.length === 0 && !pendingFile ? (
-              <div className="px-4 py-3 text-center text-xs text-[#9CA3AF] border-t border-[#E5E7EB]">
-                No attachments.{canEdit ? " Use Choose File to add files." : ""}
-              </div>
-            ) : activeDocs.length > 0 ? (
-              <div className="divide-y divide-[#F3F4F6] border-t border-[#E5E7EB]">
-                {activeDocs.map((doc) => (
-                  <AttachmentRow key={doc.id} doc={doc} canEdit={canEdit} onDelete={() => setConfirmDelete(doc)} />
-                ))}
-              </div>
-            ) : null}
-          </>
+            ))}
+            <div className="flex gap-2 pt-1">
+              <button onClick={handleUploadAll} disabled={uploading}
+                className="px-3 py-1 text-xs bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium disabled:opacity-50">
+                {uploading ? "Uploading…" : `Attach ${pendingFiles.length > 1 ? `All (${pendingFiles.length})` : "File"}`}
+              </button>
+              <button onClick={() => { setPendingFiles([]); setError(null); }}
+                className="px-3 py-1 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-white">
+                Cancel
+              </button>
+            </div>
+          </div>
         )}
       </div>
       {confirmDelete && (
@@ -517,26 +533,41 @@ function EventAttachments({ eventId, docs, canEdit }: {
   canEdit: boolean;
 }) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const [pendingFile, setPendingFile] = useState<File | null>(null);
-  const [pendingDesc, setPendingDesc] = useState("");
+  const [pendingFiles, setPendingFiles] = useState<{ file: File; desc: string }[]>([]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<AttachedFile | null>(null);
   const [deleting, setDeleting] = useState(false);
   const activeDocs = docs.filter((d) => !d.deleted_at);
 
-  async function handleUpload() {
-    if (!pendingFile) return;
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    setPendingFiles((prev) => [...prev, ...files.map((f) => ({ file: f, desc: "" }))]);
+    e.target.value = "";
+  }
+
+  function updateDesc(idx: number, desc: string) {
+    setPendingFiles((prev) => prev.map((p, i) => i === idx ? { ...p, desc } : p));
+  }
+
+  function removePending(idx: number) {
+    setPendingFiles((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  async function handleUploadAll() {
+    if (!pendingFiles.length) return;
     setUploading(true); setError(null);
     const supabase = createClient();
-    const path = `event-docs/${eventId}/${Date.now()}-${pendingFile.name}`;
-    const { data, error: upErr } = await supabase.storage.from("org-files").upload(path, pendingFile, { upsert: true });
-    if (upErr || !data) { setError("Upload failed. Please try again."); setUploading(false); return; }
-    const { data: urlData } = supabase.storage.from("org-files").getPublicUrl(data.path);
     try {
-      await uploadEventDocument(eventId, pendingFile.name, urlData.publicUrl, pendingFile.size, pendingDesc.trim() || undefined);
-      setPendingFile(null); setPendingDesc("");
+      for (const { file, desc } of pendingFiles) {
+        const path = `event-docs/${eventId}/${Date.now()}-${file.name}`;
+        const { data, error: upErr } = await supabase.storage.from("org-files").upload(path, file, { upsert: true });
+        if (upErr || !data) throw new Error(`Upload failed for ${file.name}`);
+        const { data: urlData } = supabase.storage.from("org-files").getPublicUrl(data.path);
+        await uploadEventDocument(eventId, file.name, urlData.publicUrl, file.size, desc.trim() || undefined);
+      }
+      setPendingFiles([]);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save attachment.");
@@ -556,66 +587,67 @@ function EventAttachments({ eventId, docs, canEdit }: {
   return (
     <div className="mt-2">
       <div className="border border-[#E5E7EB] rounded-lg overflow-hidden">
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          className="w-full px-3 py-1.5 bg-[#F8F9FA] flex items-center justify-between hover:bg-[#F3F4F6] transition text-left"
-        >
-          <div className="flex items-center gap-2">
-            <svg className={`w-3 h-3 text-[#9CA3AF] transition-transform duration-200 ${open ? "rotate-90" : ""}`}
-              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
-            <span className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Files ({activeDocs.length})</span>
-          </div>
+        {/* Header */}
+        <div className="px-3 py-1.5 bg-[#F8F9FA] flex items-center justify-between border-b border-[#E5E7EB]">
+          <span className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Files ({activeDocs.length})</span>
           {canEdit && (
-            <label
-              onClick={(e) => { e.stopPropagation(); if (!open) setOpen(true); }}
-              className="cursor-pointer inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium border border-[#E5E7EB] bg-white rounded text-[#6B7280] hover:bg-white transition">
+            <label className="cursor-pointer inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium border border-[#E5E7EB] bg-white rounded text-[#6B7280] hover:bg-[#F8F9FA] transition">
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
-              Choose File
-              <input type="file" className="hidden"
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) { setPendingFile(f); if (!open) setOpen(true); } e.target.value = ""; }} />
+              Choose Files
+              <input type="file" multiple className="hidden" onChange={handleFileSelect} />
             </label>
           )}
-        </button>
-        {open && (
-          <>
-            {error && <div className="px-3 py-1 bg-red-50 border-b border-red-100 text-xs text-red-600">{error}</div>}
-            {pendingFile && (
-              <div className="px-3 py-2.5 border-t border-[#E5E7EB] bg-[#F8F9FA] space-y-2">
-                <p className="text-xs text-[#6B7280]">File: <span className="font-medium text-[#1A1A2E]">{pendingFile.name}</span></p>
+        </div>
+
+        {/* Existing files */}
+        {activeDocs.length === 0 && pendingFiles.length === 0 ? (
+          <div className="px-3 py-2 text-center text-xs text-[#9CA3AF]">No files attached.</div>
+        ) : activeDocs.length > 0 ? (
+          <div className="divide-y divide-[#F3F4F6]">
+            {activeDocs.map((doc) => (
+              <AttachmentRow key={doc.id} doc={doc} canEdit={canEdit} onDelete={() => setConfirmDelete(doc)} />
+            ))}
+          </div>
+        ) : null}
+
+        {/* Pending files with description inputs */}
+        {pendingFiles.length > 0 && (
+          <div className="border-t border-[#E5E7EB] bg-[#F8F9FA] px-3 py-2.5 space-y-2.5">
+            {error && <div className="text-xs text-red-600 bg-red-50 border border-red-100 rounded px-2.5 py-1">{error}</div>}
+            {pendingFiles.map(({ file, desc }, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <svg className="w-3.5 h-3.5 text-[#4A6FA5] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span className="text-xs text-[#1A1A2E] font-medium truncate w-28 flex-shrink-0">{file.name}</span>
                 <input
                   type="text"
                   placeholder="Description (optional)"
-                  value={pendingDesc}
-                  onChange={(e) => setPendingDesc(e.target.value)}
-                  className="w-full px-2.5 py-1 text-xs border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1E3A5F]"
+                  value={desc}
+                  onChange={(e) => updateDesc(idx, e.target.value)}
+                  className="flex-1 px-2 py-0.5 text-xs border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1E3A5F] bg-white"
                 />
-                <div className="flex gap-2">
-                  <button onClick={handleUpload} disabled={uploading}
-                    className="px-2.5 py-1 text-xs bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium disabled:opacity-50">
-                    {uploading ? "Uploading…" : "Attach"}
-                  </button>
-                  <button onClick={() => { setPendingFile(null); setPendingDesc(""); setError(null); }}
-                    className="px-2.5 py-1 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-white">
-                    Cancel
-                  </button>
-                </div>
+                <button type="button" onClick={() => removePending(idx)}
+                  className="p-0.5 text-[#9CA3AF] hover:text-red-500 transition flex-shrink-0">
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-            )}
-            {activeDocs.length === 0 && !pendingFile ? (
-              <div className="px-3 py-2 text-center text-xs text-[#9CA3AF] border-t border-[#E5E7EB]">No files attached.</div>
-            ) : activeDocs.length > 0 ? (
-              <div className="divide-y divide-[#F3F4F6] border-t border-[#E5E7EB]">
-                {activeDocs.map((doc) => (
-                  <AttachmentRow key={doc.id} doc={doc} canEdit={canEdit} onDelete={() => setConfirmDelete(doc)} />
-                ))}
-              </div>
-            ) : null}
-          </>
+            ))}
+            <div className="flex gap-2 pt-0.5">
+              <button onClick={handleUploadAll} disabled={uploading}
+                className="px-2.5 py-1 text-xs bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium disabled:opacity-50">
+                {uploading ? "Uploading…" : `Attach ${pendingFiles.length > 1 ? `All (${pendingFiles.length})` : "File"}`}
+              </button>
+              <button onClick={() => { setPendingFiles([]); setError(null); }}
+                className="px-2.5 py-1 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-white">
+                Cancel
+              </button>
+            </div>
+          </div>
         )}
       </div>
       {confirmDelete && (
