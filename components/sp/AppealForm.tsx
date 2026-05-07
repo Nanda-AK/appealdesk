@@ -19,6 +19,17 @@ function isAYDisabled(fyName: string): boolean {
   return !!match && parseInt(match[1]) >= 2026;
 }
 
+/** Filter FY options based on selected act */
+function filterFYForAct(fyOptions: MasterItem[], actName: string | undefined): MasterItem[] {
+  if (actName === "The Income-tax Act, 1961") {
+    return fyOptions.filter(m => { const y = parseInt(m.name); return isNaN(y) || parseInt(m.name.slice(0, 4)) < 2026; });
+  }
+  if (actName === "The Income-tax Act, 2025") {
+    return fyOptions.filter(m => { const y = parseInt(m.name.slice(0, 4)); return !isNaN(y) && y >= 2026; });
+  }
+  return fyOptions;
+}
+
 type MasterItem = { id: string; name: string; type: string; parent_id: string | null };
 
 interface Props {
@@ -70,12 +81,17 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
 
   // Derive selected act name
   const selectedAct = (mastersByType["act_regulation"] ?? []).find(m => m.id === actRegulationId);
-  const isITAct = selectedAct?.name === "The Income-tax Act, 1961";
+  const actName = selectedAct?.name;
+  const isITAct1961 = actName === "The Income-tax Act, 1961";
+  const isITAct2025 = actName === "The Income-tax Act, 2025";
 
-  // AY is only available for the IT Act; within IT Act it's also disabled for FY 2026-27+
+  // AY only available for IT Act 1961, and only for FY up to 2025-26
   const selectedFY = (mastersByType["financial_year"] ?? []).find(m => m.id === financialYearId);
   const fyName = selectedFY?.name ?? "";
-  const ayDisabled = !isITAct || (fyName ? isAYDisabled(fyName) : false);
+  const ayDisabled = !isITAct1961 || (fyName ? isAYDisabled(fyName) : false);
+
+  // FY options filtered by act
+  const availableFYOptions = filterFYForAct(mastersByType["financial_year"] ?? [], actName);
 
   // Proceedings filtered to children of the selected act
   const availableProceedings = actRegulationId
@@ -85,16 +101,13 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
   function handleActChange(actId: string) {
     setActRegulationId(actId);
     setProceedingTypeId("");
-    // If switching away from IT Act, clear AY
-    const act = (mastersByType["act_regulation"] ?? []).find(m => m.id === actId);
-    if (act?.name !== "The Income-tax Act, 1961") {
-      setAssessmentYearId("");
-    }
+    setFinancialYearId("");
+    setAssessmentYearId("");
   }
 
   function handleFYChange(fyId: string) {
     setFinancialYearId(fyId);
-    if (!fyId || !isITAct) { setAssessmentYearId(""); return; }
+    if (!fyId || !isITAct1961) { setAssessmentYearId(""); return; }
     const fy = (mastersByType["financial_year"] ?? []).find(m => m.id === fyId);
     if (!fy || isAYDisabled(fy.name)) { setAssessmentYearId(""); return; }
     const derivedName = deriveAYName(fy.name);
@@ -160,10 +173,10 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
               </select>
             </Field>
           </div>
-          <Field label="Financial Year / Tax Year">
-            <select value={financialYearId} onChange={(e) => handleFYChange(e.target.value)} className={inp}>
-              <option value="">Select…</option>
-              {[...(mastersByType["financial_year"] ?? [])].sort((a, b) => b.name.localeCompare(a.name)).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+          <Field label={isITAct2025 ? "Tax Year" : "Financial Year / Tax Year"}>
+            <select value={financialYearId} onChange={(e) => handleFYChange(e.target.value)} className={inp} disabled={!actRegulationId}>
+              <option value="">{actRegulationId ? "Select…" : "Select Act first"}</option>
+              {[...availableFYOptions].sort((a, b) => b.name.localeCompare(a.name)).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
             </select>
           </Field>
           <Field label="Assessment Year">
@@ -246,8 +259,8 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
           <Field label="Possible Outcome">
             <select value={possibleOutcome} onChange={(e) => setPossibleOutcome(e.target.value)} className={inp}>
               <option value="">Select…</option>
-              <option value="favourable">Favourable</option>
               <option value="doubtful">Doubtful</option>
+              <option value="favourable">Favourable</option>
               <option value="unfavourable">Unfavourable</option>
             </select>
           </Field>

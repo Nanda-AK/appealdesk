@@ -31,8 +31,12 @@ export interface ProceedingInput {
 
 export interface EventInput {
   proceeding_id: string;
+  event_type: string;        // 'master' | 'sub'
   category: string;
+  parent_event_id?: string;  // sub events reference their parent master event
   event_date?: string;
+  status?: string;           // 'open' | 'in_progress' | 'closed'
+  event_notice_number?: string;
   description?: string;
   details?: Record<string, string>;
 }
@@ -183,6 +187,9 @@ export async function updateEvent(eventId: string, input: EventInput): Promise<v
     .update({
       category: input.category,
       event_date: primaryDate,
+      event_type: input.event_type || "master",
+      status: input.status || "open",
+      event_notice_number: input.event_notice_number || null,
       description: input.description || null,
       details: input.details ?? {},
     })
@@ -202,8 +209,12 @@ export async function addEvent(input: EventInput): Promise<string> {
   const { data, error } = await supabase.from("events").insert({
     proceeding_id: input.proceeding_id,
     service_provider_id: spId,
+    event_type: input.event_type || "master",
     category: input.category,
+    parent_event_id: input.parent_event_id || null,
     event_date: input.event_date || null,
+    status: input.status || "open",
+    event_notice_number: input.event_notice_number || null,
     description: input.description || null,
     details: input.details ?? {},
     created_by: user.id,

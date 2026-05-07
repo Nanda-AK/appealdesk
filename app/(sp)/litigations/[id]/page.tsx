@@ -27,7 +27,7 @@ export default async function AppealDetailPage({ params }: { params: Promise<{ i
         assigned_user:users!assigned_to(first_name, last_name),
         client_staff:users!client_staff_id(first_name, last_name),
         events(
-          id, category, event_date, description, details, created_at, deleted_at,
+          id, event_type, category, parent_event_id, event_date, status, event_notice_number, description, details, created_at, deleted_at,
           event_documents(id, file_name, file_url, file_size, description, created_at, deleted_at)
         ),
         proceeding_documents(id, file_name, file_url, file_size, description, created_at, deleted_at)
