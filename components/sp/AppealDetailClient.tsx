@@ -418,7 +418,7 @@ function ProceedingAttachments({ proceedingId, docs, canEdit }: {
       for (const { file, desc } of pendingFiles) {
         const path = `proceeding-docs/${proceedingId}/${Date.now()}-${file.name}`;
         const { data, error: upErr } = await supabase.storage.from("org-files").upload(path, file, { upsert: true });
-        if (upErr || !data) throw new Error(`Upload failed for ${file.name}`);
+        if (upErr || !data) throw new Error(`"${file.name}": ${upErr?.message ?? "Upload failed"}`);
         const { data: urlData } = supabase.storage.from("org-files").getPublicUrl(data.path);
         await uploadProceedingDocument(proceedingId, file.name, urlData.publicUrl, file.size, desc.trim() || undefined);
       }
@@ -563,7 +563,7 @@ function EventAttachments({ eventId, docs, canEdit }: {
       for (const { file, desc } of pendingFiles) {
         const path = `event-docs/${eventId}/${Date.now()}-${file.name}`;
         const { data, error: upErr } = await supabase.storage.from("org-files").upload(path, file, { upsert: true });
-        if (upErr || !data) throw new Error(`Upload failed for ${file.name}`);
+        if (upErr || !data) throw new Error(`"${file.name}": ${upErr?.message ?? "Upload failed"}`);
         const { data: urlData } = supabase.storage.from("org-files").getPublicUrl(data.path);
         await uploadEventDocument(eventId, file.name, urlData.publicUrl, file.size, desc.trim() || undefined);
       }
