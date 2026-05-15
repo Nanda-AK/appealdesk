@@ -5,18 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PER_PAGE_OPTIONS } from "@/lib/constants";
 
-interface Proceeding {
-  id: string;
-  proceeding_type: { id: string; name: string } | null;
-  authority_name: string | null;
-  importance: string | null;
-  status: string | null;
-  to_be_completed_by: string | null;
-  assigned_to_ids: string[] | null;
-  possible_outcome: string | null;
-  is_active: boolean;
-}
-
 interface Appeal {
   id: string;
   act_regulation: { id: string; name: string } | null;
@@ -25,13 +13,11 @@ interface Appeal {
   status: string | null;
   created_at: string;
   client_org: { id: string; name: string } | null;
-  proceedings: Proceeding[];
 }
 
 interface Props {
   appeals: Appeal[];
   clients: { id: string; name: string }[];
-  teamMembers: { id: string; first_name: string; last_name: string }[];
   canEdit: boolean;
   totalCount: number;
   page: number;
@@ -40,35 +26,15 @@ interface Props {
   currentSearch: string;
   currentClient: string;
   currentAY: string;
-  currentImportance: string;
-  currentAssigned: string;
   currentStatus: string;
   currentSortDir: string;
 }
-
-const IMPORTANCE: Record<string, { label: string; cls: string }> = {
-  critical: { label: "Critical", cls: "bg-red-100 text-red-700" },
-  high: { label: "High", cls: "bg-orange-100 text-orange-700" },
-  medium: { label: "Medium", cls: "bg-yellow-100 text-yellow-700" },
-  low: { label: "Low", cls: "bg-green-100 text-green-700" },
-};
-
-const OUTCOME: Record<string, { label: string; cls: string }> = {
-  favourable: { label: "Favourable", cls: "bg-green-100 text-green-700" },
-  doubtful: { label: "Doubtful", cls: "bg-yellow-100 text-yellow-700" },
-  unfavourable: { label: "Unfavourable", cls: "bg-red-100 text-red-700" },
-};
 
 const STATUS: Record<string, { label: string; cls: string }> = {
   open: { label: "Open", cls: "bg-blue-50 text-blue-700" },
   "in-progress": { label: "In Progress", cls: "bg-amber-50 text-amber-700" },
   closed: { label: "Closed", cls: "bg-gray-100 text-gray-500" },
 };
-
-function activeProceeding(proceedings: Proceeding[]): Proceeding | null {
-  if (!proceedings?.length) return null;
-  return proceedings.find((p) => p.is_active) ?? proceedings[proceedings.length - 1];
-}
 
 function fmtDate(d: string | null) {
   if (!d) return "—";
@@ -83,10 +49,10 @@ function pageNumbers(current: number, total: number): (number | "...")[] {
 }
 
 export default function AppealsClient({
-  appeals, clients, teamMembers, canEdit,
+  appeals, clients, canEdit,
   totalCount, page, perPage, assessmentYears,
   currentSearch, currentClient, currentAY,
-  currentImportance, currentAssigned, currentStatus, currentSortDir,
+  currentStatus, currentSortDir,
 }: Props) {
   const router = useRouter();
   const [searchInput, setSearchInput] = useState(currentSearch);
@@ -107,8 +73,6 @@ export default function AppealsClient({
       search: currentSearch,
       client: currentClient,
       ay: currentAY,
-      importance: currentImportance,
-      assigned: currentAssigned,
       status: currentStatus,
       sort_dir: currentSortDir,
       page: String(page),
@@ -135,7 +99,7 @@ export default function AppealsClient({
     router.push("/litigations");
   }
 
-  const hasFilters = currentSearch || currentClient || currentAY || currentImportance || currentAssigned || currentStatus;
+  const hasFilters = currentSearch || currentClient || currentAY || currentStatus;
   const totalPages = Math.ceil(totalCount / perPage);
   const rowOffset = (page - 1) * perPage;
   const showingFrom = totalCount === 0 ? 0 : rowOffset + 1;
@@ -189,19 +153,6 @@ export default function AppealsClient({
           <option value="">All Years</option>
           {assessmentYears.map((y) => <option key={y} value={y}>{y}</option>)}
         </select>
-        <select value={currentImportance} onChange={(e) => setFilter("importance", e.target.value)} className={selCls}>
-          <option value="">All Importance</option>
-          <option value="critical">Critical</option>
-          <option value="high">High</option>
-          <option value="medium">Medium</option>
-          <option value="low">Low</option>
-        </select>
-        <select value={currentAssigned} onChange={(e) => setFilter("assigned", e.target.value)} className={selCls}>
-          <option value="">All Staff</option>
-          {teamMembers.map((m) => (
-            <option key={m.id} value={m.id}>{m.first_name} {m.last_name}</option>
-          ))}
-        </select>
         <select value={currentStatus} onChange={(e) => setFilter("status", e.target.value)} className={selCls}>
           <option value="">All Statuses</option>
           <option value="open">Open</option>
@@ -240,17 +191,13 @@ export default function AppealsClient({
                 <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">Client</th>
                 <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">FY / AY</th>
                 <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">Act</th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">Importance</th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">Assigned To</th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">Deadline</th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">Outcome</th>
                 <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E5E7EB]">
               {appeals.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-16 text-center text-[#6B7280]">
+                  <td colSpan={5} className="px-4 py-16 text-center text-[#6B7280]">
                     {hasFilters
                       ? "No litigations match your filters."
                       : canEdit
@@ -259,60 +206,31 @@ export default function AppealsClient({
                   </td>
                 </tr>
               ) : (
-                appeals.map((appeal, i) => {
-                  const proc = activeProceeding(appeal.proceedings);
-                  const impCfg = proc?.importance ? IMPORTANCE[proc.importance] : null;
-                  const outCfg = proc?.possible_outcome ? OUTCOME[proc.possible_outcome] : null;
-                  const assignedNames = (proc?.assigned_to_ids ?? [])
-                    .map(id => teamMembers.find(m => m.id === id))
-                    .filter(Boolean)
-                    .map(m => `${m!.first_name} ${m!.last_name}`);
-                  return (
-                    <tr key={appeal.id} className="hover:bg-[#F8F9FA] transition-colors cursor-pointer" onClick={() => router.push(`/litigations/${appeal.id}`)}>
-                      <td className="px-4 py-3 text-[#9CA3AF] text-xs">{rowOffset + i + 1}</td>
-                      <td className="px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap max-w-[180px] truncate">
-                        {appeal.client_org?.name ?? "—"}
-                      </td>
-                      <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap text-xs">
-                        {appeal.financial_year?.name && <span>{appeal.financial_year.name}</span>}
-                        {appeal.financial_year?.name && appeal.assessment_year?.name && <span className="text-[#D1D5DB]"> / </span>}
-                        {appeal.assessment_year?.name && <span>{appeal.assessment_year.name}</span>}
-                        {!appeal.financial_year?.name && !appeal.assessment_year?.name && "—"}
-                      </td>
-                      <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap max-w-[140px] truncate">
-                        {appeal.act_regulation?.name ?? "—"}
-                      </td>
-                      <td className="px-4 py-3">
-                        {impCfg ? (
-                          <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${impCfg.cls}`}>
-                            {impCfg.label}
-                          </span>
-                        ) : <span className="text-[#9CA3AF]">—</span>}
-                      </td>
-                      <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">
-                        {assignedNames.length > 0 ? assignedNames.join(", ") : <span className="text-[#9CA3AF]">—</span>}
-                      </td>
-                      <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">
-                        {fmtDate(proc?.to_be_completed_by ?? null)}
-                      </td>
-                      <td className="px-4 py-3">
-                        {outCfg ? (
-                          <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${outCfg.cls}`}>
-                            {outCfg.label}
-                          </span>
-                        ) : <span className="text-[#9CA3AF]">—</span>}
-                      </td>
-                      <td className="px-4 py-3">
-                        {(() => {
-                          const s = STATUS[appeal.status ?? "open"];
-                          return s
-                            ? <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${s.cls}`}>{s.label}</span>
-                            : <span className="text-[#9CA3AF]">—</span>;
-                        })()}
-                      </td>
-                    </tr>
-                  );
-                })
+                appeals.map((appeal, i) => (
+                  <tr key={appeal.id} className="hover:bg-[#F8F9FA] transition-colors cursor-pointer" onClick={() => router.push(`/litigations/${appeal.id}`)}>
+                    <td className="px-4 py-3 text-[#9CA3AF] text-xs">{rowOffset + i + 1}</td>
+                    <td className="px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap max-w-[180px] truncate">
+                      {appeal.client_org?.name ?? "—"}
+                    </td>
+                    <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap text-xs">
+                      {appeal.financial_year?.name && <span>{appeal.financial_year.name}</span>}
+                      {appeal.financial_year?.name && appeal.assessment_year?.name && <span className="text-[#D1D5DB]"> / </span>}
+                      {appeal.assessment_year?.name && <span>{appeal.assessment_year.name}</span>}
+                      {!appeal.financial_year?.name && !appeal.assessment_year?.name && "—"}
+                    </td>
+                    <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap max-w-[140px] truncate">
+                      {appeal.act_regulation?.name ?? "—"}
+                    </td>
+                    <td className="px-4 py-3">
+                      {(() => {
+                        const s = STATUS[appeal.status ?? "open"];
+                        return s
+                          ? <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${s.cls}`}>{s.label}</span>
+                          : <span className="text-[#9CA3AF]">—</span>;
+                      })()}
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>

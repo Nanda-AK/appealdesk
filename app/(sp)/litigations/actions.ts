@@ -31,9 +31,9 @@ export interface ProceedingInput {
 
 export interface EventInput {
   proceeding_id: string;
-  event_type: string;        // 'master' | 'sub'
+  event_type: string;        // 'main' | 'sub'
   category: string;
-  parent_event_id?: string;  // sub events reference their parent master event
+  parent_event_id?: string;  // sub events reference their parent main event
   event_date?: string;
   status?: string;           // 'open' | 'in_progress' | 'closed'
   event_notice_number?: string;
@@ -63,6 +63,33 @@ function cleanProceeding(proc: ProceedingInput) {
     possible_outcome: (proc.possible_outcome as "favourable" | "doubtful" | "unfavourable") || null,
     status: proc.status || "open",
   };
+}
+
+const EVENT_CATEGORY_LABELS: Record<string, string> = {
+  notice_from_authority: "Notice from Authority",
+  show_cause_notice: "Show Cause Notice (SCN)",
+  personal_hearing_notice: "Personal Hearing Notice",
+  virtual_hearing_notice: "Virtual Hearing Notice",
+  assessment_order: "Assessment Order",
+  penalty_order: "Penalty Order",
+  filing_of_appeal: "Filing of Appeal",
+  others: "Others",
+  response_to_notice: "Response to Notice",
+  adjournment_request: "Adjournment Request",
+  personal_follow_up: "Personal Follow-up",
+  others_sub: "Others",
+};
+
+async function buildAppealLabel(supabase: Awaited<ReturnType<typeof createServiceClient>>, appealId: string): Promise<string> {
+  const { data } = await supabase
+    .from("appeals")
+    .select("client_org:organizations!client_org_id(name), assessment_year:master_records!assessment_year_id(name)")
+    .eq("id", appealId)
+    .single();
+  if (!data) return "Unknown Litigation";
+  const client = (data.client_org as any)?.name ?? "";
+  const ay = (data.assessment_year as any)?.name ?? "";
+  return ay ? `${client} — AY ${ay}` : client || "Unknown";
 }
 
 export async function createAppeal(appeal: AppealInput, proceeding: ProceedingInput): Promise<{ appealId: string; proceedingId: string }> {
@@ -96,7 +123,8 @@ export async function createAppeal(appeal: AppealInput, proceeding: ProceedingIn
 
   if (pErr || !newProceeding) throw new Error(pErr?.message ?? "Failed to create proceeding");
 
-  await logAction(supabase, { actorId: user.id, spId: spId!, action: "create", entityType: "appeal", entityLabel: newAppeal.id });
+  const appealLabel = await buildAppealLabel(supabase, newAppeal.id);
+  await logAction(supabase, { actorId: user.id, spId: spId!, action: "create", entityType: "appeal", entityLabel: appealLabel });
 
   revalidatePath("/litigations");
   return { appealId: newAppeal.id, proceedingId: newProceeding.id };
@@ -122,7 +150,8 @@ export async function updateAppeal(appealId: string, appeal: AppealInput): Promi
 
   if (error) throw new Error(error.message);
   const spId = user.service_provider_id ?? user.org_id;
-  await logAction(supabase, { actorId: user.id, spId: spId!, action: "update", entityType: "appeal", entityLabel: appealId });
+  const appealLabel = await buildAppealLabel(supabase, appealId);
+  await logAction(supabase, { actorId: user.id, spId: spId!, action: "update", entityType: "appeal", entityLabel: appealLabel });
   revalidatePath(`/litigations/${appealId}`);
   revalidatePath("/litigations");
 }
@@ -139,6 +168,10 @@ export async function updateProceeding(proceedingId: string, proc: ProceedingInp
     .eq("id", proceedingId);
 
   if (error) throw new Error(error.message);
+  const spId = user.service_provider_id ?? user.org_id;
+  const { data: procRef } = await supabase.from("proceedings").select("appeal_id").eq("id", proceedingId).single();
+  const procLabel = procRef?.appeal_id ? await buildAppealLabel(supabase, procRef.appeal_id) : proceedingId;
+  await logAction(supabase, { actorId: user.id, spId: spId!, action: "update", entityType: "proceeding", entityLabel: procLabel });
   revalidatePath("/litigations");
 }
 
@@ -156,6 +189,8 @@ export async function addProceeding(appealId: string, proc: ProceedingInput): Pr
   }).select("id").single();
 
   if (error) throw new Error(error.message);
+  const procAppealLabel = await buildAppealLabel(supabase, appealId);
+  await logAction(supabase, { actorId: user.id, spId: spId!, action: "create", entityType: "proceeding", entityLabel: procAppealLabel });
   revalidatePath(`/litigations/${appealId}`);
   revalidatePath("/litigations");
   return data.id;
@@ -169,6 +204,7 @@ export async function updateEvent(eventId: string, input: EventInput): Promise<v
 
   const PRIMARY_DATE: Record<string, string> = {
     notice_from_authority: "date_of_notice",
+    show_cause_notice: "date_of_notice",
     response_to_notice: "response_submitted_on",
     adjournment_request: "adjourned_to",
     personal_hearing: "hearing_date",
@@ -189,7 +225,7 @@ export async function updateEvent(eventId: string, input: EventInput): Promise<v
     .update({
       category: input.category,
       event_date: primaryDate,
-      event_type: input.event_type || "master",
+      event_type: input.event_type || "main",
       parent_event_id: input.parent_event_id ?? null,
       status: input.status || "open",
       event_notice_number: input.event_notice_number || null,
@@ -199,6 +235,8 @@ export async function updateEvent(eventId: string, input: EventInput): Promise<v
     .eq("id", eventId);
 
   if (error) throw new Error(error.message);
+  const spId = user.service_provider_id ?? user.org_id;
+  await logAction(supabase, { actorId: user.id, spId: spId!, action: "update", entityType: "event", entityLabel: EVENT_CATEGORY_LABELS[input.category] ?? input.category });
   revalidatePath("/litigations");
 }
 
@@ -212,7 +250,7 @@ export async function addEvent(input: EventInput): Promise<string> {
   const { data, error } = await supabase.from("events").insert({
     proceeding_id: input.proceeding_id,
     service_provider_id: spId,
-    event_type: input.event_type || "master",
+    event_type: input.event_type || "main",
     category: input.category,
     parent_event_id: input.parent_event_id || null,
     event_date: input.event_date || null,
@@ -224,7 +262,7 @@ export async function addEvent(input: EventInput): Promise<string> {
   }).select("id").single();
 
   if (error) throw new Error(error.message);
-  await logAction(supabase, { actorId: user.id, spId: spId!, action: "create", entityType: "event", entityLabel: input.category });
+  await logAction(supabase, { actorId: user.id, spId: spId!, action: "create", entityType: "event", entityLabel: EVENT_CATEGORY_LABELS[input.category] ?? input.category });
   revalidatePath("/litigations");
   return data.id;
 }
@@ -237,6 +275,10 @@ export async function deleteProceeding(proceedingId: string): Promise<void> {
   const supabase = await createServiceClient();
 
   const now = new Date().toISOString();
+
+  // Fetch label before cascade so we can record it in the log
+  const { data: delProcRef } = await supabase.from("proceedings").select("appeal_id").eq("id", proceedingId).single();
+  const delProcLabel = delProcRef?.appeal_id ? await buildAppealLabel(supabase, delProcRef.appeal_id) : proceedingId;
 
   // Get event IDs for cascade
   const { data: events } = await supabase
@@ -256,7 +298,7 @@ export async function deleteProceeding(proceedingId: string): Promise<void> {
   const { error } = await supabase.from("proceedings").update({ deleted_at: now }).eq("id", proceedingId);
   if (error) throw new Error(error.message);
 
-  await logAction(supabase, { actorId: user.id, spId: spId!, action: "delete", entityType: "proceeding", entityLabel: proceedingId });
+  await logAction(supabase, { actorId: user.id, spId: spId!, action: "delete", entityType: "proceeding", entityLabel: delProcLabel });
   revalidatePath("/litigations");
 }
 
@@ -268,11 +310,14 @@ export async function deleteEvent(eventId: string): Promise<void> {
   const supabase = await createServiceClient();
 
   const now = new Date().toISOString();
+  const { data: evtRef } = await supabase.from("events").select("category").eq("id", eventId).single();
+  const evtLabel = evtRef?.category ? EVENT_CATEGORY_LABELS[evtRef.category] ?? evtRef.category : eventId;
+
   await supabase.from("event_documents").update({ deleted_at: now }).eq("event_id", eventId).is("deleted_at", null);
 
   const { error } = await supabase.from("events").update({ deleted_at: now }).eq("id", eventId);
   if (error) throw new Error(error.message);
-  await logAction(supabase, { actorId: user.id, spId: spId!, action: "delete", entityType: "event" });
+  await logAction(supabase, { actorId: user.id, spId: spId!, action: "delete", entityType: "event", entityLabel: evtLabel });
   revalidatePath("/litigations");
 }
 
@@ -284,6 +329,7 @@ export async function deleteAppeal(appealId: string): Promise<void> {
   const supabase = await createServiceClient();
 
   const now = new Date().toISOString();
+  const delAppealLabel = await buildAppealLabel(supabase, appealId);
 
   const { data: proceedings } = await supabase
     .from("proceedings")
@@ -316,7 +362,7 @@ export async function deleteAppeal(appealId: string): Promise<void> {
   const { error } = await supabase.from("appeals").update({ deleted_at: now }).eq("id", appealId);
   if (error) throw new Error("Failed to delete appeal: " + error.message);
 
-  await logAction(supabase, { actorId: user.id, spId: spId!, action: "delete", entityType: "appeal", entityLabel: appealId });
+  await logAction(supabase, { actorId: user.id, spId: spId!, action: "delete", entityType: "appeal", entityLabel: delAppealLabel });
   revalidatePath("/litigations");
   revalidatePath(`/litigations/${appealId}`);
 }
@@ -347,6 +393,7 @@ export async function uploadProceedingDocument(
   }).select("id").single();
 
   if (error) throw new Error(error.message);
+  await logAction(supabase, { actorId: user.id, spId: spId!, action: "create", entityType: "document", entityLabel: fileName });
   revalidatePath("/litigations");
   return data.id;
 }
@@ -355,7 +402,10 @@ export async function deleteProceedingDocument(docId: string): Promise<void> {
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
   spOnly(user.role);
+  const spId = user.service_provider_id ?? user.org_id;
   const supabase = await createServiceClient();
+
+  const { data: docRef } = await supabase.from("proceeding_documents").select("file_name").eq("id", docId).single();
 
   const { error } = await supabase
     .from("proceeding_documents")
@@ -363,6 +413,7 @@ export async function deleteProceedingDocument(docId: string): Promise<void> {
     .eq("id", docId);
 
   if (error) throw new Error(error.message);
+  await logAction(supabase, { actorId: user.id, spId: spId!, action: "delete", entityType: "document", entityLabel: docRef?.file_name ?? docId });
   revalidatePath("/litigations");
 }
 
@@ -392,6 +443,7 @@ export async function uploadEventDocument(
   }).select("id").single();
 
   if (error) throw new Error(error.message);
+  await logAction(supabase, { actorId: user.id, spId: spId!, action: "create", entityType: "document", entityLabel: fileName });
   revalidatePath("/litigations");
   return data.id;
 }
@@ -400,7 +452,10 @@ export async function deleteEventDocument(docId: string): Promise<void> {
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
   spOnly(user.role);
+  const spId = user.service_provider_id ?? user.org_id;
   const supabase = await createServiceClient();
+
+  const { data: evtDocRef } = await supabase.from("event_documents").select("file_name").eq("id", docId).single();
 
   const { error } = await supabase
     .from("event_documents")
@@ -408,5 +463,6 @@ export async function deleteEventDocument(docId: string): Promise<void> {
     .eq("id", docId);
 
   if (error) throw new Error(error.message);
+  await logAction(supabase, { actorId: user.id, spId: spId!, action: "delete", entityType: "document", entityLabel: evtDocRef?.file_name ?? docId });
   revalidatePath("/litigations");
 }

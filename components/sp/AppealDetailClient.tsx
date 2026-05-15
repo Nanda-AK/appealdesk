@@ -139,8 +139,12 @@ interface FieldDef {
   fullWidth?: boolean;
 }
 
-const MASTER_CATEGORY_FIELDS: Record<string, FieldDef[]> = {
+const MAIN_CATEGORY_FIELDS: Record<string, FieldDef[]> = {
   notice_from_authority: [
+    { key: "date_of_notice", label: "Notice Date", type: "datetime" },
+    { key: "due_date", label: "Due Date", type: "datetime" },
+  ],
+  show_cause_notice: [
     { key: "date_of_notice", label: "Notice Date", type: "datetime" },
     { key: "due_date", label: "Due Date", type: "datetime" },
   ],
@@ -191,10 +195,11 @@ const SUB_CATEGORY_FIELDS: Record<string, FieldDef[]> = {
   ],
 };
 
-const CATEGORY_FIELDS: Record<string, FieldDef[]> = { ...MASTER_CATEGORY_FIELDS, ...SUB_CATEGORY_FIELDS };
+const CATEGORY_FIELDS: Record<string, FieldDef[]> = { ...MAIN_CATEGORY_FIELDS, ...SUB_CATEGORY_FIELDS };
 
 const PRIMARY_DATE: Record<string, string> = {
   notice_from_authority: "date_of_notice",
+  show_cause_notice: "date_of_notice",
   personal_hearing_notice: "hearing_date",
   virtual_hearing_notice: "hearing_date",
   assessment_order: "date_of_order",
@@ -208,6 +213,7 @@ const PRIMARY_DATE: Record<string, string> = {
 
 const DUE_DATE_KEY: Record<string, string> = {
   notice_from_authority: "due_date",
+  show_cause_notice: "due_date",
   personal_hearing_notice: "due_date",
   virtual_hearing_notice: "due_date",
   assessment_order: "due_date",
@@ -219,8 +225,21 @@ const DUE_DATE_KEY: Record<string, string> = {
   others_sub: "due_date",
 };
 
-const MASTER_EVENT_LABELS: Record<string, string> = {
+// Maps each main event category → the date field to surface in sub-event parent info panels.
+const PARENT_DATE_FIELD: Record<string, { key: string; label: string }> = {
+  notice_from_authority:   { key: "date_of_notice", label: "Notice Date" },
+  show_cause_notice:       { key: "date_of_notice", label: "Notice Date" },
+  personal_hearing_notice: { key: "hearing_date",   label: "Hearing Date" },
+  virtual_hearing_notice:  { key: "hearing_date",   label: "Hearing Date" },
+  assessment_order:        { key: "date_of_order",  label: "Date of Order" },
+  penalty_order:           { key: "date_of_order",  label: "Date of Order" },
+  filing_of_appeal:        { key: "appeal_filed_on", label: "Appeal Filed On" },
+  others:                  { key: "date",            label: "Date" },
+};
+
+const MAIN_EVENT_LABELS: Record<string, string> = {
   notice_from_authority: "Notice from Authority",
+  show_cause_notice: "Show Cause Notice (SCN)",
   personal_hearing_notice: "Personal Hearing Notice",
   virtual_hearing_notice: "Virtual Hearing Notice",
   assessment_order: "Assessment Order",
@@ -236,7 +255,7 @@ const SUB_EVENT_LABELS: Record<string, string> = {
   others_sub: "Others",
 };
 
-const EVENT_LABELS: Record<string, string> = { ...MASTER_EVENT_LABELS, ...SUB_EVENT_LABELS };
+const EVENT_LABELS: Record<string, string> = { ...MAIN_EVENT_LABELS, ...SUB_EVENT_LABELS };
 
 const EVENT_STATUS_CFG: Record<string, { label: string; cls: string }> = {
   open: { label: "Open", cls: "bg-blue-50 text-blue-700" },
@@ -1035,7 +1054,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
 
   // ── Add Event ──
   const [addEventProcId, setAddEventProcId] = useState<string | null>(null);
-  const [addEventParentId, setAddEventParentId] = useState<string | null>(null); // null = master, string = parent master ID for sub
+  const [addEventParentId, setAddEventParentId] = useState<string | null>(null); // null = main, string = parent main event ID for sub
   const [eventCategory, setEventCategory] = useState("");
   const [eventDetails, setEventDetails] = useState<Record<string, string>>({});
   const [eventDescription, setEventDescription] = useState("");
@@ -1057,7 +1076,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
 
   // ── Edit Event ──
   const [editEvent, setEditEvent] = useState<AppEvent | null>(null);
-  const [editEventType, setEditEventType] = useState<"master" | "sub">("master");
+  const [editEventType, setEditEventType] = useState<"main" | "sub">("main");
   const [editEventCategory, setEditEventCategory] = useState("");
   const [editEventDetails, setEditEventDetails] = useState<Record<string, string>>({});
   const [editEventDescription, setEditEventDescription] = useState("");
@@ -1082,7 +1101,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
       parentId: ev.parent_event_id ?? null,
     };
     setEditEvent(ev);
-    setEditEventType((ev.event_type as "master" | "sub") ?? "master");
+    setEditEventType((ev.event_type as "main" | "sub") ?? "main");
     setEditEventCategory(ev.category);
     setEditEventDetails(initDetails);
     setEditEventDescription(ev.description ?? "");
@@ -1174,7 +1193,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
     }
   }
 
-  function openAddMasterEvent(procId: string) {
+  function openAddMainEvent(procId: string) {
     setAddEventProcId(procId);
     setAddEventParentId(null);
     setEventCategory(""); setEventDetails({}); setEventDescription(""); setEventError(null);
@@ -1215,7 +1234,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
 
       const input: EventInput = {
         proceeding_id: addEventProcId,
-        event_type: isSubEvent ? "sub" : "master",
+        event_type: isSubEvent ? "sub" : "main",
         category: eventCategory === "others_sub" ? "others" : eventCategory,
         parent_event_id: addEventParentId || undefined,
         event_date: primaryDate,
@@ -1296,7 +1315,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
     });
   }
 
-  // Sub events collapsed by default; tracks expanded master event IDs
+  // Sub events collapsed by default; tracks expanded main event IDs
   const [expandedMasters, setExpandedMasters] = useState<Set<string>>(new Set());
   function toggleMaster(id: string) {
     setExpandedMasters((prev) => {
@@ -1306,7 +1325,17 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
     });
   }
 
-  // Flat lookup of all events by ID — used to resolve parent master event for sub events
+  // Tracks which sub event rows are expanded (inline details)
+  const [expandedSubEvents, setExpandedSubEvents] = useState<Set<string>>(new Set());
+  function toggleSubEvent(id: string) {
+    setExpandedSubEvents((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  // Flat lookup of all events by ID — used to resolve parent main event for sub events
   const allEventsById = (appeal.proceedings ?? []).reduce((acc, p) => {
     (p.events ?? []).filter(e => !e.deleted_at).forEach(e => { acc[e.id] = e as AppEvent; });
     return acc;
@@ -1385,29 +1414,19 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                     {proc.proceeding_type?.name ?? "—"}
                   </span>
 
-                  {/* Authority */}
-                  {proc.authority_name && (
-                    <span className="text-xs text-[#6B7280] truncate hidden sm:block">
-                      {[proc.authority_type, proc.authority_name].filter(Boolean).join(" · ")}
-                    </span>
-                  )}
-
                   {/* Badges + actions */}
                   <div className="ml-auto flex items-center gap-2 flex-shrink-0">
-                    {impCfg && <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${impCfg.cls}`}>{impCfg.label}</span>}
-                    {proc.mode && <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-[#F3F4F6] text-[#6B7280] capitalize hidden md:inline-flex">{proc.mode}</span>}
-                    {procStatusCfg && <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${procStatusCfg.cls}`}>{procStatusCfg.label}</span>}
-                    {assignedNames.length > 0 && <span className="text-xs text-[#6B7280] hidden lg:block">{assignedNames.join(", ")}</span>}
-                    {proc.to_be_completed_by && (
-                      <span className="text-xs text-[#6B7280] hidden lg:block">Due {fmtDate(proc.to_be_completed_by)}</span>
-                    )}
-                    {/* Attachment count */}
-                    {(() => { const cnt = (proc.proceeding_documents ?? []).filter(d => !d.deleted_at).length; return cnt > 0 ? (
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${impCfg ? impCfg.cls : "bg-[#F3F4F6] text-[#9CA3AF]"}`}>{impCfg ? impCfg.label : "—"}</span>
+                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-[#F3F4F6] text-[#6B7280] capitalize hidden md:inline-flex">{proc.mode ?? "—"}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${procStatusCfg ? procStatusCfg.cls : "bg-[#F3F4F6] text-[#9CA3AF]"}`}>{procStatusCfg ? procStatusCfg.label : "—"}</span>
+                    <span className="text-xs text-[#6B7280] hidden lg:block">Due {proc.to_be_completed_by ? fmtDate(proc.to_be_completed_by) : "—"}</span>
+                    {/* Attachment count — always shown */}
+                    {(() => { const cnt = (proc.proceeding_documents ?? []).filter(d => !d.deleted_at).length; return (
                       <span className="inline-flex items-center gap-0.5 text-xs text-[#6B7280]">
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
                         {cnt}
                       </span>
-                    ) : null; })()}
+                    ); })()}
                     {/* Edit / Delete icons */}
                     {canEdit && (
                       <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
@@ -1447,7 +1466,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
 
                     {/* Events */}
                     {(() => {
-                      const masterEvents = sortedEvents.filter(e => e.event_type === "master");
+                      const mainEvents = sortedEvents.filter(e => e.event_type === "main");
                       const subEventsByParent: Record<string, AppEvent[]> = {};
                       const orphanedSubs: AppEvent[] = [];
                       sortedEvents.filter(e => e.event_type === "sub").forEach(e => {
@@ -1488,33 +1507,68 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                         const dueDateKey = DUE_DATE_KEY[effectiveCat];
                         const dueDate = dueDateKey && ev.details?.[dueDateKey] ? fmtDateTime(ev.details[dueDateKey]) : "—";
                         const statusCfg = EVENT_STATUS_CFG[ev.status ?? "open"] ?? EVENT_STATUS_CFG.open;
+                        const isExpanded = expandedSubEvents.has(ev.id);
+                        const detailFields = CATEGORY_FIELDS[effectiveCat] ?? [];
                         return (
-                          <div
-                            className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-[#F8F9FA] transition-colors ${isSub ? "pl-8 bg-white border-t border-[#F3F4F6]" : "bg-[#F8FAFF]"}`}
-                            onClick={() => setViewEvent(ev)}
-                          >
-                            <span className={`inline-flex px-1.5 py-0.5 rounded text-xs font-medium flex-shrink-0 ${isSub ? "bg-purple-50 text-purple-700" : "bg-[#EEF2FF] text-[#4A6FA5]"}`}>
-                              {isSub ? "Sub" : "Master"}
-                            </span>
-                            <span className="text-xs text-[#1A1A2E] font-medium flex-1 min-w-0 truncate">{EVENT_LABELS[ev.category] ?? ev.category}</span>
-                            <div className="ml-auto flex items-center gap-2 flex-shrink-0">
-                              <span className="inline-flex items-center gap-1 whitespace-nowrap hidden sm:inline-flex">
-                                <span className="text-xs text-[#9CA3AF]">Notice:</span>
-                                <span className="text-xs text-[#6B7280]">{noticeDate}</span>
+                          <div className={isSub ? "bg-white border-t border-[#F3F4F6]" : ""}>
+                            {/* Row header — click to expand/collapse inline details */}
+                            <div
+                              className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-[#F8F9FA] transition-colors ${isSub ? "pl-6" : "bg-[#F8FAFF]"}`}
+                              onClick={() => toggleSubEvent(ev.id)}
+                            >
+                              <svg className={`w-3.5 h-3.5 flex-shrink-0 text-[#9CA3AF] transition-transform duration-150 ${isExpanded ? "rotate-90" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                              </svg>
+                              <span className={`inline-flex px-1.5 py-0.5 rounded text-xs font-medium flex-shrink-0 ${isSub ? "bg-purple-50 text-purple-700" : "bg-[#EEF2FF] text-[#4A6FA5]"}`}>
+                                {isSub ? "Sub" : "Main"}
                               </span>
-                              <span className="inline-flex items-center gap-1 whitespace-nowrap hidden md:inline-flex">
-                                <span className="text-xs text-[#9CA3AF]">Due:</span>
-                                <span className="text-xs text-[#6B7280]">{dueDate}</span>
-                              </span>
-                              <span className={`inline-flex px-1.5 py-0.5 rounded text-xs font-medium flex-shrink-0 ${statusCfg.cls}`}>{statusCfg.label}</span>
-                              {(() => { const cnt = (ev.event_documents ?? []).filter(d => !d.deleted_at).length; return cnt > 0 ? (
-                                <span className="inline-flex items-center gap-0.5 text-xs text-[#6B7280] flex-shrink-0">
-                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
-                                  {cnt}
+                              <span className="text-xs text-[#1A1A2E] font-medium flex-1 min-w-0 truncate">{EVENT_LABELS[ev.category] ?? ev.category}</span>
+                              <div className="ml-auto flex items-center gap-2 flex-shrink-0">
+                                <span className="inline-flex items-center gap-1 whitespace-nowrap hidden sm:inline-flex">
+                                  <span className="text-xs text-[#9CA3AF]">Notice:</span>
+                                  <span className="text-xs text-[#6B7280]">{noticeDate}</span>
                                 </span>
-                              ) : null; })()}
-                              <EventActions ev={ev} />
+                                <span className="inline-flex items-center gap-1 whitespace-nowrap hidden md:inline-flex">
+                                  <span className="text-xs text-[#9CA3AF]">Due:</span>
+                                  <span className="text-xs text-[#6B7280]">{dueDate}</span>
+                                </span>
+                                <span className={`inline-flex px-1.5 py-0.5 rounded text-xs font-medium flex-shrink-0 ${statusCfg.cls}`}>{statusCfg.label}</span>
+                                {(() => { const cnt = (ev.event_documents ?? []).filter(d => !d.deleted_at).length; return (
+                                  <span className="inline-flex items-center gap-0.5 text-xs text-[#6B7280] flex-shrink-0">
+                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                                    {cnt}
+                                  </span>
+                                ); })()}
+                                <EventActions ev={ev} />
+                              </div>
                             </div>
+                            {/* Inline details panel — shown when expanded */}
+                            {isExpanded && (
+                              <div className={`${isSub ? "pl-10" : "pl-6"} pr-4 py-3 bg-[#F8FAFF] border-t border-[#EEF2FF] space-y-2`}>
+                                {detailFields.length > 0 ? (
+                                  <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+                                    {detailFields.map((field) => {
+                                      const rawVal = ev.details?.[field.key];
+                                      const display = rawVal
+                                        ? (field.type === "datetime" ? fmtDateTime(rawVal) : rawVal)
+                                        : "—";
+                                      return (
+                                        <div key={field.key} className={field.fullWidth ? "col-span-2" : ""}>
+                                          <p className="text-xs text-[#9CA3AF] mb-0.5">{field.label}</p>
+                                          <p className="text-xs text-[#1A1A2E]">{display}</p>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                ) : null}
+                                {ev.description && (
+                                  <p className="text-xs text-[#6B7280] italic pt-1">{ev.description}</p>
+                                )}
+                                {detailFields.length === 0 && !ev.description && (
+                                  <p className="text-xs text-[#9CA3AF]">No details recorded.</p>
+                                )}
+                              </div>
+                            )}
                           </div>
                         );
                       }
@@ -1522,14 +1576,14 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                       return (
                         <div className="px-5 py-4 bg-[#EBF1F9]">
                           <div className="flex items-center justify-between mb-3">
-                            <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Events ({masterEvents.length})</p>
+                            <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Events ({mainEvents.length})</p>
                             {canEdit && (
-                              <button onClick={(e) => { e.stopPropagation(); openAddMasterEvent(proc.id); }}
+                              <button onClick={(e) => { e.stopPropagation(); openAddMainEvent(proc.id); }}
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg transition">
                                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                                 </svg>
-                                Add Master Event
+                                Add Main Event
                               </button>
                             )}
                           </div>
@@ -1538,30 +1592,23 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                             <p className="text-xs text-[#9CA3AF]">No events recorded yet.</p>
                           ) : (
                             <div className="rounded-lg border border-[#E5E7EB] overflow-hidden divide-y divide-[#E5E7EB]">
-                              {/* Master events with their sub events */}
-                              {masterEvents.map((master) => {
+                              {/* Main events with their sub events */}
+                              {mainEvents.map((master, mIdx) => {
                                 const subs = subEventsByParent[master.id] ?? [];
                                 const hasSubEvents = subs.length > 0 || canEdit;
                                 const isSubsExpanded = expandedMasters.has(master.id);
                                 return (
                                   <div key={master.id}>
-                                    {/* Master row — chevron shown when it has/can have sub events */}
+                                    {/* Main row — click toggles sub-event expansion */}
                                     <div
                                       className="flex items-center gap-3 px-3 py-2.5 bg-[#F8FAFF] cursor-pointer hover:bg-[#EEF2FF] transition-colors"
-                                      onClick={() => setViewEvent(master)}
+                                      onClick={() => toggleMaster(master.id)}
                                     >
-                                      {hasSubEvents && (
-                                        <button
-                                          onClick={(e) => { e.stopPropagation(); toggleMaster(master.id); }}
-                                          className="p-0.5 text-[#9CA3AF] hover:text-[#4A6FA5] transition-colors flex-shrink-0"
-                                        >
-                                          <svg className={`w-3.5 h-3.5 transition-transform duration-150 ${isSubsExpanded ? "rotate-90" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                                          </svg>
-                                        </button>
-                                      )}
-                                      {!hasSubEvents && <span className="w-4 flex-shrink-0" />}
-                                      <span className="inline-flex px-1.5 py-0.5 rounded text-xs font-medium flex-shrink-0 bg-[#EEF2FF] text-[#4A6FA5]">Master</span>
+                                      <svg className={`w-3.5 h-3.5 flex-shrink-0 text-[#9CA3AF] transition-transform duration-150 ${isSubsExpanded ? "rotate-90" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                                      </svg>
+                                      <span className="text-xs text-[#9CA3AF] font-medium bg-[#F3F4F6] px-1.5 py-0.5 rounded flex-shrink-0">#{mIdx + 1}</span>
+                                      <span className="inline-flex px-1.5 py-0.5 rounded text-xs font-medium flex-shrink-0 bg-[#EEF2FF] text-[#4A6FA5]">Main</span>
                                       <span className="text-xs text-[#1A1A2E] font-medium flex-1 min-w-0 truncate">{EVENT_LABELS[master.category] ?? master.category}</span>
                                       <div className="ml-auto flex items-center gap-2 flex-shrink-0">
                                         {(() => {
@@ -1583,12 +1630,10 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                                                 <span className="text-xs text-[#6B7280]">{dueDate}</span>
                                               </span>
                                               <span className={`inline-flex px-1.5 py-0.5 rounded text-xs font-medium flex-shrink-0 ${statusCfg.cls}`}>{statusCfg.label}</span>
-                                              {cnt > 0 && (
-                                                <span className="inline-flex items-center gap-0.5 text-xs text-[#6B7280] flex-shrink-0">
-                                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
-                                                  {cnt}
-                                                </span>
-                                              )}
+                                              <span className="inline-flex items-center gap-0.5 text-xs text-[#6B7280] flex-shrink-0">
+                                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                                                {cnt}
+                                              </span>
                                             </>
                                           );
                                         })()}
@@ -1775,7 +1820,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
             {/* Event type, notice number, status */}
             <div className="flex items-center gap-2 flex-wrap">
               <span className={`px-2 py-0.5 rounded text-xs font-medium ${viewEvent.event_type === "sub" ? "bg-purple-50 text-purple-700" : "bg-[#EEF2FF] text-[#4A6FA5]"}`}>
-                {viewEvent.event_type === "sub" ? "Sub Event" : "Master Event"}
+                {viewEvent.event_type === "sub" ? "Sub Event" : "Main Event"}
               </span>
               {viewEvent.event_notice_number && (
                 <span className="text-xs text-[#6B7280]">Notice No: <span className="font-medium text-[#1A1A2E]">{viewEvent.event_notice_number}</span></span>
@@ -1783,12 +1828,14 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
               {(() => { const s = EVENT_STATUS_CFG[viewEvent.status ?? "open"] ?? EVENT_STATUS_CFG.open; return <span className={`px-2 py-0.5 rounded text-xs font-medium ${s.cls}`}>{s.label}</span>; })()}
             </div>
 
-            {/* Inherited from parent master event (sub events only) */}
+            {/* Inherited from parent main event (sub events only) */}
             {viewEvent.event_type === "sub" && viewEvent.parent_event_id && (() => {
               const parent = allEventsById[viewEvent.parent_event_id];
               if (!parent) return null;
-              const primaryKey = PRIMARY_DATE[parent.category];
-              const parentNoticeDate = primaryKey && parent.details?.[primaryKey] ? fmtDateTime(parent.details[primaryKey]) : parent.event_date ? fmtDateTime(parent.event_date) : null;
+              const parentDateField = PARENT_DATE_FIELD[parent.category];
+              const parentDateKey = parentDateField?.key;
+              const parentDateLabel = parentDateField?.label ?? "Date";
+              const parentNoticeDate = parentDateKey && parent.details?.[parentDateKey] ? fmtDateTime(parent.details[parentDateKey]) : parent.event_date ? fmtDateTime(parent.event_date) : null;
               return (
                 <div className="rounded-lg bg-[#F3F4F6] border border-[#E5E7EB] px-4 py-3 space-y-2">
 
@@ -1798,7 +1845,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                       <p className="text-sm text-[#9CA3AF]">{parent.event_notice_number ? `#${parent.event_notice_number}` : "—"}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-[#9CA3AF] mb-0.5">Notice Date</p>
+                      <p className="text-xs text-[#9CA3AF] mb-0.5">{parentDateLabel}</p>
                       <p className="text-sm text-[#9CA3AF]">{parentNoticeDate ?? "—"}</p>
                     </div>
                   </div>
@@ -1869,39 +1916,43 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                 {EVENT_LABELS[editEventCategory] ?? editEventCategory}
               </span>
               <span className={`px-2 py-0.5 rounded text-xs font-medium ${editEventType === "sub" ? "bg-purple-50 text-purple-700" : "bg-[#EEF2FF] text-[#4A6FA5]"}`}>
-                {editEventType === "sub" ? "Sub Event" : "Master Event"}
+                {editEventType === "sub" ? "Sub Event" : "Main Event"}
               </span>
             </div>
 
-            {/* Event Notice Number — master events only */}
-            {editEventType === "master" && (
+            {/* Event Notice Number — main events only */}
+            {editEventType === "main" && (
               <Field label="Event Notice Number">
                 <input type="text" value={editEventNoticeNumber} onChange={(e) => setEditEventNoticeNumber(e.target.value)} className={inp} />
               </Field>
             )}
 
-            {/* Parent Master Event selector — sub events only */}
+            {/* Parent Main Event selector — sub events only */}
             {editEventType === "sub" && (() => {
               const proc = (appeal.proceedings ?? []).find(p => p.id === editEventProceedingId);
-              const masterEvents = (proc?.events ?? []).filter(e => e.event_type === "master" && !e.deleted_at);
+              const mainEvents = [...(proc?.events ?? [])]
+                .filter(e => e.event_type === "main" && !e.deleted_at)
+                .sort((a, b) => (b.event_date ?? b.created_at).localeCompare(a.event_date ?? a.created_at));
               const selectedParent = editEventParentId ? allEventsById[editEventParentId] : null;
-              const primaryKey = selectedParent ? PRIMARY_DATE[selectedParent.category] : null;
-              const parentNoticeDate = selectedParent && primaryKey && selectedParent.details?.[primaryKey]
-                ? selectedParent.details[primaryKey]
+              const parentDateField = selectedParent ? PARENT_DATE_FIELD[selectedParent.category] : null;
+              const parentDateKey = parentDateField?.key ?? null;
+              const parentDateLabel = parentDateField?.label ?? "Date";
+              const parentNoticeDate = selectedParent && parentDateKey && selectedParent.details?.[parentDateKey]
+                ? selectedParent.details[parentDateKey]
                 : selectedParent?.event_date ?? "";
               return (
                 <div className="space-y-3">
-                  <Field label="Parent Master Event">
+                  <Field label="Parent Main Event">
                     <select
                       value={editEventParentId ?? ""}
                       onChange={(e) => setEditEventParentId(e.target.value || null)}
                       className={inp}
                     >
                       <option value="">— None (unlinked) —</option>
-                      {masterEvents.map(m => (
+                      {mainEvents.map((m, mIdx) => (
                         <option key={m.id} value={m.id}>
-                          {EVENT_LABELS[m.category] ?? m.category}
-                          {m.event_notice_number ? ` — #${m.event_notice_number}` : ""}
+                          #{mIdx + 1} — {EVENT_LABELS[m.category] ?? m.category}
+                          {m.event_notice_number ? ` (Notice #${m.event_notice_number})` : ""}
                         </option>
                       ))}
                     </select>
@@ -1915,7 +1966,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                             className="w-full px-3 py-2 text-sm border-2 rounded-lg bg-[#F3F4F6] border-[#E5E7EB] text-[#9CA3AF] cursor-not-allowed" />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Notice Date</label>
+                          <label className="block text-xs font-medium text-[#6B7280] mb-1.5">{parentDateLabel}</label>
                           <input readOnly value={parentNoticeDate ? parentNoticeDate.slice(0, 10) : ""} placeholder="—" type="date"
                             className="w-full px-3 py-2 text-sm border-2 rounded-lg bg-[#F3F4F6] border-[#E5E7EB] text-[#9CA3AF] cursor-not-allowed" />
                         </div>
@@ -2018,7 +2069,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
       {/* ── Add Event Modal ── */}
       {addEventProcId && (
         <Modal
-          title={addEventParentId ? "Add Sub Event" : "Add Master Event"}
+          title={addEventParentId ? "Add Sub Event" : "Add Main Event"}
           onClose={() => { setAddEventProcId(null); setAddEventParentId(null); setAddEventPendingFiles([]); }}
           isDirty={addEventIsDirty}
         >
@@ -2026,16 +2077,18 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
             {/* Type badge (read-only) */}
             <div className="flex items-center gap-2">
               <span className={`px-2 py-0.5 rounded text-xs font-medium ${addEventParentId ? "bg-purple-50 text-purple-700" : "bg-[#EEF2FF] text-[#4A6FA5]"}`}>
-                {addEventParentId ? "Sub Event" : "Master Event"}
+                {addEventParentId ? "Sub Event" : "Main Event"}
               </span>
             </div>
 
-            {/* Inherited from parent master event (sub events only) */}
+            {/* Inherited from parent main event (sub events only) */}
             {addEventParentId && (() => {
               const parent = allEventsById[addEventParentId];
               if (!parent) return null;
-              const primaryKey = PRIMARY_DATE[parent.category];
-              const parentNoticeDate = primaryKey && parent.details?.[primaryKey] ? parent.details[primaryKey] : parent.event_date ?? "";
+              const parentDateField = PARENT_DATE_FIELD[parent.category];
+              const parentDateKey = parentDateField?.key;
+              const parentDateLabel = parentDateField?.label ?? "Date";
+              const parentNoticeDate = parentDateKey && parent.details?.[parentDateKey] ? parent.details[parentDateKey] : parent.event_date ?? "";
               return (
                 <div className="rounded-lg bg-[#F3F4F6] border border-[#E5E7EB] px-4 py-3 space-y-3">
 
@@ -2046,7 +2099,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                         className="w-full px-3 py-2 text-sm border-2 rounded-lg bg-[#F3F4F6] border-[#E5E7EB] text-[#9CA3AF] cursor-not-allowed" />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Notice Date</label>
+                      <label className="block text-xs font-medium text-[#6B7280] mb-1.5">{parentDateLabel}</label>
                       <input readOnly value={parentNoticeDate ? parentNoticeDate.slice(0, 10) : ""} placeholder="—" type="date"
                         className="w-full px-3 py-2 text-sm border-2 rounded-lg bg-[#F3F4F6] border-[#E5E7EB] text-[#9CA3AF] cursor-not-allowed" />
                     </div>
@@ -2059,7 +2112,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
             <Field label="Category *">
               <select value={eventCategory} onChange={(e) => handleEventCategoryChange(e.target.value)} className={inp}>
                 <option value="">Select category…</option>
-                {Object.entries(addEventParentId ? SUB_EVENT_LABELS : MASTER_EVENT_LABELS)
+                {Object.entries(addEventParentId ? SUB_EVENT_LABELS : MAIN_EVENT_LABELS)
                   .sort(([, a], [, b]) => a.localeCompare(b))
                   .map(([key, label]) => (
                     <option key={key} value={key}>{label}</option>
@@ -2067,7 +2120,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
               </select>
             </Field>
 
-            {/* Event Notice Number — master events only */}
+            {/* Event Notice Number — main events only */}
             {!addEventParentId && (
               <Field label="Event Notice Number">
                 <input type="text" value={eventNoticeNumber} onChange={(e) => setEventNoticeNumber(e.target.value)} className={inp} />
@@ -2151,7 +2204,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                 className="px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">Cancel</button>
               <button type="submit" disabled={eventSaving}
                 className="px-4 py-2 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60">
-                {eventSaving ? "Adding…" : (addEventParentId ? "Add Sub Event" : "Add Master Event")}
+                {eventSaving ? "Adding…" : (addEventParentId ? "Add Sub Event" : "Add Main Event")}
               </button>
             </div>
           </form>

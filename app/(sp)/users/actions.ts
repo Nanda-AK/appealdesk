@@ -3,6 +3,7 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/user";
 import { revalidatePath } from "next/cache";
+import { logAction } from "@/lib/audit";
 
 export interface UserInput {
   first_name: string;
@@ -104,6 +105,8 @@ export async function createUser(input: UserInput) {
     });
   }
 
+  const spId = currentUser.service_provider_id ?? currentUser.org_id;
+  await logAction(supabase, { actorId: currentUser.id, spId: spId!, action: "create", entityType: "user", entityLabel: `${input.first_name} ${input.last_name} (${input.email})` });
   revalidatePath("/users");
 }
 
@@ -113,11 +116,16 @@ export async function toggleUserStatus(id: string, isActive: boolean) {
   if (id === currentUser.id) throw new Error("Cannot deactivate your own account");
 
   const supabase = await createServiceClient();
+  const { data: toggleUserRef } = await supabase.from("users").select("first_name, last_name").eq("id", id).single();
+  const toggleUserName = toggleUserRef ? `${toggleUserRef.first_name} ${toggleUserRef.last_name}` : id;
+
   await supabase
     .from("users")
     .update({ is_active: isActive, updated_at: new Date().toISOString() })
     .eq("id", id);
 
+  const spId = currentUser.service_provider_id ?? currentUser.org_id;
+  await logAction(supabase, { actorId: currentUser.id, spId: spId!, action: "update", entityType: "user", entityLabel: `${toggleUserName} ${isActive ? "activated" : "deactivated"}` });
   revalidatePath("/users");
 }
 
@@ -202,6 +210,8 @@ export async function updateUser(id: string, input: UserEditInput) {
     if (pwError) throw new Error(pwError.message);
   }
 
+  const spId = currentUser.service_provider_id ?? currentUser.org_id;
+  await logAction(supabase, { actorId: currentUser.id, spId: spId!, action: "update", entityType: "user", entityLabel: `${input.first_name} ${input.last_name}` });
   revalidatePath("/users");
 }
 
@@ -212,6 +222,9 @@ export async function deleteUser(id: string) {
 
   const supabase = await createServiceClient();
 
+  const { data: delUserRef } = await supabase.from("users").select("first_name, last_name, email").eq("id", id).single();
+  const delUserName = delUserRef ? `${delUserRef.first_name} ${delUserRef.last_name} (${delUserRef.email})` : id;
+
   // Soft-delete: mark deleted_at, keep auth user intact
   const { error } = await supabase
     .from("users")
@@ -219,5 +232,7 @@ export async function deleteUser(id: string) {
     .eq("id", id);
   if (error) throw new Error(error.message);
 
+  const spId = currentUser.service_provider_id ?? currentUser.org_id;
+  await logAction(supabase, { actorId: currentUser.id, spId: spId!, action: "delete", entityType: "user", entityLabel: delUserName });
   revalidatePath("/users");
 }

@@ -6,7 +6,7 @@ export async function logAction(
     actorId: string;
     spId: string;
     action: "create" | "update" | "delete";
-    entityType: "appeal" | "proceeding" | "event" | "document";
+    entityType: "appeal" | "proceeding" | "event" | "document" | "user" | "organization";
     entityLabel?: string;
   }
 ) {

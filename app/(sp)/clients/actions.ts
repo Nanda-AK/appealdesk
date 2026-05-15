@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/user";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { logAction } from "@/lib/audit";
 
 export interface ComplianceInput {
   type: string;
@@ -70,6 +71,7 @@ export async function createClientOrg(input: ClientInput) {
     );
   }
 
+  await logAction(supabase, { actorId: user.id, spId: user.org_id!, action: "create", entityType: "organization", entityLabel: input.name });
   revalidatePath("/clients");
   redirect("/clients");
 }
@@ -116,6 +118,7 @@ export async function updateClientOrg(id: string, input: ClientInput) {
     );
   }
 
+  await logAction(supabase, { actorId: user.id, spId: user.org_id!, action: "update", entityType: "organization", entityLabel: input.name });
   revalidatePath("/clients");
   revalidatePath(`/clients/${id}`);
   redirect("/clients");
@@ -127,6 +130,9 @@ export async function deleteClient(id: string): Promise<void> {
 
   const supabase = await createServiceClient();
   const now = new Date().toISOString();
+
+  const { data: delOrgRef } = await supabase.from("organizations").select("name").eq("id", id).single();
+  const delOrgName = delOrgRef?.name ?? id;
 
   // Soft-delete users belonging to this client org
   await supabase.from("users").update({ deleted_at: now }).eq("org_id", id).is("deleted_at", null);
@@ -161,6 +167,7 @@ export async function deleteClient(id: string): Promise<void> {
   const { error } = await supabase.from("organizations").update({ deleted_at: now }).eq("id", id);
   if (error) throw new Error(error.message);
 
+  await logAction(supabase, { actorId: user.id, spId: user.org_id!, action: "delete", entityType: "organization", entityLabel: delOrgName });
   revalidatePath("/clients");
 }
 
@@ -170,11 +177,15 @@ export async function toggleClientStatus(id: string, isActive: boolean) {
 
   const supabase = await createServiceClient();
 
+  const { data: toggleOrgRef } = await supabase.from("organizations").select("name").eq("id", id).single();
+  const toggleOrgName = toggleOrgRef?.name ?? id;
+
   await supabase
     .from("organizations")
     .update({ is_active: isActive, updated_at: new Date().toISOString() })
     .eq("id", id)
     .eq("parent_sp_id", user.org_id);
 
+  await logAction(supabase, { actorId: user.id, spId: user.org_id!, action: "update", entityType: "organization", entityLabel: `${toggleOrgName} ${isActive ? "activated" : "deactivated"}` });
   revalidatePath("/clients");
 }
