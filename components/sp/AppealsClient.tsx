@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PER_PAGE_OPTIONS } from "@/lib/constants";
+import { exportLitigationsReport } from "@/app/(sp)/litigations/actions";
 
 interface Appeal {
   id: string;
@@ -230,6 +231,61 @@ export default function AppealsClient({
 }: Props) {
   const router = useRouter();
 
+  const [exporting, setExporting]         = useState<"excel" | "pdf" | "docx" | null>(null);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!exportMenuOpen) return;
+    function handler(e: MouseEvent) {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) {
+        setExportMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [exportMenuOpen]);
+
+  function triggerDownload(blob: Blob, fileName: string) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleExport(format: "excel" | "pdf" | "docx") {
+    setExporting(format);
+    setExportMenuOpen(false);
+    try {
+      const data = await exportLitigationsReport({
+        filterClients:  currentClients,
+        filterActs:     currentActs,
+        filterFYs:      currentFYs,
+        filterAYs:      currentAYs,
+        filterStatuses: currentStatuses,
+        filterAssigned: currentAssigned,
+      });
+      const dateStamp = new Date().toISOString().slice(0, 10);
+      if (format === "excel") {
+        const { generateExcel } = await import("@/lib/reports/excel");
+        triggerDownload(generateExcel(data), `litigations-${dateStamp}.xlsx`);
+      } else if (format === "pdf") {
+        const { generatePDF } = await import("@/lib/reports/pdf");
+        triggerDownload(generatePDF(data), `litigations-${dateStamp}.pdf`);
+      } else {
+        const { generateDocx } = await import("@/lib/reports/docx");
+        triggerDownload(await generateDocx(data), `litigations-${dateStamp}.docx`);
+      }
+    } catch (err) {
+      console.error("Export failed:", err);
+      alert("Export failed. Please try again.");
+    } finally {
+      setExporting(null);
+    }
+  }
+
   function push(updates: Record<string, string>) {
     const merged: Record<string, string> = {
       client:   currentClients.join(","),
@@ -362,6 +418,41 @@ export default function AppealsClient({
             Clear all
           </button>
         )}
+
+        {/* Export dropdown */}
+        <div ref={exportMenuRef} className="relative ml-auto">
+          <button
+            onClick={() => setExportMenuOpen((v) => !v)}
+            disabled={!!exporting || totalCount === 0}
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg hover:bg-[#F8F9FA] disabled:opacity-50 disabled:cursor-not-allowed transition text-[#1A1A2E] h-[38px]"
+          >
+            <svg className="w-4 h-4 text-[#4A6FA5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            {exporting
+              ? `Exporting ${exporting.toUpperCase()}…`
+              : "Export"}
+            <svg className="w-3 h-3 text-[#9CA3AF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          {exportMenuOpen && (
+            <div className="absolute right-0 top-full mt-1 bg-white border border-[#E5E7EB] rounded-lg shadow-lg z-50 w-44 py-1">
+              {(["excel", "pdf", "docx"] as const).map((fmt) => (
+                <button
+                  key={fmt}
+                  onClick={() => handleExport(fmt)}
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-[#F8F9FA] text-[#1A1A2E] transition"
+                >
+                  {fmt === "excel" && "Excel (.xlsx)"}
+                  {fmt === "pdf"   && "PDF (.pdf)"}
+                  {fmt === "docx"  && "Word (.docx)"}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Table */}

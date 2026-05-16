@@ -135,7 +135,7 @@ export default function MastersClient({ records, isSuperAdmin }: Props) {
     finally { setDeleting(null); setConfirmDelete(null); }
   }
 
-  const allTabs = [...FLAT_TABS, { key: ACTS_TAB, label: "Acts & Proceedings" }];
+  const allTabs = [...FLAT_TABS, { key: ACTS_TAB, label: "Acts" }];
 
   return (
     <div>

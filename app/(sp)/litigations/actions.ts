@@ -466,3 +466,284 @@ export async function deleteEventDocument(docId: string): Promise<void> {
   await logAction(supabase, { actorId: user.id, spId: spId!, action: "delete", entityType: "document", entityLabel: evtDocRef?.file_name ?? docId });
   revalidatePath("/litigations");
 }
+
+// ── Report Export ────────────────────────────────────────────────
+
+export interface LitigationReportFilters {
+  filterClients:  string[];
+  filterActs:     string[];
+  filterFYs:      string[];
+  filterAYs:      string[];
+  filterStatuses: string[];
+  filterAssigned: string[];
+}
+
+export interface ReportAppeal {
+  id: string;
+  client_name: string;
+  act_name: string;
+  financial_year: string;
+  assessment_year: string;
+  status: string;
+  created_at: string;
+}
+
+export interface ReportProceeding {
+  id: string;
+  appeal_id: string;
+  client_name: string;
+  proceeding_type: string;
+  authority_type: string;
+  authority_name: string;
+  jurisdiction: string;
+  jurisdiction_city: string;
+  importance: string;
+  mode: string;
+  initiated_on: string;
+  to_be_completed_by: string;
+  assigned_names: string;
+  possible_outcome: string;
+  status: string;
+}
+
+export interface ReportEvent {
+  id: string;
+  proceeding_id: string;
+  appeal_id: string;
+  client_name: string;
+  event_type: string;
+  parent_event_id: string | null;
+  category: string;
+  event_date: string;
+  event_notice_number: string;
+  description: string;
+  status: string;
+}
+
+export interface ReportDocument {
+  id: string;
+  parent_id: string;  // proceeding_id or event_id
+  file_name: string;
+  description: string;
+}
+
+export interface LitigationReportData {
+  spName:              string;
+  appeals:             ReportAppeal[];
+  proceedings:         ReportProceeding[];
+  events:              ReportEvent[];
+  proceedingDocuments: ReportDocument[];
+  eventDocuments:      ReportDocument[];
+  generatedAt:         string;
+}
+
+const REPORT_APPEAL_SELECT = `
+  id, status, created_at,
+  act_regulation:master_records!act_regulation_id(id, name),
+  financial_year:master_records!financial_year_id(id, name),
+  assessment_year:master_records!assessment_year_id(id, name),
+  client_org:organizations!client_org_id(id, name)
+`;
+
+const REPORT_PROCEEDING_SELECT = `
+  id, appeal_id, authority_type, authority_name,
+  jurisdiction, jurisdiction_city, importance, mode,
+  initiated_on, to_be_completed_by,
+  assigned_to_ids,
+  possible_outcome, status,
+  proceeding_type:master_records!proceeding_type_id(id, name)
+`;
+
+const REPORT_EVENT_SELECT = `
+  id, proceeding_id, event_type, category, parent_event_id,
+  event_date, event_notice_number, description, status
+`;
+
+export async function exportLitigationsReport(
+  filters: LitigationReportFilters,
+): Promise<LitigationReportData> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+  spOnly(user.role);
+  const spId = user.service_provider_id ?? user.org_id;
+  const supabase = await createServiceClient();
+
+  // Query 1: Appeals (no pagination, full filtered set)
+  let q = supabase
+    .from("appeals")
+    .select(REPORT_APPEAL_SELECT)
+    .eq("service_provider_id", spId!)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false });
+
+  if (filters.filterClients.length)  q = q.in("client_org_id", filters.filterClients);
+  if (filters.filterActs.length)     q = q.in("act_regulation_id", filters.filterActs);
+  if (filters.filterFYs.length)      q = q.in("financial_year_id", filters.filterFYs);
+  if (filters.filterAYs.length)      q = q.in("assessment_year_id", filters.filterAYs);
+  if (filters.filterStatuses.length) q = q.in("status", filters.filterStatuses);
+  if (filters.filterAssigned.length) q = q.in("assigned_to", filters.filterAssigned);
+
+  const { data: rawAppeals, error: aErr } = await q;
+  if (aErr) throw new Error(aErr.message);
+
+  // Fetch SP organisation name
+  const { data: spOrg } = await supabase
+    .from("organizations")
+    .select("name")
+    .eq("id", spId!)
+    .single();
+  const spName = spOrg?.name ?? "";
+
+  if (!rawAppeals || rawAppeals.length === 0) {
+    return { spName, appeals: [], proceedings: [], events: [], proceedingDocuments: [], eventDocuments: [], generatedAt: new Date().toISOString() };
+  }
+
+  const litigationIds = rawAppeals.map((a: any) => a.id);
+
+  // Query 2: Proceedings
+  const { data: rawProceedings, error: pErr } = await supabase
+    .from("proceedings")
+    .select(REPORT_PROCEEDING_SELECT)
+    .eq("service_provider_id", spId!)
+    .in("appeal_id", litigationIds)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: true });
+
+  if (pErr) throw new Error(pErr.message);
+
+  const proceedingIds = (rawProceedings ?? []).map((p: any) => p.id);
+
+  // Query 3: Events
+  let rawEvents: any[] = [];
+  if (proceedingIds.length > 0) {
+    const { data: evtData, error: eErr } = await supabase
+      .from("events")
+      .select(REPORT_EVENT_SELECT)
+      .in("proceeding_id", proceedingIds)
+      .is("deleted_at", null)
+      .order("event_date", { ascending: true, nullsFirst: false });
+    if (eErr) throw new Error(eErr.message);
+    rawEvents = evtData ?? [];
+  }
+
+  const eventIds = rawEvents.map((e: any) => e.id);
+
+  // Query 4: Proceeding documents
+  let rawProcDocs: any[] = [];
+  if (proceedingIds.length > 0) {
+    const { data: pd } = await supabase
+      .from("proceeding_documents")
+      .select("id, proceeding_id, file_name, description")
+      .in("proceeding_id", proceedingIds)
+      .is("deleted_at", null);
+    rawProcDocs = pd ?? [];
+  }
+
+  // Query 5: Event documents
+  let rawEventDocs: any[] = [];
+  if (eventIds.length > 0) {
+    const { data: ed } = await supabase
+      .from("event_documents")
+      .select("id, event_id, file_name, description")
+      .in("event_id", eventIds)
+      .is("deleted_at", null);
+    rawEventDocs = ed ?? [];
+  }
+
+  // Resolve assigned_to_ids → full names
+  const allUserIds = [
+    ...new Set((rawProceedings ?? []).flatMap((p: any) => p.assigned_to_ids ?? [])),
+  ];
+  const userNameMap = new Map<string, string>();
+  if (allUserIds.length > 0) {
+    const { data: userRows } = await supabase
+      .from("users")
+      .select("id, first_name, last_name")
+      .in("id", allUserIds);
+    (userRows ?? []).forEach((u: any) => {
+      userNameMap.set(u.id, [u.first_name, u.last_name].filter(Boolean).join(" "));
+    });
+  }
+
+  const appealMap = new Map<string, any>(rawAppeals.map((a: any) => [a.id, a]));
+
+  const appeals: ReportAppeal[] = rawAppeals.map((a: any) => ({
+    id: a.id,
+    client_name: (a.client_org as any)?.name ?? "",
+    act_name: (a.act_regulation as any)?.name ?? "",
+    financial_year: (a.financial_year as any)?.name ?? "",
+    assessment_year: (a.assessment_year as any)?.name ?? "",
+    status: a.status ?? "",
+    created_at: a.created_at ?? "",
+  }));
+
+  const proceedings: ReportProceeding[] = (rawProceedings ?? []).map((p: any) => {
+    const parentAppeal = appealMap.get(p.appeal_id);
+    return {
+      id: p.id,
+      appeal_id: p.appeal_id,
+      client_name: (parentAppeal?.client_org as any)?.name ?? "",
+      proceeding_type: (p.proceeding_type as any)?.name ?? "",
+      authority_type: p.authority_type ?? "",
+      authority_name: p.authority_name ?? "",
+      jurisdiction: p.jurisdiction ?? "",
+      jurisdiction_city: p.jurisdiction_city ?? "",
+      importance: p.importance ?? "",
+      mode: p.mode ?? "",
+      initiated_on: p.initiated_on ?? "",
+      to_be_completed_by: p.to_be_completed_by ?? "",
+      assigned_names: (p.assigned_to_ids ?? [])
+        .map((id: string) => userNameMap.get(id) ?? "")
+        .filter(Boolean)
+        .join(", "),
+      possible_outcome: p.possible_outcome ?? "",
+      status: p.status ?? "",
+    };
+  });
+
+  const procAppealMap = new Map<string, string>(
+    (rawProceedings ?? []).map((p: any) => [p.id, p.appeal_id]),
+  );
+
+  const events: ReportEvent[] = rawEvents.map((e: any) => {
+    const appealId = procAppealMap.get(e.proceeding_id) ?? "";
+    const parentAppeal = appealMap.get(appealId);
+    return {
+      id: e.id,
+      proceeding_id: e.proceeding_id,
+      appeal_id: appealId,
+      client_name: (parentAppeal?.client_org as any)?.name ?? "",
+      event_type: e.event_type ?? "",
+      parent_event_id: e.parent_event_id ?? null,
+      category: e.category ?? "",
+      event_date: e.event_date ?? "",
+      event_notice_number: e.event_notice_number ?? "",
+      description: e.description ?? "",
+      status: e.status ?? "",
+    };
+  });
+
+  const proceedingDocuments: ReportDocument[] = rawProcDocs.map((d: any) => ({
+    id: d.id,
+    parent_id: d.proceeding_id,
+    file_name: d.file_name ?? "",
+    description: d.description ?? "",
+  }));
+
+  const eventDocuments: ReportDocument[] = rawEventDocs.map((d: any) => ({
+    id: d.id,
+    parent_id: d.event_id,
+    file_name: d.file_name ?? "",
+    description: d.description ?? "",
+  }));
+
+  return {
+    spName,
+    appeals,
+    proceedings,
+    events,
+    proceedingDocuments,
+    eventDocuments,
+    generatedAt: new Date().toISOString(),
+  };
+}

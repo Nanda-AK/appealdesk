@@ -250,8 +250,8 @@ export default function EditSpUserForm({ user }: Props) {
 
           <Field label="Role" required>
             <select value={form.role} onChange={(e) => set("role")(e.target.value as UserEditInput["role"])} className={inp}>
-              <option value="sp_admin">SP Admin</option>
-              <option value="sp_staff">SP Staff</option>
+              <option value="sp_admin">Admin</option>
+              <option value="sp_staff">Staff</option>
             </select>
           </Field>
 

@@ -300,7 +300,7 @@ export default function UsersClient({
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
-            {currentTab === "team" ? "Add SP User" : "Add Client User"}
+            {currentTab === "team" ? "Add User" : "Add Client User"}
           </Link>
         )}
       </div>
@@ -315,7 +315,7 @@ export default function UsersClient({
               currentTab === tab ? "bg-[#1E3A5F] text-white" : "text-[#6B7280] hover:text-[#1A1A2E] hover:bg-[#F8F9FA]"
             }`}
           >
-            {tab === "team" ? `SP Users (${teamUsers.length})` : `Client Users (${clientUsers.length})`}
+            {tab === "team" ? `Users (${teamUsers.length})` : `Client Users (${clientUsers.length})`}
           </button>
         ))}
       </div>

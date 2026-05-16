@@ -46,7 +46,7 @@ export default function SpMastersClient({ records }: Props) {
       return acc;
     }, {} as Record<string, MasterRecord[]>);
 
-  const allTabs = [...FLAT_TABS, { key: ACTS_TAB, label: "Acts & Proceedings" }];
+  const allTabs = [...FLAT_TABS, { key: ACTS_TAB, label: "Acts" }];
 
   return (
     <div>
