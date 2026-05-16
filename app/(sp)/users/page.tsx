@@ -2,26 +2,38 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/user";
 import UsersClient from "@/components/sp/UsersClient";
 
-export default async function UsersPage() {
+function parseMulti(val: string | string[] | undefined): string[] {
+  if (!val) return [];
+  const raw = Array.isArray(val) ? val[0] : val;
+  return raw.split(",").filter(Boolean);
+}
+
+export default async function UsersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const params = await searchParams;
   const user = await getCurrentUser();
   const supabase = await createClient();
-
   const spId = user?.service_provider_id ?? user?.org_id;
 
-  // Fetch client org IDs under this SP first
+  const currentTab         = (params.tab as string) === "clients" ? "clients" : "team";
+  const currentRoles       = parseMulti(params.role);
+  const currentOrgs        = parseMulti(params.org);
+  const currentDesignations = parseMulti(params.designation);
+  const currentStatuses    = parseMulti(params.status);
+  const currentSortDir     = (params.sort_dir as string) === "desc" ? "desc" : "asc";
+
+  // Fetch client org IDs under this SP
   const { data: clientOrgs } = await supabase
     .from("organizations")
-    .select("id, name")
+    .select("id")
     .eq("parent_sp_id", spId!)
     .eq("type", "client")
-    .eq("is_active", true)
-    .order("name");
+    .eq("is_active", true);
 
-  const clientOrgIds = (clientOrgs ?? []).map((o) => o.id);
-
-  // Fetch SP team users (sp_admin, sp_staff) whose org_id = spId
-  // AND client users whose org_id is one of the client orgs
-  const orgIdsToFetch = [spId!, ...clientOrgIds];
+  const orgIdsToFetch = [spId!, ...(clientOrgs ?? []).map((o) => o.id)];
 
   const { data: users } = await supabase
     .from("users")
@@ -34,8 +46,6 @@ export default async function UsersPage() {
     .is("deleted_at", null)
     .order("first_name");
 
-  // Supabase returns FK joins as arrays; normalize to objects for the client component
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const normalizedUsers = (users ?? []).map((u: any) => ({
     ...u,
     organization: Array.isArray(u.organization) ? (u.organization[0] ?? null) : u.organization,
@@ -43,15 +53,16 @@ export default async function UsersPage() {
 
   return (
     <div className="p-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-[#1A1A2E]">Users</h1>
-        <p className="text-[#6B7280] text-sm mt-0.5">{users?.length ?? 0} users in your workspace</p>
-      </div>
       <UsersClient
         users={normalizedUsers}
-        clientOrgs={clientOrgs ?? []}
         currentUserId={user!.id}
         isAdmin={user!.role === "sp_admin"}
+        currentTab={currentTab as "team" | "clients"}
+        currentRoles={currentRoles}
+        currentOrgs={currentOrgs}
+        currentDesignations={currentDesignations}
+        currentStatuses={currentStatuses}
+        currentSortDir={currentSortDir}
       />
     </div>
   );

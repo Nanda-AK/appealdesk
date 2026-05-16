@@ -4,10 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/user";
 
 export interface LogFilters {
-  filterAction?: string;
-  filterEntity?: string;
-  fromDate?: string;
-  toDate?: string;
+  filterActions: string[];
+  filterEntities: string[];
+  filterClientNames: string[]; // resolved org names used for ilike on entity_label
+  fromDate: string;
+  toDate: string;
 }
 
 export async function exportLogs(filters: LogFilters) {
@@ -23,10 +24,16 @@ export async function exportLogs(filters: LogFilters) {
     .eq("service_provider_id", spId!)
     .order("created_at", { ascending: false });
 
-  if (filters.filterAction) q = q.eq("action", filters.filterAction);
-  if (filters.filterEntity) q = q.eq("entity_type", filters.filterEntity);
+  if (filters.filterActions.length)   q = q.in("action", filters.filterActions);
+  if (filters.filterEntities.length)  q = q.in("entity_type", filters.filterEntities);
+  if (filters.filterClientNames.length) {
+    const orCondition = filters.filterClientNames
+      .map((n) => `entity_label.ilike.%${n}%`)
+      .join(",");
+    q = q.or(orCondition);
+  }
   if (filters.fromDate) q = q.gte("created_at", filters.fromDate);
-  if (filters.toDate) q = q.lte("created_at", filters.toDate + "T23:59:59");
+  if (filters.toDate)   q = q.lte("created_at", filters.toDate + "T23:59:59");
 
   const { data, error } = await q;
   if (error) throw new Error(error.message);

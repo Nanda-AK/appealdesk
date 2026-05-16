@@ -11,15 +11,19 @@ const APPEAL_SELECT = `
   client_org:organizations!client_org_id(id, name)
 `;
 
-// Helper: build empty-result early return
-function emptyResult(supabase: any, spId: string) {
-  return Promise.all([
-    supabase.from("organizations").select("id, name").eq("parent_sp_id", spId).eq("type", "client").eq("is_active", true).order("name"),
-    supabase.from("appeals").select("assessment_year:master_records!assessment_year_id(name)").eq("service_provider_id", spId).not("assessment_year_id", "is", null).is("deleted_at", null),
-  ]).then(([{ data: clients }, { data: ayRows }]) => ({
-    clients: clients ?? [],
-    assessmentYears: [...new Set<string>((ayRows ?? []).map((a: any): string => a.assessment_year?.name ?? "").filter((n: string) => n !== ""))].sort().reverse(),
-  }));
+function parseMulti(val: string | string[] | undefined): string[] {
+  if (!val) return [];
+  const raw = Array.isArray(val) ? val[0] : val;
+  return raw.split(",").filter(Boolean);
+}
+
+function dedupeRecords(rows: any[] | null, key: string): { id: string; name: string }[] {
+  const map = new Map<string, { id: string; name: string }>();
+  (rows ?? []).forEach((r: any) => {
+    const rec = r[key];
+    if (rec?.id) map.set(rec.id, { id: rec.id, name: rec.name });
+  });
+  return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export default async function AppealsPage({
@@ -33,41 +37,20 @@ export default async function AppealsPage({
   const spId = user?.service_provider_id ?? user?.org_id;
   const isClient = user?.role === "client";
 
-  // Parse URL params
+  // Parse URL params — all multi-value (comma-separated)
   const page = Math.max(1, parseInt((params.page as string) ?? "1", 10));
   const perPageRaw = parseInt((params.per_page as string) ?? "", 10);
   const perPage = PER_PAGE_OPTIONS.includes(perPageRaw) ? perPageRaw : DEFAULT_PER_PAGE;
-  const search = (params.search as string) ?? "";
-  const filterClient = (params.client as string) ?? "";
-  const filterAY = (params.ay as string) ?? "";
-  const filterStatus = (params.status as string) ?? "";
+  const filterClients   = parseMulti(params.client);
+  const filterActs      = parseMulti(params.act);
+  const filterFYs       = parseMulti(params.fy);
+  const filterAYs       = parseMulti(params.ay);
+  const filterStatuses  = parseMulti(params.status);
+  const filterAssigned  = parseMulti(params.assigned);
   const sortAsc = (params.sort_dir as string) === "asc";
 
   const from = (page - 1) * perPage;
-  const to = from + perPage - 1;
-
-  // Resolve AY name → UUID for filtering
-  let filterAYId: string | null = null;
-  if (filterAY) {
-    const { data: ayMaster } = await supabase
-      .from("master_records")
-      .select("id")
-      .eq("name", filterAY)
-      .eq("type", "assessment_year")
-      .maybeSingle();
-    filterAYId = ayMaster?.id ?? null;
-  }
-
-  // Resolve text search → matching client org IDs
-  let searchOrgIds: string[] | null = null;
-  if (search) {
-    const { data: orgs } = await supabase
-      .from("organizations")
-      .select("id")
-      .ilike("name", `%${search}%`)
-      .eq("parent_sp_id", spId!);
-    searchOrgIds = (orgs ?? []).map((o: any) => o.id as string);
-  }
+  const to   = from + perPage - 1;
 
   // Build main query
   let appealsQuery = supabase
@@ -76,53 +59,56 @@ export default async function AppealsPage({
     .eq("service_provider_id", spId!)
     .is("deleted_at", null);
 
-  if (isClient) appealsQuery = appealsQuery.eq("client_org_id", user!.org_id!);
-  if (filterClient) appealsQuery = appealsQuery.eq("client_org_id", filterClient);
-  if (filterAYId) appealsQuery = appealsQuery.eq("assessment_year_id", filterAYId);
-  if (filterStatus) appealsQuery = appealsQuery.eq("status", filterStatus);
-
-  if (searchOrgIds !== null) {
-    if (searchOrgIds.length === 0) {
-      const { clients, assessmentYears } = await emptyResult(supabase, spId!);
-      return (
-        <div className="p-8">
-          <AppealsClient appeals={[]} clients={clients}
-            canEdit={user?.role === "sp_admin" || user?.role === "sp_staff"}
-            totalCount={0} page={1} perPage={perPage} assessmentYears={assessmentYears}
-            currentSearch={search} currentClient={filterClient} currentAY={filterAY}
-            currentStatus={filterStatus} currentSortDir={sortAsc ? "asc" : "desc"} />
-        </div>
-      );
-    }
-    appealsQuery = appealsQuery.in("client_org_id", searchOrgIds);
-  }
+  if (isClient)              appealsQuery = appealsQuery.eq("client_org_id", user!.org_id!);
+  if (filterClients.length)  appealsQuery = appealsQuery.in("client_org_id", filterClients);
+  if (filterActs.length)     appealsQuery = appealsQuery.in("act_regulation_id", filterActs);
+  if (filterFYs.length)      appealsQuery = appealsQuery.in("financial_year_id", filterFYs);
+  if (filterAYs.length)      appealsQuery = appealsQuery.in("assessment_year_id", filterAYs);
+  if (filterStatuses.length) appealsQuery = appealsQuery.in("status", filterStatuses);
+  if (filterAssigned.length) appealsQuery = appealsQuery.in("assigned_to", filterAssigned);
 
   appealsQuery = appealsQuery.order("created_at", { ascending: sortAsc }).range(from, to);
 
-  const [{ data: appeals, count }, { data: clients }, { data: ayRows }] = await Promise.all([
+  const [
+    { data: appeals, count },
+    { data: clients },
+    { data: actRows },
+    { data: fyRows },
+    { data: ayRows },
+    { data: userRows },
+  ] = await Promise.all([
     appealsQuery,
     supabase.from("organizations").select("id, name").eq("parent_sp_id", spId!).eq("type", "client").eq("is_active", true).order("name"),
-    supabase.from("appeals").select("assessment_year:master_records!assessment_year_id(name)").eq("service_provider_id", spId!).not("assessment_year_id", "is", null).is("deleted_at", null),
+    supabase.from("appeals").select("act_regulation:master_records!act_regulation_id(id, name)").eq("service_provider_id", spId!).not("act_regulation_id", "is", null).is("deleted_at", null),
+    supabase.from("appeals").select("financial_year:master_records!financial_year_id(id, name)").eq("service_provider_id", spId!).not("financial_year_id", "is", null).is("deleted_at", null),
+    supabase.from("appeals").select("assessment_year:master_records!assessment_year_id(id, name)").eq("service_provider_id", spId!).not("assessment_year_id", "is", null).is("deleted_at", null),
+    supabase.from("users").select("id, first_name, last_name").eq("org_id", spId!).in("role", ["sp_admin", "sp_staff"]).eq("is_active", true).is("deleted_at", null).order("first_name"),
   ]);
 
-  const assessmentYears = [...new Set<string>(
-    (ayRows ?? []).map((a: any): string => a.assessment_year?.name ?? "").filter((n: string) => n !== "")
-  )].sort().reverse();
+  const teamMembers = (userRows ?? []).map((u: any) => ({
+    id: u.id,
+    name: [u.first_name, u.last_name].filter(Boolean).join(" "),
+  }));
 
   return (
     <div className="p-8">
       <AppealsClient
         appeals={(appeals ?? []) as any}
         clients={clients ?? []}
+        acts={dedupeRecords(actRows, "act_regulation")}
+        financialYears={dedupeRecords(fyRows, "financial_year")}
+        assessmentYears={dedupeRecords(ayRows, "assessment_year")}
+        teamMembers={teamMembers}
         canEdit={user?.role === "sp_admin" || user?.role === "sp_staff"}
         totalCount={count ?? 0}
         page={page}
         perPage={perPage}
-        assessmentYears={assessmentYears}
-        currentSearch={search}
-        currentClient={filterClient}
-        currentAY={filterAY}
-        currentStatus={filterStatus}
+        currentClients={filterClients}
+        currentActs={filterActs}
+        currentFYs={filterFYs}
+        currentAYs={filterAYs}
+        currentStatuses={filterStatuses}
+        currentAssigned={filterAssigned}
         currentSortDir={sortAsc ? "asc" : "desc"}
       />
     </div>

@@ -261,9 +261,6 @@ export default function DocumentsClient({ forms, templates, canEdit }: Props) {
       {/* ── TAB: FORMS (Income Tax Rules) ── */}
       {activeTab === "forms" && (
         <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
-          <div className="px-4 py-3 border-b-2 border-[#B0BDD0] bg-[#D1D9E6]">
-            <p className="text-[#1A1A2E] font-semibold text-sm">Forms</p>
-          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -320,29 +317,27 @@ export default function DocumentsClient({ forms, templates, canEdit }: Props) {
 
       {/* ── TAB: TEMPLATES ── */}
       {activeTab === "templates" && (
-        templates.length === 0 ? (
-          <div className="bg-white border border-[#E5E7EB] rounded-xl p-16 text-center">
-            <svg className="w-10 h-10 text-[#D1D5DB] mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-            </svg>
-            <p className="text-[#6B7280] text-sm">No templates uploaded yet.</p>
-            {canEdit && <p className="text-[#9CA3AF] text-xs mt-1">Click "Upload Template" to add your first template.</p>}
-          </div>
-        ) : (
-          <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-[#F8F9FA] border-b border-[#E5E7EB]">
-                  <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Template Name</th>
-                  <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Description</th>
-                  <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Type</th>
-                  <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Size</th>
-                  <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Uploaded</th>
-                  <th className="px-4 py-3 font-medium text-[#6B7280] w-32" />
+        <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-[#D1D9E6] border-b-2 border-[#B0BDD0]">
+                <th className="text-left px-4 py-3 font-semibold text-[#1A1A2E]">Template Name</th>
+                <th className="text-left px-4 py-3 font-semibold text-[#1A1A2E]">Description</th>
+                <th className="text-left px-4 py-3 font-semibold text-[#1A1A2E]">Type</th>
+                <th className="text-left px-4 py-3 font-semibold text-[#1A1A2E]">Size</th>
+                <th className="text-left px-4 py-3 font-semibold text-[#1A1A2E]">Uploaded</th>
+                <th className="px-4 py-3 font-semibold text-[#1A1A2E] w-32" />
+              </tr>
+            </thead>
+            <tbody>
+              {templates.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-12 text-center text-[#6B7280]">
+                    No templates uploaded yet.{canEdit && " Click \"Upload Template\" to get started."}
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {templates.map((t, i) => {
+              ) : (
+                templates.map((t, i) => {
                   const badge = fileTypeBadge(t.file_type ?? t.name);
                   return (
                     <tr
@@ -392,11 +387,11 @@ export default function DocumentsClient({ forms, templates, canEdit }: Props) {
                       </td>
                     </tr>
                   );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {/* ── MODAL: Add/Edit Form Row ── */}

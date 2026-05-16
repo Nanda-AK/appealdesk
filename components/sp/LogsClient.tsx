@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { exportLogs } from "@/app/(sp)/logs/actions";
 
@@ -13,13 +13,17 @@ interface Log {
   actor: { first_name: string; last_name: string; role: string } | null;
 }
 
+interface NamedRecord { id: string; name: string; }
+
 interface Props {
   logs: Log[];
+  clients: NamedRecord[];
   totalCount: number;
   page: number;
   perPage: number;
-  currentAction: string;
-  currentEntity: string;
+  currentClients: string[];
+  currentActions: string[];
+  currentEntities: string[];
   currentFrom: string;
   currentTo: string;
 }
@@ -31,18 +35,36 @@ const ACTION_CFG: Record<string, { label: string; cls: string }> = {
 };
 
 const ENTITY_LABELS: Record<string, string> = {
-  appeal: "Litigation",
-  proceeding: "Proceeding",
-  event: "Event",
-  document: "Document",
-  user: "User",
+  appeal:       "Litigation",
+  proceeding:   "Proceeding",
+  event:        "Event",
+  document:     "Document",
+  user:         "User",
   organization: "Organisation",
 };
 
+const ACTION_OPTIONS: NamedRecord[] = [
+  { id: "create", name: "Created" },
+  { id: "update", name: "Updated" },
+  { id: "delete", name: "Deleted" },
+];
+
+const ENTITY_OPTIONS: NamedRecord[] = [
+  { id: "appeal",       name: "Litigation" },
+  { id: "proceeding",   name: "Proceeding" },
+  { id: "event",        name: "Event" },
+  { id: "document",     name: "Document" },
+  { id: "user",         name: "User" },
+  { id: "organization", name: "Organisation" },
+];
+
 function fmtDateTime(d: string) {
   const dt = new Date(d);
-  return dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) +
-    " " + dt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
+  return (
+    dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) +
+    " " +
+    dt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })
+  );
 }
 
 function pageNumbers(current: number, total: number): (number | "...")[] {
@@ -55,38 +77,183 @@ function pageNumbers(current: number, total: number): (number | "...")[] {
 function toCSV(rows: Log[]): string {
   const header = ["Date/Time", "User", "Role", "Action", "Type", "Record"];
   const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
-  const lines = rows.map((l) => [
-    escape(fmtDateTime(l.created_at)),
-    escape(l.actor ? `${l.actor.first_name} ${l.actor.last_name}` : ""),
-    escape(l.actor?.role.replace(/_/g, " ") ?? ""),
-    escape(ACTION_CFG[l.action]?.label ?? l.action),
-    escape(ENTITY_LABELS[l.entity_type] ?? l.entity_type),
-    escape(l.entity_label ?? ""),
-  ].join(","));
+  const lines = rows.map((l) =>
+    [
+      escape(fmtDateTime(l.created_at)),
+      escape(l.actor ? `${l.actor.first_name} ${l.actor.last_name}` : ""),
+      escape(l.actor?.role.replace(/_/g, " ") ?? ""),
+      escape(ACTION_CFG[l.action]?.label ?? l.action),
+      escape(ENTITY_LABELS[l.entity_type] ?? l.entity_type),
+      escape(l.entity_label ?? ""),
+    ].join(",")
+  );
   return [header.join(","), ...lines].join("\n");
 }
 
+// Multi-select dropdown — buffers selections locally, applies on close.
+function MultiSelect({
+  options,
+  values,
+  onChange,
+  placeholder,
+  searchable = false,
+}: {
+  options: NamedRecord[];
+  values: string[];
+  onChange: (ids: string[]) => void;
+  placeholder: string;
+  searchable?: boolean;
+}) {
+  const [open, setOpen]       = useState(false);
+  const [pending, setPending] = useState<string[]>([]);
+  const [query, setQuery]     = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef     = useRef<HTMLInputElement>(null);
+  const pendingRef   = useRef<string[]>([]);
+
+  function openDropdown() {
+    const copy = [...values];
+    setPending(copy);
+    pendingRef.current = copy;
+    setQuery("");
+    setOpen(true);
+    if (searchable) setTimeout(() => inputRef.current?.focus(), 0);
+  }
+
+  function applyAndClose() {
+    onChange(pendingRef.current);
+    setOpen(false);
+    setQuery("");
+  }
+
+  useEffect(() => {
+    if (!open) return;
+    function handler(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        applyAndClose();
+      }
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function toggle(id: string) {
+    setPending((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      pendingRef.current = next;
+      return next;
+    });
+  }
+
+  const filtered = searchable && query
+    ? options.filter((o) => o.name.toLowerCase().includes(query.toLowerCase()))
+    : options;
+
+  let triggerText: string;
+  if (values.length === 0)      triggerText = placeholder;
+  else if (values.length === 1) triggerText = options.find((o) => o.id === values[0])?.name ?? "1 selected";
+  else                          triggerText = `${values.length} selected`;
+
+  const hasValue = values.length > 0;
+  const isMulti  = values.length > 1;
+
+  return (
+    <div ref={containerRef} className="relative">
+      <div
+        className="flex items-center gap-1.5 px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg bg-white cursor-pointer min-w-[144px] max-w-[200px] h-[38px] select-none"
+        onClick={() => (open ? applyAndClose() : openDropdown())}
+      >
+        <span className={`flex-1 truncate ${!hasValue ? "text-[#9CA3AF]" : isMulti ? "font-medium text-[#1E3A5F]" : "text-[#1A1A2E]"}`}>
+          {triggerText}
+        </span>
+        {hasValue ? (
+          <button
+            onMouseDown={(e) => { e.stopPropagation(); onChange([]); }}
+            className="text-[#9CA3AF] hover:text-[#1A1A2E] shrink-0 text-base leading-none"
+          >×</button>
+        ) : (
+          <svg className="w-3.5 h-3.5 shrink-0 text-[#9CA3AF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        )}
+      </div>
+
+      {open && (
+        <div className="absolute top-full left-0 mt-1 bg-white border border-[#E5E7EB] rounded-lg shadow-lg z-50 w-56 max-h-64 flex flex-col">
+          {searchable && (
+            <div className="p-2 border-b border-[#F3F4F6] shrink-0">
+              <input
+                ref={inputRef}
+                className="w-full px-2 py-1.5 text-sm border border-[#E5E7EB] rounded focus:outline-none focus:ring-1 focus:ring-[#4A6FA5]"
+                placeholder="Search…"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </div>
+          )}
+          {pending.length > 0 && (
+            <div className="px-3 py-1.5 border-b border-[#F3F4F6] flex items-center justify-between shrink-0">
+              <span className="text-xs text-[#6B7280]">{pending.length} selected</span>
+              <button
+                onMouseDown={(e) => { e.preventDefault(); setPending([]); pendingRef.current = []; }}
+                className="text-xs text-[#4A6FA5] hover:underline"
+              >Clear</button>
+            </div>
+          )}
+          <div className="overflow-y-auto flex-1 py-1">
+            {filtered.length === 0 ? (
+              <div className="px-3 py-2 text-sm text-[#9CA3AF]">No matches</div>
+            ) : (
+              filtered.map((o) => {
+                const isChecked = pending.includes(o.id);
+                return (
+                  <button
+                    key={o.id}
+                    onMouseDown={(e) => { e.preventDefault(); toggle(o.id); }}
+                    className={`w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-[#F8F9FA] ${isChecked ? "bg-blue-50/50" : ""}`}
+                  >
+                    <div className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors ${isChecked ? "bg-[#1E3A5F] border-[#1E3A5F]" : "border-[#D1D5DB]"}`}>
+                      {isChecked && (
+                        <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                    <span className={`text-sm flex-1 truncate ${isChecked ? "font-medium text-[#1A1A2E]" : "text-[#4B5563]"}`}>
+                      {o.name}
+                    </span>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function LogsClient({
-  logs, totalCount, page, perPage,
-  currentAction, currentEntity, currentFrom, currentTo,
+  logs, clients, totalCount, page, perPage,
+  currentClients, currentActions, currentEntities, currentFrom, currentTo,
 }: Props) {
   const router = useRouter();
-  const [search, setSearch] = useState("");
   const [exporting, setExporting] = useState(false);
 
-  const totalPages = Math.ceil(totalCount / perPage);
-  const rowOffset = (page - 1) * perPage;
+  const totalPages  = Math.ceil(totalCount / perPage);
+  const rowOffset   = (page - 1) * perPage;
   const showingFrom = totalCount === 0 ? 0 : rowOffset + 1;
-  const showingTo = Math.min(rowOffset + perPage, totalCount);
-  const hasFilters = currentAction || currentEntity || currentFrom || currentTo;
+  const showingTo   = Math.min(rowOffset + perPage, totalCount);
+  const hasFilters  = currentClients.length > 0 || currentActions.length > 0 || currentEntities.length > 0 || currentFrom || currentTo;
 
   function push(updates: Record<string, string>) {
     const merged: Record<string, string> = {
-      action: currentAction,
-      entity: currentEntity,
-      from: currentFrom,
-      to: currentTo,
-      page: String(page),
+      client: currentClients.join(","),
+      action: currentActions.join(","),
+      entity: currentEntities.join(","),
+      from:   currentFrom,
+      to:     currentTo,
+      page:   String(page),
       ...updates,
     };
     const p = new URLSearchParams();
@@ -97,23 +264,31 @@ export default function LogsClient({
     router.push(`/logs${p.toString() ? `?${p.toString()}` : ""}`);
   }
 
-  function setFilter(key: string, value: string) {
+  function setMultiFilter(key: string, ids: string[]) {
+    push({ [key]: ids.join(","), page: "1" });
+  }
+
+  function setDateFilter(key: string, value: string) {
     push({ [key]: value, page: "1" });
   }
 
   function clearAll() {
-    setSearch("");
     router.push("/logs");
   }
 
   async function handleExport() {
     setExporting(true);
     try {
+      const selectedClientNames = currentClients
+        .map((id) => clients.find((c) => c.id === id)?.name)
+        .filter((n): n is string => !!n);
+
       const data = await exportLogs({
-        filterAction: currentAction,
-        filterEntity: currentEntity,
-        fromDate: currentFrom,
-        toDate: currentTo,
+        filterActions:      currentActions,
+        filterEntities:     currentEntities,
+        filterClientNames:  selectedClientNames,
+        fromDate:           currentFrom,
+        toDate:             currentTo,
       });
       const csv = toCSV(data as unknown as Log[]);
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -128,20 +303,10 @@ export default function LogsClient({
     }
   }
 
-  // Client-side text search on the current page
-  const filtered = useMemo(() => {
-    if (!search) return logs;
-    const q = search.toLowerCase();
-    return logs.filter((l) => {
-      const actor = l.actor ? `${l.actor.first_name} ${l.actor.last_name}`.toLowerCase() : "";
-      const label = (l.entity_label ?? "").toLowerCase();
-      return actor.includes(q) || label.includes(q);
-    });
-  }, [logs, search]);
-
-  const selCls = "px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]";
   const btnPage = (active: boolean) =>
-    `px-3 py-1.5 text-sm rounded-lg border transition ${active ? "bg-[#1E3A5F] text-white border-[#1E3A5F]" : "border-[#E5E7EB] text-[#6B7280] hover:bg-[#F8F9FA]"}`;
+    `px-3 py-1.5 text-sm rounded-lg border transition ${
+      active ? "bg-[#1E3A5F] text-white border-[#1E3A5F]" : "border-[#E5E7EB] text-[#6B7280] hover:bg-[#F8F9FA]"
+    }`;
 
   return (
     <div>
@@ -165,54 +330,64 @@ export default function LogsClient({
         </button>
       </div>
 
-      {/* Filters */}
+      {/* Filters — Client, Date From→To, Actions, Type */}
       <div className="bg-white border border-[#E5E7EB] rounded-xl p-4 mb-4 flex flex-wrap gap-3 items-center">
-        <input
-          type="text"
-          placeholder="Search user or record…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] w-48"
+
+        {/* Client */}
+        <MultiSelect
+          options={clients}
+          values={currentClients}
+          onChange={(ids) => setMultiFilter("client", ids)}
+          placeholder="All Clients"
+          searchable
         />
-        <select value={currentAction} onChange={(e) => setFilter("action", e.target.value)} className={selCls}>
-          <option value="">All Actions</option>
-          <option value="create">Created</option>
-          <option value="update">Updated</option>
-          <option value="delete">Deleted</option>
-        </select>
-        <select value={currentEntity} onChange={(e) => setFilter("entity", e.target.value)} className={selCls}>
-          <option value="">All Types</option>
-          <option value="appeal">Litigation</option>
-          <option value="proceeding">Proceeding</option>
-          <option value="event">Event</option>
-          <option value="document">Document</option>
-          <option value="user">User</option>
-          <option value="organization">Organisation</option>
-        </select>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-[#6B7280]">From</span>
+
+        {/* Date range */}
+        <div className="flex items-center gap-1.5 px-3 py-2 border-2 border-[#4A6FA5] rounded-lg bg-white h-[38px]">
+          <span className="text-xs text-[#9CA3AF] whitespace-nowrap">From</span>
           <input
             type="date"
             value={currentFrom}
-            onChange={(e) => setFilter("from", e.target.value)}
-            className="px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]"
+            onChange={(e) => setDateFilter("from", e.target.value)}
+            className="text-sm text-[#1A1A2E] bg-transparent focus:outline-none w-32"
           />
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-[#6B7280]">To</span>
+          <span className="text-xs text-[#D1D5DB]">—</span>
           <input
             type="date"
             value={currentTo}
-            onChange={(e) => setFilter("to", e.target.value)}
-            className="px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]"
+            onChange={(e) => setDateFilter("to", e.target.value)}
+            className="text-sm text-[#1A1A2E] bg-transparent focus:outline-none w-32"
           />
+          {(currentFrom || currentTo) && (
+            <button
+              onMouseDown={() => push({ from: "", to: "", page: "1" })}
+              className="text-[#9CA3AF] hover:text-[#1A1A2E] text-base leading-none ml-1"
+            >×</button>
+          )}
         </div>
-        {(hasFilters || search) && (
+
+        {/* Actions */}
+        <MultiSelect
+          options={ACTION_OPTIONS}
+          values={currentActions}
+          onChange={(ids) => setMultiFilter("action", ids)}
+          placeholder="All Actions"
+        />
+
+        {/* Type */}
+        <MultiSelect
+          options={ENTITY_OPTIONS}
+          values={currentEntities}
+          onChange={(ids) => setMultiFilter("entity", ids)}
+          placeholder="All Types"
+        />
+
+        {hasFilters && (
           <button
             onClick={clearAll}
             className="px-3 py-2 text-sm text-[#6B7280] hover:text-[#1A1A2E] border border-[#E5E7EB] rounded-lg transition"
           >
-            Clear
+            Clear all
           </button>
         )}
       </div>
@@ -222,23 +397,23 @@ export default function LogsClient({
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#E5E7EB] bg-[#F8F9FA]">
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280]">When</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280]">User</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Action</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Type</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Record</th>
+              <tr className="bg-[#D1D9E6] border-b-2 border-[#B0BDD0]">
+                <th className="text-left px-4 py-3 font-semibold text-[#1A1A2E]">When</th>
+                <th className="text-left px-4 py-3 font-semibold text-[#1A1A2E]">User</th>
+                <th className="text-left px-4 py-3 font-semibold text-[#1A1A2E]">Action</th>
+                <th className="text-left px-4 py-3 font-semibold text-[#1A1A2E]">Type</th>
+                <th className="text-left px-4 py-3 font-semibold text-[#1A1A2E]">Record</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
+              {logs.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-12 text-center text-[#6B7280] text-sm">
                     No log entries found.
                   </td>
                 </tr>
               ) : (
-                filtered.map((log) => {
+                logs.map((log) => {
                   const actionCfg = ACTION_CFG[log.action] ?? { label: log.action, cls: "bg-gray-100 text-gray-600" };
                   const actor = log.actor;
                   return (
@@ -283,9 +458,7 @@ export default function LogsClient({
               onClick={() => push({ page: String(page - 1) })}
               disabled={page <= 1}
               className="px-3 py-1.5 text-sm rounded-lg border border-[#E5E7EB] text-[#6B7280] hover:bg-[#F8F9FA] disabled:opacity-40 transition"
-            >
-              ← Prev
-            </button>
+            >← Prev</button>
             {pageNumbers(page, totalPages).map((n, i) =>
               n === "..." ? (
                 <span key={`ellipsis-${i}`} className="px-2 text-[#9CA3AF]">…</span>
@@ -299,9 +472,7 @@ export default function LogsClient({
               onClick={() => push({ page: String(page + 1) })}
               disabled={page >= totalPages}
               className="px-3 py-1.5 text-sm rounded-lg border border-[#E5E7EB] text-[#6B7280] hover:bg-[#F8F9FA] disabled:opacity-40 transition"
-            >
-              Next →
-            </button>
+            >Next →</button>
           </div>
         </div>
       )}

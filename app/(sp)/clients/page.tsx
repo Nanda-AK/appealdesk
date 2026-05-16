@@ -1,13 +1,28 @@
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/user";
-import Link from "next/link";
 import ClientsClient from "@/components/sp/ClientsClient";
 
-export default async function ClientsPage() {
+function parseMulti(val: string | string[] | undefined): string[] {
+  if (!val) return [];
+  const raw = Array.isArray(val) ? val[0] : val;
+  return raw.split(",").filter(Boolean);
+}
+
+export default async function ClientsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const params = await searchParams;
   const user = await getCurrentUser();
   const supabase = await createClient();
-
   const spId = user?.service_provider_id ?? user?.org_id;
+
+  const currentClientIds = parseMulti(params.name);
+  const currentBtypes    = parseMulti(params.btype);
+  const currentCities    = parseMulti(params.city);
+  const currentStatuses  = parseMulti(params.status);
+  const currentSortDir   = (params.sort_dir as string) === "desc" ? "desc" : "asc";
 
   const { data: clients } = await supabase
     .from("organizations")
@@ -19,24 +34,15 @@ export default async function ClientsPage() {
 
   return (
     <div className="p-8">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-[#1A1A2E]">Clients</h1>
-          <p className="text-[#6B7280] text-sm mt-0.5">{clients?.length ?? 0} client organizations</p>
-        </div>
-        {user?.role === "sp_admin" && (
-          <Link
-            href="/clients/new"
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#1E3A5F] hover:bg-[#162d4a] text-white text-sm font-medium rounded-lg transition"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            Add Client
-          </Link>
-        )}
-      </div>
-      <ClientsClient clients={clients ?? []} isAdmin={user?.role === "sp_admin"} />
+      <ClientsClient
+        clients={clients ?? []}
+        isAdmin={user?.role === "sp_admin"}
+        currentClientIds={currentClientIds}
+        currentBtypes={currentBtypes}
+        currentCities={currentCities}
+        currentStatuses={currentStatuses}
+        currentSortDir={currentSortDir}
+      />
     </div>
   );
 }
