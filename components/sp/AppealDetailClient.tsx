@@ -257,6 +257,13 @@ const SUB_EVENT_LABELS: Record<string, string> = {
 
 const EVENT_LABELS: Record<string, string> = { ...MAIN_EVENT_LABELS, ...SUB_EVENT_LABELS };
 
+function getEventLabel(category: string, details?: Record<string, string> | null): string {
+  if ((category === "others" || category === "others_sub") && details?.category_name?.trim()) {
+    return `Others (${details.category_name.trim()})`;
+  }
+  return EVENT_LABELS[category] ?? category;
+}
+
 const EVENT_STATUS_CFG: Record<string, { label: string; cls: string }> = {
   open: { label: "Open", cls: "bg-blue-50 text-blue-700" },
   in_progress: { label: "In Progress", cls: "bg-amber-50 text-amber-700" },
@@ -380,7 +387,7 @@ function AttachmentRow({ doc, onDelete, canEdit }: { doc: AttachedFile; onDelete
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
         </a>
         {canEdit && (
-          <button onClick={onDelete} title="Delete file" className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-red-400 hover:text-red-600 inline-flex">
+          <button type="button" onClick={onDelete} title="Delete file" className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-red-400 hover:text-red-600 inline-flex">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
           </button>
         )}
@@ -401,7 +408,12 @@ function ProceedingAttachments({ proceedingId, docs, canEdit }: {
   const [confirmDelete, setConfirmDelete] = useState<AttachedFile | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [uploadedDocs, setUploadedDocs] = useState<AttachedFile[]>([]);
-  const activeDocs = [...docs.filter((d) => !d.deleted_at), ...uploadedDocs];
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
+  const serverDocIds = new Set(docs.map((d) => d.id));
+  const activeDocs = [
+    ...docs.filter((d) => !d.deleted_at && !deletedIds.has(d.id)),
+    ...uploadedDocs.filter((d) => !deletedIds.has(d.id) && !serverDocIds.has(d.id)),
+  ];
 
   // When router.refresh() brings back updated docs, drop any uploadedDocs whose IDs
   // are now present in the refreshed prop — prevents rendering them twice.
@@ -453,10 +465,14 @@ function ProceedingAttachments({ proceedingId, docs, canEdit }: {
     setDeleting(true);
     try {
       await deleteProceedingDocument(confirmDelete.id);
+      setDeletedIds((prev) => new Set([...prev, confirmDelete.id]));
       setUploadedDocs((prev) => prev.filter((d) => d.id !== confirmDelete.id));
       setConfirmDelete(null);
       router.refresh();
-    } catch { /* swallow */ } finally { setDeleting(false); }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete file.");
+      setConfirmDelete(null);
+    } finally { setDeleting(false); }
   }
 
   return (
@@ -477,6 +493,9 @@ function ProceedingAttachments({ proceedingId, docs, canEdit }: {
         </div>
 
         {/* Existing files */}
+        {error && pendingFiles.length === 0 && (
+          <div className="px-4 py-2 text-xs text-red-600 bg-red-50 border-b border-red-100">{error}</div>
+        )}
         {activeDocs.length === 0 && pendingFiles.length === 0 ? (
           <div className="px-4 py-3 text-center text-xs text-[#9CA3AF]">
             No attachments.{canEdit ? " Use Choose Files to add files." : ""}
@@ -559,7 +578,12 @@ function EventAttachments({ eventId, docs, canEdit }: {
   const [confirmDelete, setConfirmDelete] = useState<AttachedFile | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [uploadedDocs, setUploadedDocs] = useState<AttachedFile[]>([]);
-  const activeDocs = [...docs.filter((d) => !d.deleted_at), ...uploadedDocs];
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
+  const serverDocIds = new Set(docs.map((d) => d.id));
+  const activeDocs = [
+    ...docs.filter((d) => !d.deleted_at && !deletedIds.has(d.id)),
+    ...uploadedDocs.filter((d) => !deletedIds.has(d.id) && !serverDocIds.has(d.id)),
+  ];
 
   useEffect(() => {
     if (uploadedDocs.length === 0) return;
@@ -609,10 +633,14 @@ function EventAttachments({ eventId, docs, canEdit }: {
     setDeleting(true);
     try {
       await deleteEventDocument(confirmDelete.id);
+      setDeletedIds((prev) => new Set([...prev, confirmDelete.id]));
       setUploadedDocs((prev) => prev.filter((d) => d.id !== confirmDelete.id));
       setConfirmDelete(null);
       router.refresh();
-    } catch { /* swallow */ } finally { setDeleting(false); }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete file.");
+      setConfirmDelete(null);
+    } finally { setDeleting(false); }
   }
 
   return (
@@ -633,6 +661,9 @@ function EventAttachments({ eventId, docs, canEdit }: {
         </div>
 
         {/* Existing files */}
+        {error && pendingFiles.length === 0 && (
+          <div className="px-3 py-1.5 text-xs text-red-600 bg-red-50 border-b border-red-100">{error}</div>
+        )}
         {activeDocs.length === 0 && pendingFiles.length === 0 ? (
           <div className="px-3 py-2 text-center text-xs text-[#9CA3AF]">No files attached.</div>
         ) : activeDocs.length > 0 ? (
@@ -1386,7 +1417,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
             const clientStaffNames = (proc.client_staff_ids ?? []).map(id => clientUsers.find(u => u.id === id)).filter(Boolean).map(u => `${u!.first_name} ${u!.last_name}`);
             const sortedEvents = [...(proc.events ?? [])]
               .filter((e) => !e.deleted_at)
-              .sort((a, b) => (a.event_date ?? a.created_at).localeCompare(b.event_date ?? b.created_at));
+              .sort((a, b) => a.created_at.localeCompare(b.created_at));
             const procStatusCfg = STATUS_CFG[proc.status ?? "open"];
             const isExpanded = expandedProcs.has(proc.id);
 
@@ -1500,7 +1531,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                         );
                       }
 
-                      function EventRow({ ev, isSub }: { ev: AppEvent; isSub?: boolean }) {
+                      function EventRow({ ev, isSub, parentOrderNumber }: { ev: AppEvent; isSub?: boolean; parentOrderNumber?: string | null }) {
                         const effectiveCat = ev.event_type === "sub" && ev.category === "others" ? "others_sub" : ev.category;
                         const primaryKey = PRIMARY_DATE[effectiveCat];
                         const noticeDate = primaryKey && ev.details?.[primaryKey]
@@ -1524,7 +1555,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                               <span className={`inline-flex px-1.5 py-0.5 rounded text-xs font-medium flex-shrink-0 ${isSub ? "bg-purple-50 text-purple-700" : "bg-[#EEF2FF] text-[#4A6FA5]"}`}>
                                 {isSub ? "Sub" : "Main"}
                               </span>
-                              <span className="text-xs text-[#1A1A2E] font-medium flex-1 min-w-0 truncate">{EVENT_LABELS[ev.category] ?? ev.category}</span>
+                              <span className="text-xs text-[#1A1A2E] font-medium flex-1 min-w-0 truncate">{getEventLabel(ev.category, ev.details)}</span>
                               <div className="ml-auto flex items-center gap-2 flex-shrink-0">
                                 <span className="inline-flex items-center gap-1 whitespace-nowrap hidden sm:inline-flex">
                                   <span className="text-xs text-[#9CA3AF]">Notice:</span>
@@ -1547,6 +1578,12 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                             {/* Inline details panel — shown when expanded */}
                             {isExpanded && (
                               <div className={`${isSub ? "pl-10" : "pl-6"} pr-4 py-3 bg-[#F8FAFF] border-t border-[#EEF2FF] space-y-2`}>
+                                {isSub && parentOrderNumber && (
+                                  <div className="pb-1 border-b border-[#EEF2FF]">
+                                    <p className="text-xs text-[#9CA3AF] mb-0.5">Order No. (Parent)</p>
+                                    <p className="text-xs font-medium text-[#1A1A2E]">#{parentOrderNumber}</p>
+                                  </div>
+                                )}
                                 {detailFields.length > 0 ? (
                                   <div className="grid grid-cols-2 gap-x-6 gap-y-2">
                                     {detailFields.map((field) => {
@@ -1611,7 +1648,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                                       </svg>
                                       <span className="text-xs text-[#9CA3AF] font-medium bg-[#F3F4F6] px-1.5 py-0.5 rounded flex-shrink-0">#{mIdx + 1}</span>
                                       <span className="inline-flex px-1.5 py-0.5 rounded text-xs font-medium flex-shrink-0 bg-[#EEF2FF] text-[#4A6FA5]">Main</span>
-                                      <span className="text-xs text-[#1A1A2E] font-medium flex-1 min-w-0 truncate">{EVENT_LABELS[master.category] ?? master.category}</span>
+                                      <span className="text-xs text-[#1A1A2E] font-medium flex-1 min-w-0 truncate">{getEventLabel(master.category, master.details)}</span>
                                       <div className="ml-auto flex items-center gap-2 flex-shrink-0">
                                         {(() => {
                                           const effectiveCat = master.category;
@@ -1661,7 +1698,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                                     {isSubsExpanded && (
                                       <>
                                         {subs.map((sub) => (
-                                          <EventRow key={sub.id} ev={sub} isSub />
+                                          <EventRow key={sub.id} ev={sub} isSub parentOrderNumber={master.event_notice_number} />
                                         ))}
                                         {canEdit && (
                                           <div className="pl-8 pr-3 py-1.5 bg-white border-t border-[#F3F4F6]" onClick={(e) => e.stopPropagation()}>
@@ -1819,7 +1856,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
 
       {/* ── Quick View Event Modal ── */}
       {viewEvent && (
-        <Modal title={EVENT_LABELS[viewEvent.category] ?? viewEvent.category} onClose={() => setViewEvent(null)} isDirty={false}>
+        <Modal title={getEventLabel(viewEvent.category, viewEvent.details)} onClose={() => setViewEvent(null)} isDirty={false}>
           <div className="space-y-5">
             {/* Event type, notice number, status */}
             <div className="flex items-center gap-2 flex-wrap">
@@ -1827,7 +1864,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                 {viewEvent.event_type === "sub" ? "Sub Event" : "Main Event"}
               </span>
               {viewEvent.event_notice_number && (
-                <span className="text-xs text-[#6B7280]">Notice No: <span className="font-medium text-[#1A1A2E]">{viewEvent.event_notice_number}</span></span>
+                <span className="text-xs text-[#6B7280]">Order No: <span className="font-medium text-[#1A1A2E]">{viewEvent.event_notice_number}</span></span>
               )}
               {(() => { const s = EVENT_STATUS_CFG[viewEvent.status ?? "open"] ?? EVENT_STATUS_CFG.open; return <span className={`px-2 py-0.5 rounded text-xs font-medium ${s.cls}`}>{s.label}</span>; })()}
             </div>
@@ -1845,7 +1882,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-xs text-[#9CA3AF] mb-0.5">Notice No.</p>
+                      <p className="text-xs text-[#9CA3AF] mb-0.5">Order No.</p>
                       <p className="text-sm text-[#9CA3AF]">{parent.event_notice_number ? `#${parent.event_notice_number}` : "—"}</p>
                     </div>
                     <div>
@@ -1911,22 +1948,35 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
 
       {/* ── Edit Event Modal ── */}
       {editEvent && (
-        <Modal title={`Edit — ${EVENT_LABELS[editEventCategory] ?? editEventCategory}`} onClose={() => setEditEvent(null)} isDirty={editEventIsDirty}>
+        <Modal title={`Edit — ${getEventLabel(editEventCategory, editEventDetails)}`} onClose={() => setEditEvent(null)} isDirty={editEventIsDirty}>
           <form onSubmit={handleSaveEvent} className="space-y-5">
             {/* Category (read-only display, can't change category as it would break field semantics) */}
             <div className="flex items-center gap-2">
               <span className="text-xs text-[#6B7280] font-medium">Category:</span>
               <span className="px-2 py-0.5 rounded text-xs font-medium bg-[#EEF2FF] text-[#4A6FA5]">
-                {EVENT_LABELS[editEventCategory] ?? editEventCategory}
+                {getEventLabel(editEventCategory, editEventDetails)}
               </span>
               <span className={`px-2 py-0.5 rounded text-xs font-medium ${editEventType === "sub" ? "bg-purple-50 text-purple-700" : "bg-[#EEF2FF] text-[#4A6FA5]"}`}>
                 {editEventType === "sub" ? "Sub Event" : "Main Event"}
               </span>
             </div>
 
-            {/* Event Notice Number — main events only */}
+            {/* Category Name — shown only when category is Others */}
+            {(editEventCategory === "others" || editEventCategory === "others_sub") && (
+              <Field label="Category Name *">
+                <input
+                  type="text"
+                  value={editEventDetails["category_name"] ?? ""}
+                  onChange={(e) => setEditDetail("category_name", e.target.value)}
+                  placeholder="Enter category name…"
+                  className={inp}
+                />
+              </Field>
+            )}
+
+            {/* Order Number — main events only */}
             {editEventType === "main" && (
-              <Field label="Event Notice Number">
+              <Field label="Order Number">
                 <input type="text" value={editEventNoticeNumber} onChange={(e) => setEditEventNoticeNumber(e.target.value)} className={inp} />
               </Field>
             )}
@@ -1936,7 +1986,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
               const proc = (appeal.proceedings ?? []).find(p => p.id === editEventProceedingId);
               const mainEvents = [...(proc?.events ?? [])]
                 .filter(e => e.event_type === "main" && !e.deleted_at)
-                .sort((a, b) => (a.event_date ?? a.created_at).localeCompare(b.event_date ?? b.created_at));
+                .sort((a, b) => a.created_at.localeCompare(b.created_at));
               const selectedParent = editEventParentId ? allEventsById[editEventParentId] : null;
               const parentDateField = selectedParent ? PARENT_DATE_FIELD[selectedParent.category] : null;
               const parentDateKey = parentDateField?.key ?? null;
@@ -1955,8 +2005,8 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                       <option value="">— None (unlinked) —</option>
                       {mainEvents.map((m, mIdx) => (
                         <option key={m.id} value={m.id}>
-                          #{mIdx + 1} — {EVENT_LABELS[m.category] ?? m.category}
-                          {m.event_notice_number ? ` (Notice #${m.event_notice_number})` : ""}
+                          #{mIdx + 1} — {getEventLabel(m.category, m.details)}
+                          {m.event_notice_number ? ` (Order #${m.event_notice_number})` : ""}
                         </option>
                       ))}
                     </select>
@@ -1965,7 +2015,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                     <div className="rounded-lg bg-[#F3F4F6] border border-[#E5E7EB] px-4 py-3">
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Notice No.</label>
+                          <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Order No.</label>
                           <input readOnly value={selectedParent.event_notice_number ?? ""} placeholder="—"
                             className="w-full px-3 py-2 text-sm border-2 rounded-lg bg-[#F3F4F6] border-[#E5E7EB] text-[#9CA3AF] cursor-not-allowed" />
                         </div>
@@ -2094,11 +2144,10 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
               const parentDateLabel = parentDateField?.label ?? "Date";
               const parentNoticeDate = parentDateKey && parent.details?.[parentDateKey] ? parent.details[parentDateKey] : parent.event_date ?? "";
               return (
-                <div className="rounded-lg bg-[#F3F4F6] border border-[#E5E7EB] px-4 py-3 space-y-3">
-
+                <div className="rounded-lg bg-[#F3F4F6] border border-[#E5E7EB] px-4 py-3">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Notice No.</label>
+                      <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Order No.</label>
                       <input readOnly value={parent.event_notice_number ?? ""} placeholder="—"
                         className="w-full px-3 py-2 text-sm border-2 rounded-lg bg-[#F3F4F6] border-[#E5E7EB] text-[#9CA3AF] cursor-not-allowed" />
                     </div>
@@ -2124,9 +2173,22 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
               </select>
             </Field>
 
-            {/* Event Notice Number — main events only */}
+            {/* Category Name — shown only when category is Others */}
+            {(eventCategory === "others" || eventCategory === "others_sub") && (
+              <Field label="Category Name *">
+                <input
+                  type="text"
+                  value={eventDetails["category_name"] ?? ""}
+                  onChange={(e) => setDetail("category_name", e.target.value)}
+                  placeholder="Enter category name…"
+                  className={inp}
+                />
+              </Field>
+            )}
+
+            {/* Order Number — main events only */}
             {!addEventParentId && (
-              <Field label="Event Notice Number">
+              <Field label="Order Number">
                 <input type="text" value={eventNoticeNumber} onChange={(e) => setEventNoticeNumber(e.target.value)} className={inp} />
               </Field>
             )}

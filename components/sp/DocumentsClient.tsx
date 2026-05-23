@@ -1,15 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
-  createForm, updateForm, deleteForm, removeFormFile, FormInput,
+  createForm, updateForm, deleteForm, FormInput,
+  addFormFile, deleteFormFile,
   createTemplate, updateTemplate, deleteTemplate, TemplateInput,
   createResource, updateResource, deleteResource, addResourceFile, deleteResourceFile, ResourceInput,
 } from "@/app/(sp)/documents/actions";
 
 // ── Types ──────────────────────────────────────────────────────────────
+
+interface FormFile {
+  id: string;
+  form_id: string;
+  file_name: string;
+  file_url: string;
+  file_type: string | null;
+  file_size: number | null;
+  created_at: string;
+}
 
 interface Form {
   id: string;
@@ -23,6 +34,7 @@ interface Form {
   file_url: string | null;
   file_size: number | null;
   sort_order: number;
+  form_files: FormFile[];
 }
 
 interface Template {
@@ -91,6 +103,210 @@ function fileTypeBadge(nameOrType: string) {
   return { bg: "bg-gray-100", text: "text-gray-600", label: ext.toUpperCase() };
 }
 
+function sanitize(name: string) {
+  return name.replace(/[^a-zA-Z0-9._-]/g, "_");
+}
+
+// ── FormAttachments component ──────────────────────────────────────────
+
+function FormAttachments({ formId, files, canEdit }: { formId: string; files: FormFile[]; canEdit: boolean }) {
+  const router = useRouter();
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<FormFile | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<FormFile[]>([]);
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
+
+  const serverFileIds = new Set(files.map((f) => f.id));
+  const activeFiles = [
+    ...files.filter((f) => !deletedIds.has(f.id)),
+    ...uploadedFiles.filter((f) => !deletedIds.has(f.id) && !serverFileIds.has(f.id)),
+  ];
+
+  useEffect(() => {
+    if (uploadedFiles.length === 0) return;
+    const serverIds = new Set(files.map((f) => f.id));
+    setUploadedFiles((prev) => prev.filter((f) => !serverIds.has(f.id)));
+  }, [files]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const selected = Array.from(e.target.files ?? []);
+    if (!selected.length) return;
+    setPendingFiles((prev) => [...prev, ...selected]);
+    e.target.value = "";
+  }
+
+  function removePending(idx: number) {
+    setPendingFiles((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  async function handleUploadAll() {
+    if (!pendingFiles.length) return;
+    setUploading(true); setError(null);
+    const supabase = createClient();
+    try {
+      for (const file of pendingFiles) {
+        const path = `form-files/${formId}/${Date.now()}-${sanitize(file.name)}`;
+        const { data, error: upErr } = await supabase.storage.from("org-files").upload(path, file, { upsert: true });
+        if (upErr || !data) throw new Error(`"${file.name}": ${upErr?.message ?? "Upload failed"}`);
+        const { data: urlData } = supabase.storage.from("org-files").getPublicUrl(data.path);
+        const ext = file.name.split(".").pop()?.toUpperCase();
+        const fileId = await addFormFile(formId, file.name, urlData.publicUrl, ext, file.size);
+        setUploadedFiles((prev) => [...prev, {
+          id: fileId,
+          form_id: formId,
+          file_name: file.name,
+          file_url: urlData.publicUrl,
+          file_type: ext ?? null,
+          file_size: file.size,
+          created_at: new Date().toISOString(),
+        }]);
+      }
+      setPendingFiles([]);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed.");
+    } finally { setUploading(false); }
+  }
+
+  async function handleDelete() {
+    if (!confirmDelete) return;
+    setDeleting(true);
+    try {
+      await deleteFormFile(confirmDelete.id);
+      setDeletedIds((prev) => new Set([...prev, confirmDelete.id]));
+      setUploadedFiles((prev) => prev.filter((f) => f.id !== confirmDelete.id));
+      setConfirmDelete(null);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete file.");
+      setConfirmDelete(null);
+    } finally { setDeleting(false); }
+  }
+
+  return (
+    <div>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">
+          Attachments ({activeFiles.length})
+        </span>
+        {canEdit && (
+          <label className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg cursor-pointer transition">
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            Add Files
+            <input type="file" multiple className="hidden"
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+              onChange={handleFileSelect} />
+          </label>
+        )}
+      </div>
+
+      {/* Pending files */}
+      {pendingFiles.length > 0 && (
+        <div className="mb-2 border border-[#E5E7EB] rounded-lg divide-y divide-[#F3F4F6] overflow-hidden">
+          {pendingFiles.map((file, idx) => {
+            const badge = fileTypeBadge(file.name);
+            return (
+              <div key={idx} className="flex items-center gap-3 px-3 py-2 bg-[#FFFBEB]">
+                <div className={`w-7 h-7 rounded ${badge.bg} flex items-center justify-center flex-shrink-0`}>
+                  <span className={`text-xs font-bold ${badge.text}`}>{badge.label}</span>
+                </div>
+                <span className="text-xs text-[#1A1A2E] flex-1 min-w-0 truncate">{file.name}</span>
+                <span className="text-xs text-[#9CA3AF] flex-shrink-0">{fmtSize(file.size)}</span>
+                <button type="button" onClick={() => removePending(idx)}
+                  className="p-1 rounded hover:bg-[#F3F4F6] text-red-400 hover:text-red-600 flex-shrink-0">
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            );
+          })}
+          <div className="px-3 py-2 bg-[#FFFBEB] flex items-center justify-between gap-3">
+            {error && <p className="text-xs text-red-600 flex-1">{error}</p>}
+            <div className="flex gap-2 ml-auto">
+              <button type="button" onClick={() => setPendingFiles([])}
+                className="px-2.5 py-1 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F8F9FA] transition">
+                Clear
+              </button>
+              <button type="button" onClick={handleUploadAll} disabled={uploading}
+                className="px-2.5 py-1 text-xs bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg transition disabled:opacity-60">
+                {uploading ? "Uploading…" : `Upload ${pendingFiles.length} file${pendingFiles.length !== 1 ? "s" : ""}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Uploaded files list */}
+      {activeFiles.length > 0 ? (
+        <div className="border border-[#E5E7EB] rounded-lg divide-y divide-[#E5E7EB] overflow-hidden">
+          {activeFiles.map((f) => {
+            const badge = fileTypeBadge(f.file_type ?? f.file_name);
+            return (
+              <div key={f.id} className="flex items-center gap-2.5 px-3 py-2.5 bg-white hover:bg-[#F8F9FA] transition">
+                <div className={`w-7 h-7 rounded ${badge.bg} flex items-center justify-center flex-shrink-0`}>
+                  <span className={`text-xs font-bold ${badge.text}`}>{badge.label}</span>
+                </div>
+                <span className="text-xs font-medium text-[#1A1A2E] flex-1 min-w-0 truncate">{f.file_name}</span>
+                {f.file_size && <span className="text-xs text-[#9CA3AF] flex-shrink-0">{fmtSize(f.file_size)}</span>}
+                <div className="flex items-center gap-0.5 flex-shrink-0">
+                  <a href={f.file_url} target="_blank" rel="noopener noreferrer" title="View"
+                    className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] inline-flex">
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  </a>
+                  {canEdit && (
+                    <button type="button" onClick={() => setConfirmDelete(f)} title="Delete file"
+                      className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-red-400 hover:text-red-600 inline-flex">
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : pendingFiles.length === 0 ? (
+        <p className="text-xs text-[#9CA3AF] py-1">No files attached yet.</p>
+      ) : null}
+
+      {error && pendingFiles.length === 0 && (
+        <p className="text-xs text-red-600 mt-1">{error}</p>
+      )}
+
+      {/* Confirm delete popup */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl shadow-xl border border-[#E5E7EB] p-5 w-full max-w-xs mx-4">
+            <h3 className="text-sm font-semibold text-[#1A1A2E] mb-1">Delete file?</h3>
+            <p className="text-xs text-[#6B7280] mb-4 truncate">"{confirmDelete.file_name}" will be permanently removed.</p>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setConfirmDelete(null)}
+                className="flex-1 px-3 py-1.5 text-xs border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">
+                Cancel
+              </button>
+              <button type="button" onClick={handleDelete} disabled={deleting}
+                className="flex-1 px-3 py-1.5 text-xs bg-red-600 hover:bg-red-700 text-white rounded-lg transition disabled:opacity-60">
+                {deleting ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Blank state ────────────────────────────────────────────────────────
 
 const blankForm: FormInput = { rule_no: "", rule_heading: "", form_no: "", page_no: "", parallel_rule_1962: "", url: "" };
@@ -104,10 +320,15 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
   // ── Form (IT Rules) state
   const [showFormModal, setShowFormModal] = useState(false);
   const [editingForm, setEditingForm] = useState<Form | null>(null);
+
+  // Keep editingForm.form_files in sync when the server refreshes after an upload/delete
+  useEffect(() => {
+    if (!editingForm) return;
+    const updated = forms.find((f) => f.id === editingForm.id);
+    if (updated) setEditingForm(updated);
+  }, [forms]); // eslint-disable-line react-hooks/exhaustive-deps
   const [formData, setFormData] = useState<FormInput>(blankForm);
-  const [formFile, setFormFile] = useState<File | null>(null);
-  const [formCurrentFile, setFormCurrentFile] = useState<{ name: string; url: string; size: number | null } | null>(null);
-  const [removingFormFile, setRemovingFormFile] = useState(false);
+  const [formNewFiles, setFormNewFiles] = useState<File[]>([]);
   const [formSaving, setFormSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [deletingFormId, setDeletingFormId] = useState<string | null>(null);
@@ -142,8 +363,7 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
   function openAddForm() {
     setEditingForm(null);
     setFormData(blankForm);
-    setFormFile(null);
-    setFormCurrentFile(null);
+    setFormNewFiles([]);
     setFormError(null);
     setShowFormModal(true);
   }
@@ -151,45 +371,34 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
   function openEditForm(f: Form) {
     setEditingForm(f);
     setFormData({ rule_no: f.rule_no ?? "", rule_heading: f.rule_heading, form_no: f.form_no ?? "", page_no: f.page_no ?? "", parallel_rule_1962: f.parallel_rule_1962 ?? "", url: f.url ?? "" });
-    setFormFile(null);
-    setFormCurrentFile(f.file_url ? { name: f.file_name ?? f.file_url.split("/").pop() ?? "", url: f.file_url, size: f.file_size } : null);
+    setFormNewFiles([]);
     setFormError(null);
     setShowFormModal(true);
   }
 
-  async function handleRemoveFormFile() {
-    if (!editingForm) return;
-    setRemovingFormFile(true);
-    try {
-      await removeFormFile(editingForm.id);
-      setFormCurrentFile(null);
-      router.refresh();
-    } catch {
-      alert("Failed to remove file.");
-    } finally {
-      setRemovingFormFile(false);
+  async function uploadFormFiles(formId: string, files: File[]) {
+    const supabase = createClient();
+    for (const file of files) {
+      const path = `form-files/${formId}/${Date.now()}-${sanitize(file.name)}`;
+      const { data: up, error: upErr } = await supabase.storage.from("org-files").upload(path, file, { upsert: false });
+      if (upErr) throw new Error(`"${file.name}": ${upErr.message}`);
+      const { data: urlData } = supabase.storage.from("org-files").getPublicUrl(up.path);
+      const ext = file.name.split(".").pop()?.toUpperCase();
+      await addFormFile(formId, file.name, urlData.publicUrl, ext, file.size);
     }
   }
 
-  async function handleFormSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleFormSubmit(e?: React.FormEvent) {
+    e?.preventDefault();
     if (!formData.rule_heading.trim()) { setFormError("Form description is required."); return; }
     setFormSaving(true);
     setFormError(null);
     try {
-      let fileExtra: Partial<FormInput> = {};
-      if (formFile) {
-        const supabase = createClient();
-        const path = `forms/${Date.now()}-${formFile.name}`;
-        const { data: upData, error: upErr } = await supabase.storage.from("org-files").upload(path, formFile, { upsert: false, contentType: formFile.type || "application/octet-stream" });
-        if (upErr) throw new Error(upErr.message);
-        const { data: urlData } = supabase.storage.from("org-files").getPublicUrl(upData.path);
-        fileExtra = { file_name: formFile.name, file_url: urlData.publicUrl, file_size: formFile.size };
-      }
       if (editingForm) {
-        await updateForm(editingForm.id, { ...formData, ...fileExtra });
+        await updateForm(editingForm.id, formData);
       } else {
-        await createForm({ ...formData, ...fileExtra });
+        const newId = await createForm(formData);
+        if (formNewFiles.length > 0) await uploadFormFiles(newId, formNewFiles);
       }
       setShowFormModal(false);
       router.refresh();
@@ -240,10 +449,8 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
     setTplError(null);
     try {
       if (editingTemplate) {
-        // Edit — only name/description, no file re-upload
         await updateTemplate(editingTemplate.id, { name: tplName, description: tplDesc || undefined });
       } else {
-        // Upload file first
         const supabase = createClient();
         const path = `templates/${Date.now()}-${tplFile!.name}`;
         const { data: uploadData, error: uploadError } = await supabase.storage
@@ -251,7 +458,6 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
           .upload(path, tplFile!, { upsert: false, contentType: tplFile!.type || "application/octet-stream" });
         if (uploadError) throw new Error(uploadError.message);
         const { data: urlData } = supabase.storage.from("org-files").getPublicUrl(uploadData.path);
-
         const ext = tplFile!.name.split(".").pop()?.toUpperCase();
         await createTemplate({
           name: tplName,
@@ -434,62 +640,49 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
                   <th className="text-center px-4 py-3 font-semibold text-[#1A1A2E] w-24 border-r border-[#E5E7EB]">Form No.</th>
                   <th className="text-center px-4 py-3 font-semibold text-[#1A1A2E] w-24 border-r border-[#E5E7EB]">Section</th>
                   <th className="text-center px-4 py-3 font-semibold text-[#1A1A2E] w-28 border-r border-[#E5E7EB]">Forms Link</th>
-                  <th className="text-center px-4 py-3 font-semibold text-[#1A1A2E] w-28">Attachment</th>
-                  {canEdit && <th className="w-28 px-4 py-3" />}
+                  <th className="text-center px-4 py-3 font-semibold text-[#1A1A2E] w-24">Files</th>
                 </tr>
               </thead>
               <tbody>
                 {forms.length === 0 ? (
                   <tr>
-                    <td colSpan={canEdit ? 7 : 6} className="px-4 py-12 text-center text-[#6B7280]">
+                    <td colSpan={6} className="px-4 py-12 text-center text-[#6B7280]">
                       No forms added yet.{canEdit && " Click \"Add Form\" to get started."}
                     </td>
                   </tr>
                 ) : (
-                  forms.map((f, i) => (
-                    <tr
-                      key={f.id}
-                      onClick={() => canEdit ? openEditForm(f) : undefined}
-                      className={`border-b border-[#E5E7EB] ${i % 2 === 0 ? "bg-white" : "bg-[#F8F9FA]"} hover:bg-[#EEF2FF] transition-colors ${canEdit ? "cursor-pointer" : ""}`}
-                    >
-                      <td className="px-4 py-3 text-center text-[#1A1A2E] font-medium border-r border-[#E5E7EB]">{f.rule_no || "—"}</td>
-                      <td className="px-4 py-3 text-[#1A1A2E] border-r border-[#E5E7EB]">{f.rule_heading}</td>
-                      <td className="px-4 py-3 text-center text-[#6B7280] border-r border-[#E5E7EB]">{f.form_no || "—"}</td>
-                      <td className="px-4 py-3 text-center text-[#6B7280] border-r border-[#E5E7EB]">{f.page_no || "—"}</td>
-                      <td className="px-4 py-3 text-center border-r border-[#E5E7EB]" onClick={(e) => e.stopPropagation()}>
-                        {f.url
-                          ? <a href={f.url} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-[#4A6FA5] hover:text-[#1E3A5F] hover:underline">Click Here</a>
-                          : <span className="text-[#D1D5DB]">—</span>}
-                      </td>
-                      <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
-                        {f.file_url
-                          ? (
-                            <a href={f.file_url} target="_blank" rel="noopener noreferrer" title={f.file_name ?? "Download"}
-                              className="inline-flex items-center gap-1 text-xs font-medium text-[#4A6FA5] hover:text-[#1E3A5F]">
-                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                              </svg>
-                              {fileTypeBadge(f.file_name ?? f.file_url).label}
-                            </a>
-                          )
-                          : <span className="text-[#D1D5DB]">—</span>}
-                      </td>
-                      {canEdit && (
-                        <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center justify-center gap-0.5">
-                            <button onClick={() => openEditForm(f)} title="Edit form"
-                              className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] inline-flex">
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                            </button>
-                            <button onClick={() => setConfirmDeleteForm(f)} title="Delete form"
-                              className="p-1.5 rounded hover:bg-red-50 transition-colors text-red-500 hover:text-red-700 inline-flex">
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                            </button>
-                          </div>
+                  forms.map((f, i) => {
+                    const files = f.form_files ?? [];
+                    return (
+                      <tr
+                        key={f.id}
+                        onClick={() => canEdit && openEditForm(f)}
+                        className={`border-b border-[#E5E7EB] ${i % 2 === 0 ? "bg-white" : "bg-[#F8F9FA]"} hover:bg-[#EEF2FF] transition-colors ${canEdit ? "cursor-pointer" : ""}`}
+                      >
+                        <td className="px-4 py-3 text-center text-[#1A1A2E] font-medium border-r border-[#E5E7EB]">{f.rule_no || "—"}</td>
+                        <td className="px-4 py-3 text-[#1A1A2E] border-r border-[#E5E7EB]">{f.rule_heading}</td>
+                        <td className="px-4 py-3 text-center text-[#6B7280] border-r border-[#E5E7EB]">{f.form_no || "—"}</td>
+                        <td className="px-4 py-3 text-center text-[#6B7280] border-r border-[#E5E7EB]">{f.page_no || "—"}</td>
+                        <td className="px-4 py-3 text-center border-r border-[#E5E7EB]" onClick={(e) => e.stopPropagation()}>
+                          {f.url
+                            ? <a href={f.url} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-[#4A6FA5] hover:text-[#1E3A5F] hover:underline">Click Here</a>
+                            : <span className="text-[#D1D5DB]">—</span>}
                         </td>
-                      )}
-                    </tr>
-                  ))
+                        <td className="px-4 py-3 text-center">
+                          {files.length > 0 ? (
+                            <div className="inline-flex items-center gap-1.5 text-[#4A6FA5]">
+                              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                              </svg>
+                              <span className="text-xs font-semibold">{files.length}</span>
+                            </div>
+                          ) : (
+                            <span className="text-[#D1D5DB]">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -608,22 +801,17 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
                       <td className="px-4 py-3 font-medium text-[#1A1A2E] border-r border-[#E5E7EB] truncate max-w-0">{r.act?.name ?? "—"}</td>
                       <td className="px-4 py-3 text-[#6B7280] border-r border-[#E5E7EB] truncate">{r.description}</td>
                       <td className="px-4 py-3 text-[#6B7280] border-r border-[#E5E7EB]">{r.author ?? "—"}</td>
-                      <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-center gap-1 flex-wrap">
-                          {(r.resource_files ?? []).length === 0 ? (
-                            <span className="text-[#9CA3AF] text-xs">—</span>
-                          ) : (
-                            (r.resource_files ?? []).map((f) => {
-                              const badge = fileTypeBadge(f.file_type ?? f.file_name);
-                              return (
-                                <a key={f.id} href={f.file_url} target="_blank" rel="noopener noreferrer" title={f.file_name}
-                                  className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold ${badge.bg} ${badge.text} hover:opacity-80 transition`}>
-                                  {badge.label}
-                                </a>
-                              );
-                            })
-                          )}
-                        </div>
+                      <td className="px-4 py-3 text-center">
+                        {(r.resource_files ?? []).length === 0 ? (
+                          <span className="text-[#9CA3AF] text-xs">—</span>
+                        ) : (
+                          <div className="inline-flex items-center gap-1.5 text-[#4A6FA5]">
+                            <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                            </svg>
+                            <span className="text-xs font-semibold">{(r.resource_files ?? []).length}</span>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))
@@ -636,15 +824,17 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
 
       {/* ── MODAL: Add/Edit Form Row ── */}
       {showFormModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 mx-4">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-base font-semibold text-[#1A1A2E]">{editingForm ? "Edit Form" : "Add New Form"}</h2>
-              <button onClick={() => setShowFormModal(false)} className="text-[#9CA3AF] hover:text-[#6B7280]">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white rounded-t-2xl px-6 pt-6 pb-4 border-b border-[#E5E7EB]">
+              <div className="flex items-center justify-between">
+                <h2 className="text-base font-semibold text-[#1A1A2E]">{editingForm ? "Edit Form" : "Add New Form"}</h2>
+                <button onClick={() => setShowFormModal(false)} className="text-[#9CA3AF] hover:text-[#6B7280]">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
             </div>
-            <form onSubmit={handleFormSubmit} className="space-y-3">
+            <form onSubmit={handleFormSubmit} className="px-6 py-4 space-y-3">
               {formError && <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">{formError}</div>}
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -666,43 +856,95 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
               </div>
               <div>
                 <label className="block text-xs font-medium text-[#6B7280] mb-1">URL <span className="text-[#9CA3AF]">(link to form document)</span></label>
-                <input type="url" value={formData.url ?? ""} onChange={(e) => setFormData((p) => ({ ...p, url: e.target.value }))} placeholder="https://…" className={inp} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-[#6B7280] mb-2">Attachment</label>
-                {formCurrentFile ? (
-                  <div className="flex items-center justify-between gap-3 bg-[#F8F9FA] border border-[#E5E7EB] rounded-lg px-3 py-2 mb-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <svg className="w-3.5 h-3.5 text-[#4A6FA5] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      <a href={formCurrentFile.url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#4A6FA5] hover:underline truncate">{formCurrentFile.name}</a>
-                      {formCurrentFile.size && <span className="text-xs text-[#9CA3AF] flex-shrink-0">{(formCurrentFile.size / 1024).toFixed(0)} KB</span>}
-                    </div>
-                    {canEdit && (
-                      <button type="button" onClick={handleRemoveFormFile} disabled={removingFormFile}
-                        className="text-xs text-red-500 hover:text-red-700 flex-shrink-0 disabled:opacity-40">
-                        {removingFormFile ? "Removing…" : "Remove"}
-                      </button>
-                    )}
-                  </div>
-                ) : null}
                 <input
-                  type="file"
-                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
-                  onChange={(e) => setFormFile(e.target.files?.[0] ?? null)}
-                  className="block w-full text-sm text-[#6B7280] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-[#1E3A5F] file:text-white hover:file:bg-[#162d4a] file:cursor-pointer cursor-pointer"
+                  type="url"
+                  value={formData.url ?? ""}
+                  onChange={(e) => setFormData((p) => ({ ...p, url: e.target.value }))}
+                  onBlur={(e) => {
+                    const v = e.target.value.trim();
+                    if (v && !/^https?:\/\//i.test(v)) {
+                      setFormData((p) => ({ ...p, url: `https://${v}` }));
+                    }
+                  }}
+                  placeholder="https://…"
+                  className={inp}
                 />
-                {formFile && <p className="text-xs text-[#4A6FA5] mt-1">{formFile.name} selected</p>}
-                <p className="text-xs text-[#9CA3AF] mt-1">PDF, Word, Excel, PowerPoint</p>
               </div>
-              <div className="flex gap-3 pt-2">
+              {/* Files — inline picker for Add mode */}
+              {!editingForm && canEdit && (
+                <div>
+                  <label className="block text-xs font-medium text-[#6B7280] mb-2">Attachments</label>
+                  <input
+                    type="file"
+                    multiple
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+                    onChange={(e) => setFormNewFiles((prev) => [...prev, ...Array.from(e.target.files ?? [])])}
+                    className="block w-full text-sm text-[#6B7280] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-[#1E3A5F] file:text-white hover:file:bg-[#162d4a] file:cursor-pointer cursor-pointer"
+                  />
+                  {formNewFiles.length > 0 && (
+                    <div className="mt-2 border border-[#E5E7EB] rounded-lg divide-y divide-[#F3F4F6] overflow-hidden">
+                      {formNewFiles.map((file, idx) => {
+                        const badge = fileTypeBadge(file.name);
+                        return (
+                          <div key={idx} className="flex items-center gap-3 px-3 py-2 bg-[#FFFBEB]">
+                            <div className={`w-7 h-7 rounded ${badge.bg} flex items-center justify-center flex-shrink-0`}>
+                              <span className={`text-xs font-bold ${badge.text}`}>{badge.label}</span>
+                            </div>
+                            <span className="text-xs text-[#1A1A2E] flex-1 min-w-0 truncate">{file.name}</span>
+                            <span className="text-xs text-[#9CA3AF] flex-shrink-0">{fmtSize(file.size)}</span>
+                            <button type="button" onClick={() => setFormNewFiles((prev) => prev.filter((_, i) => i !== idx))}
+                              className="p-1 rounded hover:bg-[#F3F4F6] text-red-400 hover:text-red-600 flex-shrink-0">
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <p className="text-xs text-[#9CA3AF] mt-1">PDF, Word, Excel, PowerPoint — multiple files allowed</p>
+                </div>
+              )}
+
+              {/* Add mode footer — inside form so submit works */}
+              {!editingForm && (
+                <div className="flex gap-3 pt-2">
+                  <button type="button" onClick={() => setShowFormModal(false)} className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">Cancel</button>
+                  <button type="submit" disabled={formSaving} className="flex-1 px-4 py-2 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60">
+                    {formSaving ? "Saving…" : "Add Form"}
+                  </button>
+                </div>
+              )}
+            </form>
+
+            {/* Attachments — full manager shown in edit mode */}
+            {editingForm && (
+              <div className="border-t border-[#E5E7EB] px-6 py-4">
+                <FormAttachments
+                  formId={editingForm.id}
+                  files={editingForm.form_files ?? []}
+                  canEdit={canEdit}
+                />
+              </div>
+            )}
+
+            {/* Edit mode footer — below attachments */}
+            {editingForm && (
+              <div className="border-t border-[#E5E7EB] px-6 py-4 flex gap-3">
+                {canEdit && (
+                  <button type="button" onClick={() => { setShowFormModal(false); setConfirmDeleteForm(editingForm); }}
+                    className="px-4 py-2 text-sm border border-red-200 text-red-600 hover:bg-red-50 rounded-lg transition">
+                    Delete
+                  </button>
+                )}
                 <button type="button" onClick={() => setShowFormModal(false)} className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">Cancel</button>
-                <button type="submit" disabled={formSaving} className="flex-1 px-4 py-2 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60">
-                  {formSaving ? "Saving…" : editingForm ? "Save Changes" : "Add Form"}
+                <button type="button" onClick={() => handleFormSubmit()} disabled={formSaving}
+                  className="flex-1 px-4 py-2 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60">
+                  {formSaving ? "Saving…" : "Save Changes"}
                 </button>
               </div>
-            </form>
+            )}
           </div>
         </div>
       )}
@@ -746,6 +988,12 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
                 </div>
               )}
               <div className="flex gap-3 pt-2">
+                {editingTemplate && canEdit && (
+                  <button type="button" onClick={() => { setShowTemplateModal(false); setConfirmDeleteTpl(editingTemplate); }}
+                    className="px-4 py-2 text-sm border border-red-200 text-red-600 hover:bg-red-50 rounded-lg transition">
+                    Delete
+                  </button>
+                )}
                 <button type="button" onClick={() => setShowTemplateModal(false)} className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">Cancel</button>
                 <button type="submit" disabled={tplUploading} className="flex-1 px-4 py-2 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60">
                   {tplUploading ? (editingTemplate ? "Saving…" : "Uploading…") : editingTemplate ? "Save Changes" : "Upload"}
@@ -838,7 +1086,6 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
                   {editingResource ? "Files" : "Upload Files"} {!editingResource && <span className="text-red-500">*</span>}
                 </label>
 
-                {/* Existing files (edit mode) */}
                 {editingResource && localResFiles.length > 0 && (
                   <div className="mb-3 border border-[#E5E7EB] rounded-lg divide-y divide-[#E5E7EB] overflow-hidden">
                     {localResFiles.map((f) => {
@@ -874,7 +1121,6 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
                   </div>
                 )}
 
-                {/* File picker */}
                 <input
                   type="file"
                   multiple
@@ -894,10 +1140,16 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
                     })}
                   </div>
                 )}
-                <p className="text-xs text-[#9CA3AF] mt-1">Supported: PDF, Word (.doc, .docx), Excel (.xls, .xlsx), PowerPoint (.ppt, .pptx) — multiple files allowed</p>
+                <p className="text-xs text-[#9CA3AF] mt-1">PDF, Word, Excel, PowerPoint — multiple files allowed</p>
               </div>
 
               <div className="flex gap-3 pt-2 pb-2">
+                {editingResource && canEdit && (
+                  <button type="button" onClick={() => { setShowResourceModal(false); setConfirmDeleteRes(editingResource); }}
+                    className="px-4 py-2 text-sm border border-red-200 text-red-600 hover:bg-red-50 rounded-lg transition">
+                    Delete
+                  </button>
+                )}
                 <button type="button" onClick={() => setShowResourceModal(false)} className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">Cancel</button>
                 <button type="submit" disabled={resSaving} className="flex-1 px-4 py-2 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60">
                   {resSaving ? (editingResource ? "Saving…" : "Uploading…") : editingResource ? "Save Changes" : "Add Resource"}

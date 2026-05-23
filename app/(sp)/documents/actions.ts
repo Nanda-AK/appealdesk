@@ -58,7 +58,7 @@ export interface FormInput {
   file_size?: number;
 }
 
-export async function createForm(input: FormInput) {
+export async function createForm(input: FormInput): Promise<string> {
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
   spOnly(user.role);
@@ -74,7 +74,7 @@ export async function createForm(input: FormInput) {
 
   const nextOrder = (existing?.[0]?.sort_order ?? 0) + 1;
 
-  const { error } = await supabase.from("forms").insert({
+  const { data, error } = await supabase.from("forms").insert({
     service_provider_id: spId,
     rule_no: input.rule_no || null,
     rule_heading: input.rule_heading,
@@ -86,10 +86,11 @@ export async function createForm(input: FormInput) {
     file_url: input.file_url || null,
     file_size: input.file_size || null,
     sort_order: nextOrder,
-  });
+  }).select("id").single();
 
   if (error) throw new Error(error.message);
   revalidatePath("/documents");
+  return data.id;
 }
 
 export async function updateForm(id: string, input: FormInput) {
@@ -106,7 +107,6 @@ export async function updateForm(id: string, input: FormInput) {
     page_no: input.page_no || null,
     parallel_rule_1962: input.parallel_rule_1962 || null,
     url: input.url || null,
-    updated_at: new Date().toISOString(),
   };
   if (input.file_url !== undefined) {
     updatePayload.file_name = input.file_name || null;
@@ -264,6 +264,40 @@ export async function deleteResource(id: string) {
   await supabase.from("resources").delete().eq("id", id).eq("service_provider_id", spId!);
   revalidatePath("/documents");
 }
+
+// ── FORM FILES ─────────────────────────────────────────
+
+export async function addFormFile(formId: string, fileName: string, fileUrl: string, fileType?: string, fileSize?: number): Promise<string> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+  spOnly(user.role);
+  const supabase = await createServiceClient();
+
+  const { data, error } = await supabase.from("form_files").insert({
+    form_id: formId,
+    file_name: fileName,
+    file_url: fileUrl,
+    file_type: fileType || null,
+    file_size: fileSize || null,
+  }).select("id").single();
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/documents");
+  return data.id;
+}
+
+export async function deleteFormFile(fileId: string): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+  spOnly(user.role);
+  const supabase = await createServiceClient();
+
+  const { error } = await supabase.from("form_files").delete().eq("id", fileId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/documents");
+}
+
+// ── RESOURCES ──────────────────────────────────────────
 
 export async function addResourceFile(resourceId: string, fileName: string, fileUrl: string, fileType?: string, fileSize?: number) {
   const user = await getCurrentUser();

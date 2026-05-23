@@ -10,7 +10,7 @@ export default async function DocumentsPage() {
   const [{ data: forms }, { data: templates }, { data: resources }, { data: acts }] = await Promise.all([
     supabase
       .from("forms")
-      .select("*")
+      .select("*, form_files(*)")
       .eq("service_provider_id", spId!)
       .order("sort_order", { ascending: true }),
 
