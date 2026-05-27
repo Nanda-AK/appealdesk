@@ -11,6 +11,7 @@ export default async function ProvidersPage() {
     .from("organizations")
     .select("id, name, business_type, city, is_active, created_at")
     .eq("type", "service_provider")
+    .is("deleted_at", null)
     .order("name");
 
   return (

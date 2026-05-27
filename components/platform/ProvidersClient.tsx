@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { toggleProviderStatus } from "@/app/(platform)/platform/providers/actions";
+import { toggleProviderStatus, deleteProvider } from "@/app/(platform)/platform/providers/actions";
 import { UserRole } from "@/lib/types";
 
 interface Provider {
@@ -19,11 +19,22 @@ interface Props {
   userRole: UserRole;
 }
 
+const isPlatformRole = (role: UserRole) =>
+  role === "super_admin" || role === "platform_admin";
+
 export default function ProvidersClient({ providers, userRole }: Props) {
   const [search, setSearch] = useState("");
   const [sortAsc, setSortAsc] = useState(true);
   const [loading, setLoading] = useState<string | null>(null);
+
+  // Activate / deactivate confirm
   const [confirm, setConfirm] = useState<{ id: string; name: string; activate: boolean } | null>(null);
+
+  // Delete confirm
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const canDelete = isPlatformRole(userRole);
 
   const q = search.toLowerCase();
   const filtered = providers
@@ -43,6 +54,22 @@ export default function ProvidersClient({ providers, userRole }: Props) {
     } finally {
       setLoading(null);
       setConfirm(null);
+    }
+  }
+
+  async function handleDelete() {
+    if (!deleteConfirm) return;
+    setDeleteError(null);
+    setLoading(deleteConfirm.id);
+    try {
+      const result = await deleteProvider(deleteConfirm.id);
+      if (result?.error) {
+        setDeleteError(result.error);
+        return;
+      }
+      setDeleteConfirm(null);
+    } finally {
+      setLoading(null);
     }
   }
 
@@ -117,10 +144,13 @@ export default function ProvidersClient({ providers, userRole }: Props) {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-0.5">
+                        {/* Edit */}
                         <Link href={`/platform/providers/${sp.id}`} title="Edit service provider"
                           className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] inline-flex">
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                         </Link>
+
+                        {/* Activate / Deactivate */}
                         <button
                           onClick={() => setConfirm({ id: sp.id, name: sp.name, activate: !sp.is_active })}
                           disabled={loading === sp.id}
@@ -133,6 +163,20 @@ export default function ProvidersClient({ providers, userRole }: Props) {
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                           )}
                         </button>
+
+                        {/* Delete — platform roles only */}
+                        {canDelete && (
+                          <button
+                            onClick={() => { setDeleteError(null); setDeleteConfirm({ id: sp.id, name: sp.name }); }}
+                            disabled={loading === sp.id}
+                            title="Delete service provider"
+                            className="p-1.5 rounded hover:bg-red-50 transition-colors text-red-400 hover:text-red-600 disabled:opacity-50 inline-flex"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                            </svg>
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -170,6 +214,50 @@ export default function ProvidersClient({ providers, userRole }: Props) {
                 }`}
               >
                 {loading ? "Processing…" : confirm.activate ? "Activate" : "Deactivate"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirm Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl border border-[#E5E7EB] p-6 w-full max-w-sm mx-4">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="flex-shrink-0 w-9 h-9 rounded-full bg-red-50 flex items-center justify-center">
+                <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-[#1A1A2E]">Delete Service Provider?</h3>
+                <p className="text-sm text-[#6B7280] mt-1">
+                  <span className="font-medium text-[#1A1A2E]">&quot;{deleteConfirm.name}&quot;</span> and all its users will be removed. This can be recovered from the Recycle Bin.
+                </p>
+              </div>
+            </div>
+
+            {deleteError && (
+              <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">
+                {deleteError}
+              </p>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setDeleteConfirm(null); setDeleteError(null); }}
+                disabled={!!loading}
+                className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={!!loading}
+                className="flex-1 px-4 py-2 text-sm rounded-lg text-white font-medium bg-red-600 hover:bg-red-700 transition disabled:opacity-60"
+              >
+                {loading ? "Deleting…" : "Delete"}
               </button>
             </div>
           </div>
