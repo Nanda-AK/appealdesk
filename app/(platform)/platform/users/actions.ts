@@ -56,6 +56,14 @@ export async function createPlatformSpAdmin(spId: string, input: SpAdminFullInpu
 
   if (!sp) throw new Error("Service provider not found");
 
+  // Check for duplicate email before touching auth
+  const { data: existing } = await supabase
+    .from("users")
+    .select("id")
+    .eq("email", input.email.toLowerCase().trim())
+    .maybeSingle();
+  if (existing) throw new Error("A user with this email already exists.");
+
   // Create auth user
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({
     email: input.email,
@@ -97,6 +105,7 @@ export async function createPlatformSpAdmin(spId: string, input: SpAdminFullInpu
 
   if (profileError) {
     await supabase.auth.admin.deleteUser(authData.user.id);
+    if (profileError.code === "23505") throw new Error("A user with this email already exists.");
     throw new Error(profileError.message);
   }
 
