@@ -28,13 +28,13 @@ interface MasterRecord {
 
 interface Props {
   records: MasterRecord[];
-  isSuperAdmin: boolean;
+  canDelete: boolean;
 }
 
 // ─── Shared inline input style ────────────────────────────────────────────────
 const inp = "px-2 py-1 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]";
 
-export default function MastersClient({ records, isSuperAdmin }: Props) {
+export default function MastersClient({ records, canDelete }: Props) {
   const [activeTab, setActiveTab] = useState("business_type");
 
   // Flat tab state
@@ -235,7 +235,7 @@ export default function MastersClient({ records, isSuperAdmin }: Props) {
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         )}
                       </button>
-                      {isSuperAdmin && (
+                      {canDelete && (
                         <button onClick={() => setConfirmDelete({ id: rec.id, name: rec.name })} disabled={deleting === rec.id}
                           title="Delete"
                           className="p-1.5 rounded hover:bg-red-50 transition-colors text-red-500 hover:text-red-700 disabled:opacity-50 inline-flex">
@@ -265,7 +265,7 @@ export default function MastersClient({ records, isSuperAdmin }: Props) {
                 {/* Act header */}
                 <div className="flex items-center gap-3 px-5 py-4 bg-[#F8F9FA] border-b border-[#E5E7EB]">
                   <button onClick={() => setExpandedActs(prev => { const s = new Set(prev); s.has(act.id) ? s.delete(act.id) : s.add(act.id); return s; })}
-                    className="text-[#6B7280] hover:text-[#1A1A2E] transition flex-shrink-0">
+                    className="text-[#6B7280] hover:text-[#1A1A2E] transition shrink-0">
                     <svg className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-90" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                     </svg>
@@ -292,7 +292,7 @@ export default function MastersClient({ records, isSuperAdmin }: Props) {
                   </div>
 
                   {editingId !== act.id && (
-                    <div className="flex items-center gap-0.5 flex-shrink-0">
+                    <div className="flex items-center gap-0.5 shrink-0">
                       <button onClick={() => { setAddingUnderActId(act.id); setNewProcName(""); setExpandedActs(prev => new Set(prev).add(act.id)); }}
                         className="text-xs font-medium text-[#4A6FA5] hover:text-[#1E3A5F] px-2 py-1">+ Add Proceeding</button>
                       <button onClick={() => startEdit(act.id, act.name)} title="Edit"
@@ -308,7 +308,7 @@ export default function MastersClient({ records, isSuperAdmin }: Props) {
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         )}
                       </button>
-                      {isSuperAdmin && procs.length === 0 && (
+                      {canDelete && procs.length === 0 && (
                         <button onClick={() => setConfirmDelete({ id: act.id, name: act.name })} title="Delete"
                           className="p-1.5 rounded hover:bg-red-50 transition-colors text-red-500 hover:text-red-700 inline-flex">
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -327,7 +327,7 @@ export default function MastersClient({ records, isSuperAdmin }: Props) {
 
                     {procs.map((proc, i) => (
                       <div key={proc.id} className={`flex items-center gap-3 px-6 py-3 border-b border-[#F3F4F6] ${i % 2 === 1 ? "bg-[#FAFAFA]" : ""} hover:bg-[#F8F9FA] transition-colors`}>
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#B0BDD0] flex-shrink-0" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#B0BDD0] shrink-0" />
                         <div className="flex-1 min-w-0">
                           {editingId === proc.id ? (
                             <div className="flex items-center gap-2">
@@ -341,11 +341,11 @@ export default function MastersClient({ records, isSuperAdmin }: Props) {
                             <span className="text-sm text-[#1A1A2E]">{proc.name}</span>
                           )}
                         </div>
-                        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${proc.is_active ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium shrink-0 ${proc.is_active ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"}`}>
                           {proc.is_active ? "Active" : "Inactive"}
                         </span>
                         {editingId !== proc.id && (
-                          <div className="flex items-center gap-0.5 flex-shrink-0">
+                          <div className="flex items-center gap-0.5 shrink-0">
                             <button onClick={() => startEdit(proc.id, proc.name)} title="Edit"
                               className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] inline-flex">
                               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
@@ -359,7 +359,7 @@ export default function MastersClient({ records, isSuperAdmin }: Props) {
                                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                               )}
                             </button>
-                            {isSuperAdmin && (
+                            {canDelete && (
                               <button onClick={() => setConfirmDelete({ id: proc.id, name: proc.name })} title="Delete"
                                 className="p-1.5 rounded hover:bg-red-50 transition-colors text-red-500 hover:text-red-700 inline-flex">
                                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -374,7 +374,7 @@ export default function MastersClient({ records, isSuperAdmin }: Props) {
                     {addingUnderActId === act.id && (
                       <form onSubmit={e => handleAddProceeding(e, act.id)}
                         className="flex items-center gap-2 px-6 py-3 bg-[#EEF2FF] border-b border-[#E5E7EB]">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#4A6FA5] flex-shrink-0" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#4A6FA5] shrink-0" />
                         <input value={newProcName} onChange={e => setNewProcName(e.target.value)}
                           placeholder="Proceeding name, e.g. Assessment u/s 143(2)"
                           className={`${inp} flex-1`} autoFocus />

@@ -10,7 +10,7 @@ export default async function PlatformRecycleBinPage() {
   const supabase = await createClient();
   const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
-  const [{ data: users }, { data: masters }] = await Promise.all([
+  const [{ data: users }, { data: masters }, { data: providers }, { data: clients }] = await Promise.all([
     // Platform users: super_admin, platform_admin, sp_admin — deleted within 30 days
     supabase
       .from("users")
@@ -32,6 +32,24 @@ export default async function PlatformRecycleBinPage() {
       .not("deleted_at", "is", null)
       .gte("deleted_at", cutoff)
       .order("deleted_at", { ascending: false }),
+
+    // Deleted service providers
+    supabase
+      .from("organizations")
+      .select("id, name, business_type, city, deleted_at")
+      .eq("type", "service_provider")
+      .not("deleted_at", "is", null)
+      .gte("deleted_at", cutoff)
+      .order("deleted_at", { ascending: false }),
+
+    // Deleted clients
+    supabase
+      .from("organizations")
+      .select("id, name, business_type, city, deleted_at")
+      .eq("type", "client")
+      .not("deleted_at", "is", null)
+      .gte("deleted_at", cutoff)
+      .order("deleted_at", { ascending: false }),
   ]);
 
   const normalizedUsers = (users ?? []).map((u: any) => ({
@@ -50,6 +68,8 @@ export default async function PlatformRecycleBinPage() {
       <PlatformRecycleBinClient
         users={normalizedUsers as any}
         masters={(masters ?? []) as any}
+        providers={(providers ?? []) as any}
+        clients={(clients ?? []) as any}
       />
     </div>
   );

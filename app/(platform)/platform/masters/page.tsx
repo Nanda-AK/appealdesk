@@ -23,7 +23,7 @@ export default async function MastersPage() {
       </div>
       <MastersClient
         records={records ?? []}
-        isSuperAdmin={user!.role === "super_admin"}
+        canDelete={user!.role === "super_admin" || user!.role === "platform_admin"}
       />
     </div>
   );

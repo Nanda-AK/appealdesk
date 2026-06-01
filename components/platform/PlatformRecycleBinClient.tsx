@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import {
   restorePlatformUser, purgePlatformUser,
   restoreMasterRecord, purgeMasterRecord,
+  restoreProvider, purgeProvider,
+  restoreClient, purgeClient,
 } from "@/app/(platform)/platform/recycle-bin/actions";
 
 function daysLeft(deletedAt: string): number {
@@ -64,7 +66,7 @@ function RowActions({ onRestore, onPurge }: { onRestore: () => Promise<void>; on
   }
 
   return (
-    <div className="flex items-center gap-0.5 flex-shrink-0">
+    <div className="flex items-center gap-0.5 shrink-0">
       <button onClick={handleRestore} disabled={!!busy} title="Restore item"
         className="p-1.5 rounded hover:bg-[#EEF2FF] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] disabled:opacity-50 inline-flex">
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
@@ -148,13 +150,31 @@ interface MasterRecord {
   deleted_at: string;
 }
 
+interface Provider {
+  id: string;
+  name: string;
+  business_type?: string;
+  city?: string;
+  deleted_at: string;
+}
+
+interface Client {
+  id: string;
+  name: string;
+  business_type?: string;
+  city?: string;
+  deleted_at: string;
+}
+
 interface Props {
   users: User[];
   masters: MasterRecord[];
+  providers: Provider[];
+  clients: Client[];
 }
 
-export default function PlatformRecycleBinClient({ users, masters }: Props) {
-  const total = users.length + masters.length;
+export default function PlatformRecycleBinClient({ users, masters, providers, clients }: Props) {
+  const total = users.length + masters.length + providers.length + clients.length;
 
   if (total === 0) {
     return (
@@ -170,6 +190,52 @@ export default function PlatformRecycleBinClient({ users, masters }: Props) {
 
   return (
     <div className="space-y-4">
+      <Section title="Service Providers" count={providers.length}>
+        <div className="divide-y divide-[#F3F4F6]">
+          {providers.map((p) => (
+            <div key={p.id} className="px-5 py-3 flex items-center justify-between gap-4">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-[#1A1A2E] truncate">{p.name}</p>
+                <p className="text-xs text-[#6B7280] truncate">
+                  {[p.business_type, p.city].filter(Boolean).join(" · ") || "—"}
+                </p>
+                <p className="text-xs text-[#9CA3AF]">Deleted {fmtDate(p.deleted_at)}</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <DaysChip deletedAt={p.deleted_at} />
+                <RowActions
+                  onRestore={() => restoreProvider(p.id)}
+                  onPurge={() => purgeProvider(p.id)}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="Clients" count={clients.length}>
+        <div className="divide-y divide-[#F3F4F6]">
+          {clients.map((c) => (
+            <div key={c.id} className="px-5 py-3 flex items-center justify-between gap-4">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-[#1A1A2E] truncate">{c.name}</p>
+                <p className="text-xs text-[#6B7280] truncate">
+                  {[c.business_type, c.city].filter(Boolean).join(" · ") || "—"}
+                </p>
+                <p className="text-xs text-[#9CA3AF]">Deleted {fmtDate(c.deleted_at)}</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <DaysChip deletedAt={c.deleted_at} />
+                <RowActions
+                  onRestore={() => restoreClient(c.id)}
+                  onPurge={() => purgeClient(c.id)}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </Section>
+
       <Section title="Users" count={users.length}>
         <div className="divide-y divide-[#F3F4F6]">
           {users.map((u) => (
