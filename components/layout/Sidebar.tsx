@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -210,9 +211,10 @@ export default function Sidebar({ userName, userRole, isPlatform = false, orgNam
   // (e.g. a stale/dead storage URL) instead of showing a broken-image icon.
   const [logoFailed, setLogoFailed] = useState(false);
 
-  // Persist collapse state across page navigations
+  // Persist collapse state across page navigations.
   useEffect(() => {
     const stored = localStorage.getItem("sidebar-collapsed");
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage is browser-only; useEffect+[] is the correct SSR-safe pattern for reading client storage into state without causing hydration mismatches
     if (stored !== null) setCollapsed(stored === "true");
   }, []);
 
@@ -286,12 +288,22 @@ export default function Sidebar({ userName, userRole, isPlatform = false, orgNam
       <div className={`border-b border-white/10 flex flex-col items-center py-4 ${collapsed ? "px-2" : "px-4"}`}>
         {/* Logo mark */}
         <div className={`shrink-0 ${collapsed ? "" : "self-start flex items-center gap-2.5 w-full"}`}>
+<<<<<<< HEAD
           {orgLogoUrl && !logoFailed ? (
             <img
               src={orgLogoUrl}
               alt={orgName ?? "Logo"}
               className="w-8 h-8 rounded-lg object-cover bg-white/10 shrink-0"
               onError={() => setLogoFailed(true)}
+=======
+          {orgLogoUrl ? (
+            <Image
+              src={orgLogoUrl}
+              alt={orgName ?? "Logo"}
+              width={32}
+              height={32}
+              className="w-8 h-8 rounded-lg object-cover bg-white/10 shrink-0"
+>>>>>>> 73023ddd6d99bd0310883e5a6040ce38cc4b88fe
             />
           ) : (
             <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
@@ -360,7 +372,11 @@ export default function Sidebar({ userName, userRole, isPlatform = false, orgNam
         {!collapsed && (
           <div className="px-3 py-2 mb-1 flex items-center gap-2.5">
             {userAvatarUrl ? (
+<<<<<<< HEAD
               <img src={userAvatarUrl} alt={userName}
+=======
+              <Image src={userAvatarUrl} alt={userName} width={32} height={32}
+>>>>>>> 73023ddd6d99bd0310883e5a6040ce38cc4b88fe
                 className="w-8 h-8 rounded-full object-cover shrink-0 bg-white/10" />
             ) : (
               <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
@@ -378,7 +394,7 @@ export default function Sidebar({ userName, userRole, isPlatform = false, orgNam
         {collapsed && (
           <div className="flex justify-center mb-1">
             {userAvatarUrl ? (
-              <img src={userAvatarUrl} alt={userName} title={userName}
+              <Image src={userAvatarUrl} alt={userName} title={userName} width={32} height={32}
                 className="w-8 h-8 rounded-full object-cover bg-white/10" />
             ) : (
               <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center" title={userName}>

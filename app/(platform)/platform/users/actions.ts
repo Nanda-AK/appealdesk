@@ -13,7 +13,6 @@ export interface SpAdminFullInput {
   middle_name?: string;
   last_name: string;
   email: string;
-  password: string;
   // Contact
   mobile_country_code?: string;
   mobile_number?: string;
@@ -56,12 +55,22 @@ export async function createPlatformSpAdmin(spId: string, input: SpAdminFullInpu
 
   if (!sp) throw new Error("Service provider not found");
 
-  // Create auth user
-  const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-    email: input.email,
-    password: input.password,
-    email_confirm: true,
-  });
+  // Check for duplicate email before touching auth
+  const { data: existing } = await supabase
+    .from("users")
+    .select("id")
+    .eq("email", input.email.toLowerCase().trim())
+    .maybeSingle();
+  if (existing) throw new Error("A user with this email already exists.");
+
+  // Send invite — user sets their own password via email link
+  const { data: authData, error: authError } = await supabase.auth.admin.inviteUserByEmail(
+    input.email,
+    {
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?type=invite`,
+      data: { role: "sp_admin", sp_id: spId },
+    }
+  );
 
   if (authError) throw new Error(authError.message);
 
@@ -97,6 +106,7 @@ export async function createPlatformSpAdmin(spId: string, input: SpAdminFullInpu
 
   if (profileError) {
     await supabase.auth.admin.deleteUser(authData.user.id);
+    if (profileError.code === "23505") throw new Error("A user with this email already exists.");
     throw new Error(profileError.message);
   }
 

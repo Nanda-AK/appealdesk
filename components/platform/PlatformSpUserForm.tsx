@@ -119,7 +119,7 @@ function EyeBtn({ visible, toggle }: { visible: boolean; toggle: () => void }) {
 
 const BLANK: SpAdminFullInput = {
   first_name: "", middle_name: "", last_name: "",
-  email: "", password: "",
+  email: "",
   mobile_country_code: "+91", mobile_number: "",
   date_of_birth: "",
   department: "", designation: "",
@@ -134,9 +134,6 @@ export default function PlatformSpUserForm({ providers }: Props) {
   const [selectedSpId, setSelectedSpId] = useState(providers[0]?.id ?? "");
   const [form, setForm] = useState<SpAdminFullInput>(BLANK);
   const [locationOther, setLocationOther] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showConfirm, setShowConfirm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -149,8 +146,6 @@ export default function PlatformSpUserForm({ providers }: Props) {
     if (!form.first_name.trim()) { setError("First name is required."); return; }
     if (!form.last_name.trim()) { setError("Last name is required."); return; }
     if (!form.email.trim()) { setError("Email is required."); return; }
-    if (form.password.length < 8) { setError("Password must be at least 8 characters."); return; }
-    if (form.password !== confirmPassword) { setError("Passwords do not match."); return; }
 
     setSaving(true);
     setError(null);
@@ -232,32 +227,8 @@ export default function PlatformSpUserForm({ providers }: Props) {
             <input type="date" value={form.date_of_birth ?? ""} onChange={(e) => set("date_of_birth")(e.target.value)} className={inp} />
           </Field>
 
-          <Field label="Password" required>
-            <div className="relative">
-              <input type={showPassword ? "text" : "password"} value={form.password}
-                onChange={(e) => set("password")(e.target.value)} placeholder="Min. 8 characters"
-                autoComplete="new-password"
-                className="w-full px-3 py-2 pr-9 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]" />
-              <EyeBtn visible={showPassword} toggle={() => setShowPassword(!showPassword)} />
-            </div>
-            <p className="text-xs text-[#9CA3AF] mt-1">Share with user so they can log in immediately.</p>
-          </Field>
-
           <Field label="Role">
             <input value="SP Admin" disabled className={`${inp} bg-[#F8F9FA] text-[#6B7280] cursor-not-allowed`} />
-          </Field>
-
-          <Field label="Confirm Password" required>
-            <div className="relative">
-              <input type={showConfirm ? "text" : "password"} value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Re-enter password"
-                autoComplete="new-password"
-                className={`w-full px-3 py-2 pr-9 text-sm border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] ${confirmPassword && confirmPassword !== form.password ? "border-red-400" : "border-[#4A6FA5]"}`} />
-              <EyeBtn visible={showConfirm} toggle={() => setShowConfirm(!showConfirm)} />
-            </div>
-            {confirmPassword && confirmPassword !== form.password && (
-              <p className="text-xs text-red-500 mt-1">Passwords do not match.</p>
-            )}
           </Field>
         </div>
       </section>
@@ -345,7 +316,7 @@ export default function PlatformSpUserForm({ providers }: Props) {
         </button>
         <button type="submit" disabled={saving}
           className="px-5 py-2.5 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60">
-          {saving ? "Creating…" : "Create SP Admin"}
+          {saving ? "Sending invite…" : "Send Invite"}
         </button>
       </div>
     </form>
