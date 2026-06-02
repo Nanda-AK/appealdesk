@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { UserRole } from "@/lib/types";
 import {
   createMasterRecord,
   createChildMasterRecord,
@@ -28,13 +29,23 @@ interface MasterRecord {
 
 interface Props {
   records: MasterRecord[];
-  isSuperAdmin: boolean;
+  userRole: UserRole;
 }
 
 // ─── Shared inline input style ────────────────────────────────────────────────
 const inp = "px-2 py-1 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]";
 
-export default function MastersClient({ records, isSuperAdmin }: Props) {
+// ─── Shared icon SVG paths ────────────────────────────────────────────────────
+const TrashIcon = ({ className }: { className: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+  </svg>
+);
+
+export default function MastersClient({ records, userRole }: Props) {
+  // Role-based access
+  const canDelete = userRole === "super_admin" || userRole === "platform_admin";
+
   const [activeTab, setActiveTab] = useState("business_type");
 
   // Flat tab state
@@ -58,10 +69,14 @@ export default function MastersClient({ records, isSuperAdmin }: Props) {
   const [editValue, setEditValue] = useState("");
   const [editSaving, setEditSaving] = useState(false);
 
-  // Toggle / Delete
+  // Toggle confirm
   const [toggling, setToggling] = useState<string | null>(null);
+  const [toggleConfirm, setToggleConfirm] = useState<{ id: string; name: string; activate: boolean } | null>(null);
+
+  // Delete confirm
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // ─── Flat tab helpers ─────────────────────────────────────────────────────
   const currentLabel = FLAT_TABS.find(t => t.key === activeTab)?.label ?? "";
@@ -122,17 +137,27 @@ export default function MastersClient({ records, isSuperAdmin }: Props) {
     finally { setActSaving(false); }
   }
 
-  async function handleToggle(id: string, isActive: boolean) {
-    setToggling(id);
-    try { await toggleMasterRecord(id, !isActive); }
-    finally { setToggling(null); }
+  // ─── Toggle (with confirm modal) ─────────────────────────────────────────
+  async function handleToggleConfirm() {
+    if (!toggleConfirm) return;
+    setToggling(toggleConfirm.id);
+    try { await toggleMasterRecord(toggleConfirm.id, toggleConfirm.activate); }
+    finally { setToggling(null); setToggleConfirm(null); }
   }
 
+  // ─── Delete (with confirm modal + error state) ────────────────────────────
   async function handleDelete() {
     if (!confirmDelete) return;
+    setDeleteError(null);
     setDeleting(confirmDelete.id);
-    try { await deleteMasterRecord(confirmDelete.id); }
-    finally { setDeleting(null); setConfirmDelete(null); }
+    try {
+      await deleteMasterRecord(confirmDelete.id);
+      setConfirmDelete(null);
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Failed to delete.");
+    } finally {
+      setDeleting(null);
+    }
   }
 
   const allTabs = [...FLAT_TABS, { key: ACTS_TAB, label: "Acts" }];
@@ -226,8 +251,10 @@ export default function MastersClient({ records, isSuperAdmin }: Props) {
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                         </button>
                       )}
-                      <button onClick={() => handleToggle(rec.id, rec.is_active)} disabled={toggling === rec.id}
-                        title={rec.is_active ? "Disable" : "Enable"}
+                      <button
+                        onClick={() => setToggleConfirm({ id: rec.id, name: rec.name, activate: !rec.is_active })}
+                        disabled={toggling === rec.id}
+                        title={rec.is_active ? "Deactivate" : "Activate"}
                         className={`p-1.5 rounded hover:bg-[#F3F4F6] transition-colors disabled:opacity-50 inline-flex ${rec.is_active ? "text-amber-500 hover:text-amber-700" : "text-green-600 hover:text-green-800"}`}>
                         {rec.is_active ? (
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
@@ -235,11 +262,13 @@ export default function MastersClient({ records, isSuperAdmin }: Props) {
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         )}
                       </button>
-                      {isSuperAdmin && (
-                        <button onClick={() => setConfirmDelete({ id: rec.id, name: rec.name })} disabled={deleting === rec.id}
+                      {canDelete && (
+                        <button
+                          onClick={() => { setDeleteError(null); setConfirmDelete({ id: rec.id, name: rec.name }); }}
+                          disabled={deleting === rec.id}
                           title="Delete"
-                          className="p-1.5 rounded hover:bg-red-50 transition-colors text-red-500 hover:text-red-700 disabled:opacity-50 inline-flex">
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                          className="p-1.5 rounded hover:bg-red-50 transition-colors text-red-400 hover:text-red-600 disabled:opacity-50 inline-flex">
+                          <TrashIcon className="w-4 h-4" />
                         </button>
                       )}
                     </div>
@@ -264,7 +293,12 @@ export default function MastersClient({ records, isSuperAdmin }: Props) {
               <div key={act.id} className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
                 {/* Act header */}
                 <div className="flex items-center gap-3 px-5 py-4 bg-[#F8F9FA] border-b border-[#E5E7EB]">
-                  <button onClick={() => setExpandedActs(prev => { const s = new Set(prev); s.has(act.id) ? s.delete(act.id) : s.add(act.id); return s; })}
+                  <button
+                    onClick={() => setExpandedActs(prev => {
+                      const s = new Set(prev);
+                      if (s.has(act.id)) { s.delete(act.id); } else { s.add(act.id); }
+                      return s;
+                    })}
                     className="text-[#6B7280] hover:text-[#1A1A2E] transition flex-shrink-0">
                     <svg className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-90" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -299,8 +333,10 @@ export default function MastersClient({ records, isSuperAdmin }: Props) {
                         className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] inline-flex">
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                       </button>
-                      <button onClick={() => handleToggle(act.id, act.is_active)} disabled={toggling === act.id}
-                        title={act.is_active ? "Disable" : "Enable"}
+                      <button
+                        onClick={() => setToggleConfirm({ id: act.id, name: act.name, activate: !act.is_active })}
+                        disabled={toggling === act.id}
+                        title={act.is_active ? "Deactivate" : "Activate"}
                         className={`p-1.5 rounded hover:bg-[#F3F4F6] transition-colors disabled:opacity-50 inline-flex ${act.is_active ? "text-amber-500 hover:text-amber-700" : "text-green-600 hover:text-green-800"}`}>
                         {act.is_active ? (
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
@@ -308,10 +344,13 @@ export default function MastersClient({ records, isSuperAdmin }: Props) {
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         )}
                       </button>
-                      {isSuperAdmin && procs.length === 0 && (
-                        <button onClick={() => setConfirmDelete({ id: act.id, name: act.name })} title="Delete"
-                          className="p-1.5 rounded hover:bg-red-50 transition-colors text-red-500 hover:text-red-700 inline-flex">
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      {/* Acts can only be deleted when they have no proceedings */}
+                      {canDelete && procs.length === 0 && (
+                        <button
+                          onClick={() => { setDeleteError(null); setConfirmDelete({ id: act.id, name: act.name }); }}
+                          title="Delete act"
+                          className="p-1.5 rounded hover:bg-red-50 transition-colors text-red-400 hover:text-red-600 inline-flex">
+                          <TrashIcon className="w-4 h-4" />
                         </button>
                       )}
                     </div>
@@ -350,8 +389,10 @@ export default function MastersClient({ records, isSuperAdmin }: Props) {
                               className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] inline-flex">
                               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                             </button>
-                            <button onClick={() => handleToggle(proc.id, proc.is_active)} disabled={toggling === proc.id}
-                              title={proc.is_active ? "Disable" : "Enable"}
+                            <button
+                              onClick={() => setToggleConfirm({ id: proc.id, name: proc.name, activate: !proc.is_active })}
+                              disabled={toggling === proc.id}
+                              title={proc.is_active ? "Deactivate" : "Activate"}
                               className={`p-1.5 rounded hover:bg-[#F3F4F6] transition-colors disabled:opacity-50 inline-flex ${proc.is_active ? "text-amber-500 hover:text-amber-700" : "text-green-600 hover:text-green-800"}`}>
                               {proc.is_active ? (
                                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
@@ -359,10 +400,12 @@ export default function MastersClient({ records, isSuperAdmin }: Props) {
                                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                               )}
                             </button>
-                            {isSuperAdmin && (
-                              <button onClick={() => setConfirmDelete({ id: proc.id, name: proc.name })} title="Delete"
-                                className="p-1.5 rounded hover:bg-red-50 transition-colors text-red-500 hover:text-red-700 inline-flex">
-                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            {canDelete && (
+                              <button
+                                onClick={() => { setDeleteError(null); setConfirmDelete({ id: proc.id, name: proc.name }); }}
+                                title="Delete"
+                                className="p-1.5 rounded hover:bg-red-50 transition-colors text-red-400 hover:text-red-600 inline-flex">
+                                <TrashIcon className="w-3.5 h-3.5" />
                               </button>
                             )}
                           </div>
@@ -418,17 +461,64 @@ export default function MastersClient({ records, isSuperAdmin }: Props) {
         </div>
       )}
 
-      {/* Confirm delete modal */}
+      {/* ── Toggle Confirm Modal ─────────────────────────────────────────────── */}
+      {toggleConfirm && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl border border-[#E5E7EB] p-6 w-full max-w-sm mx-4">
+            <h3 className="text-base font-semibold text-[#1A1A2E] mb-2">
+              {toggleConfirm.activate ? "Activate" : "Deactivate"} Record?
+            </h3>
+            <p className="text-sm text-[#6B7280] mb-5">
+              {toggleConfirm.activate
+                ? `"${toggleConfirm.name}" will become active and available for selection in new records.`
+                : `"${toggleConfirm.name}" will be deactivated and hidden from selection in new records.`}
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setToggleConfirm(null)} className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">
+                Cancel
+              </button>
+              <button
+                onClick={handleToggleConfirm}
+                disabled={!!toggling}
+                className={`flex-1 px-4 py-2 text-sm rounded-lg text-white font-medium transition disabled:opacity-60 ${toggleConfirm.activate ? "bg-green-600 hover:bg-green-700" : "bg-amber-500 hover:bg-amber-600"}`}>
+                {toggling ? "Processing…" : toggleConfirm.activate ? "Activate" : "Deactivate"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Delete Confirm Modal ─────────────────────────────────────────────── */}
       {confirmDelete && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl border border-[#E5E7EB] p-6 w-full max-w-sm mx-4">
-            <h3 className="text-base font-semibold text-[#1A1A2E] mb-2">Delete Record?</h3>
-            <p className="text-sm text-[#6B7280] mb-5">
-              Deleting <strong>"{confirmDelete.name}"</strong> is permanent and cannot be undone.
-            </p>
+            <div className="flex items-start gap-3 mb-4">
+              <div className="flex-shrink-0 w-9 h-9 rounded-full bg-red-50 flex items-center justify-center">
+                <TrashIcon className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-[#1A1A2E]">Delete Record?</h3>
+                <p className="text-sm text-[#6B7280] mt-1">
+                  <span className="font-medium text-[#1A1A2E]">&quot;{confirmDelete.name}&quot;</span> will be removed. This can be recovered from the Recycle Bin.
+                </p>
+              </div>
+            </div>
+            {deleteError && (
+              <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">
+                {deleteError}
+              </p>
+            )}
             <div className="flex gap-3">
-              <button onClick={() => setConfirmDelete(null)} className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">Cancel</button>
-              <button onClick={handleDelete} disabled={!!deleting} className="flex-1 px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition disabled:opacity-60">
+              <button
+                onClick={() => { setConfirmDelete(null); setDeleteError(null); }}
+                disabled={!!deleting}
+                className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition disabled:opacity-60">
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={!!deleting}
+                className="flex-1 px-4 py-2 text-sm rounded-lg text-white font-medium bg-red-600 hover:bg-red-700 transition disabled:opacity-60">
                 {deleting ? "Deleting…" : "Delete"}
               </button>
             </div>

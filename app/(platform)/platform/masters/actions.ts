@@ -72,7 +72,8 @@ export async function toggleMasterRecord(id: string, isActive: boolean) {
 
 export async function deleteMasterRecord(id: string) {
   const user = await getCurrentUser();
-  if (!user || user.role !== "super_admin") throw new Error("Unauthorized");
+  if (!user || (user.role !== "super_admin" && user.role !== "platform_admin"))
+    throw new Error("Unauthorized");
 
   const supabase = await createServiceClient();
   // Soft-delete: also soft-delete children (proceeding types under this act)
