@@ -51,7 +51,7 @@ export async function createUser(input: UserInput) {
   const { data: created, error: createError } = await supabase.auth.admin.inviteUserByEmail(
     input.email,
     {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?type=invite`,
       data: { role: input.role },
     }
   );

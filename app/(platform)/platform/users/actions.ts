@@ -67,7 +67,7 @@ export async function createPlatformSpAdmin(spId: string, input: SpAdminFullInpu
   const { data: authData, error: authError } = await supabase.auth.admin.inviteUserByEmail(
     input.email,
     {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?type=invite`,
       data: { role: "sp_admin", sp_id: spId },
     }
   );
