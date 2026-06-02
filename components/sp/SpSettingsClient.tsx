@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { updateSpProfile, saveSpCompliance, ComplianceInput } from "@/app/(sp)/settings/actions";
 import { INDIAN_STATES } from "@/lib/constants";
@@ -245,7 +246,7 @@ export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
             <label className="block text-xs font-medium text-[#6B7280] mb-2">Logo <span className="text-[#9CA3AF]">(JPG/PNG, max 2MB)</span></label>
             <div className="flex items-center gap-4">
               {logoUrl ? (
-                <img src={logoUrl} alt="Logo" className="w-14 h-14 rounded-xl object-cover border border-[#E5E7EB]" />
+                <Image src={logoUrl} alt="Logo" width={56} height={56} className="w-14 h-14 rounded-xl object-cover border border-[#E5E7EB]" />
               ) : (
                 <div className="w-14 h-14 rounded-xl bg-[#1E3A5F] flex items-center justify-center flex-shrink-0">
                   <span className="text-white font-bold text-xl">{name.charAt(0).toUpperCase() || "S"}</span>

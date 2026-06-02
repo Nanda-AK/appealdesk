@@ -6,7 +6,7 @@ export default async function UsersPage() {
   const user = await getCurrentUser();
   const supabase = await createClient();
 
-  const [{ data: platformUsers }, { data: spUsers }, { data: providers }] = await Promise.all([
+  const [{ data: platformUsers }, { data: spUsers }] = await Promise.all([
     supabase
       .from("users")
       .select("id, first_name, middle_name, last_name, email, role, is_active, created_at")
@@ -19,11 +19,6 @@ export default async function UsersPage() {
       .eq("role", "sp_admin")
       .is("deleted_at", null)
       .order("first_name"),
-    supabase
-      .from("organizations")
-      .select("id, name")
-      .eq("type", "service_provider")
-      .order("name"),
   ]);
 
   return (

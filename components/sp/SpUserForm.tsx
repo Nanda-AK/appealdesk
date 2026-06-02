@@ -1,19 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { createUser, UserInput } from "@/app/(sp)/users/actions";
 import { INDIAN_STATES } from "@/lib/constants";
 
 const inp = "w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]";
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="col-span-2 border-t border-[#F3F4F6] pt-4 mt-1">
-      <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">{children}</p>
-    </div>
-  );
-}
 
 function Field({ label, required, children, full }: { label: string; required?: boolean; children: React.ReactNode; full?: boolean }) {
   return (
@@ -90,7 +84,7 @@ function AvatarUpload({ value, onChange }: { value: string; onChange: (url: stri
     <div className="col-span-2 flex items-center gap-4 pb-4 border-b border-[#F3F4F6] mb-2">
       <div className="relative flex-shrink-0">
         {value ? (
-          <img src={value} alt="Avatar" className="w-16 h-16 rounded-full object-cover border-2 border-[#E5E7EB]" />
+          <Image src={value} alt="Avatar" width={64} height={64} className="w-16 h-16 rounded-full object-cover border-2 border-[#E5E7EB]" />
         ) : (
           <div className="w-16 h-16 rounded-full bg-[#F3F4F6] border-2 border-dashed border-[#D1D5DB] flex items-center justify-center">
             <svg className="w-6 h-6 text-[#9CA3AF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

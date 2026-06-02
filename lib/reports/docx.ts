@@ -9,7 +9,6 @@ import {
   HeadingLevel,
   WidthType,
   ShadingType,
-  AlignmentType,
   BorderStyle,
 } from "docx";
 import type { LitigationReportData } from "@/app/(sp)/litigations/actions";

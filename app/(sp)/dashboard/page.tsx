@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/user";
 import Link from "next/link";
@@ -38,6 +39,7 @@ export default async function DashboardPage() {
     : { col: "service_provider_id", val: spId! };
 
   const today = new Date().toISOString().split("T")[0];
+  // eslint-disable-next-line react-hooks/purity
   const in30 = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
   const [

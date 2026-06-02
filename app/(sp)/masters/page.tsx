@@ -6,8 +6,6 @@ export default async function SpMastersPage() {
   const user = await getCurrentUser();
   const supabase = await createClient();
 
-  const spId = user?.service_provider_id ?? user?.org_id;
-
   // Fetch only platform-level records (SP cannot add custom records)
   const { data: records } = await supabase
     .from("master_records")

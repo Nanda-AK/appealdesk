@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
   createForm, updateForm, deleteForm, FormInput,
-  createTemplate, updateTemplate, deleteTemplate, TemplateInput,
+  createTemplate, updateTemplate, deleteTemplate,
 } from "@/app/(platform)/platform/documents/actions";
 
 interface Form {
@@ -235,7 +235,7 @@ export default function PlatformDocumentsClient({ forms, templates, canEdit }: P
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
             </svg>
             <p className="text-[#6B7280] text-sm">No templates uploaded yet.</p>
-            {canEdit && <p className="text-[#9CA3AF] text-xs mt-1">Click "Upload Template" to add your first template.</p>}
+            {canEdit && <p className="text-[#9CA3AF] text-xs mt-1">Click &quot;Upload Template&quot; to add your first template.</p>}
           </div>
         ) : (
           <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
@@ -395,7 +395,7 @@ export default function PlatformDocumentsClient({ forms, templates, canEdit }: P
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl shadow-xl border border-[#E5E7EB] p-6 w-full max-w-sm mx-4">
             <h3 className="text-base font-semibold text-[#1A1A2E] mb-2">Delete Row?</h3>
-            <p className="text-sm text-[#6B7280] mb-5">"{confirmDeleteForm.rule_heading}" will be permanently removed.</p>
+            <p className="text-sm text-[#6B7280] mb-5">&quot;{confirmDeleteForm.rule_heading}&quot; will be permanently removed.</p>
             <div className="flex gap-3">
               <button onClick={() => setConfirmDeleteForm(null)} className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">Cancel</button>
               <button onClick={() => handleDeleteForm(confirmDeleteForm)} disabled={deletingFormId === confirmDeleteForm.id}
@@ -412,7 +412,7 @@ export default function PlatformDocumentsClient({ forms, templates, canEdit }: P
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl shadow-xl border border-[#E5E7EB] p-6 w-full max-w-sm mx-4">
             <h3 className="text-base font-semibold text-[#1A1A2E] mb-2">Delete Template?</h3>
-            <p className="text-sm text-[#6B7280] mb-5">"{confirmDeleteTpl.name}" will be permanently removed.</p>
+            <p className="text-sm text-[#6B7280] mb-5">&quot;{confirmDeleteTpl.name}&quot; will be permanently removed.</p>
             <div className="flex gap-3">
               <button onClick={() => setConfirmDeleteTpl(null)} className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">Cancel</button>
               <button onClick={() => handleDeleteTemplate(confirmDeleteTpl)} disabled={deletingTplId === confirmDeleteTpl.id}

@@ -41,9 +41,13 @@ export default async function DocumentsPage() {
   return (
     <div className="p-8">
       <DocumentsClient
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         forms={(forms ?? []) as any}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         templates={(templates ?? []) as any}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         resources={(resources ?? []) as any}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         acts={(acts ?? []) as any}
         canEdit={canEdit}
       />

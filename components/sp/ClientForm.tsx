@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { createClientOrg, updateClientOrg, ComplianceInput } from "@/app/(sp)/clients/actions";
@@ -185,6 +186,7 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
     const file = e.target.files?.[0];
     if (!file) return;
     updateExtraRow(rowId, "uploading", true);
+    // eslint-disable-next-line react-hooks/purity
     const url = await uploadFile(file, `compliance/${type.replace(/\s+/g, "_")}/${Date.now()}-${file.name}`);
     if (url) updateExtraRow(rowId, "attachment_url", url);
     updateExtraRow(rowId, "uploading", false);
@@ -317,7 +319,7 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
               </label>
               <div className="flex items-center gap-4">
                 {logoUrl && (
-                  <img src={logoUrl} alt="Logo" className="w-12 h-12 rounded-lg object-cover border border-[#E5E7EB]" />
+                  <Image src={logoUrl} alt="Logo" width={48} height={48} className="w-12 h-12 rounded-lg object-cover border border-[#E5E7EB]" />
                 )}
                 <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F8F9FA] transition">
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -332,7 +334,7 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
           {readOnly && logoUrl && (
             <div className="col-span-2">
               <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Logo</label>
-              <img src={logoUrl} alt="Logo" className="w-16 h-16 rounded-lg object-cover border border-[#E5E7EB]" />
+              <Image src={logoUrl} alt="Logo" width={64} height={64} className="w-16 h-16 rounded-lg object-cover border border-[#E5E7EB]" />
             </div>
           )}
         </div>

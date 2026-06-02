@@ -46,6 +46,7 @@ export default async function UsersPage({
     .is("deleted_at", null)
     .order("first_name");
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const normalizedUsers = (users ?? []).map((u: any) => ({
     ...u,
     organization: Array.isArray(u.organization) ? (u.organization[0] ?? null) : u.organization,

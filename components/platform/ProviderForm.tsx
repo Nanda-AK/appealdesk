@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { createProvider, updateProvider, ComplianceInput } from "@/app/(platform)/platform/providers/actions";
@@ -250,7 +251,7 @@ export default function ProviderForm({ mode, providerId, initialData, initialCom
             <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Logo <span className="text-[#9CA3AF]">(JPG/PNG, max 2MB)</span></label>
             <div className="flex items-center gap-4">
               {logoUrl && (
-                <img src={logoUrl} alt="Logo" className="w-12 h-12 rounded-lg object-cover border border-[#E5E7EB]" />
+                <Image src={logoUrl} alt="Logo" width={48} height={48} className="w-12 h-12 rounded-lg object-cover border border-[#E5E7EB]" />
               )}
               <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F8F9FA] transition">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

@@ -25,7 +25,9 @@ export default async function PlatformDocumentsPage() {
   return (
     <div className="p-8">
       <PlatformDocumentsClient
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         forms={(forms ?? []) as any}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         templates={(templates ?? []) as any}
         canEdit={canEdit}
       />
