@@ -12,6 +12,7 @@ interface PlatformUser {
   last_name: string;
   email: string;
   role: string;
+  designation?: string | null;
   is_active: boolean;
   created_at: string;
 }
@@ -347,8 +348,8 @@ export default function PlatformUsersClient({ platformUsers, spAdmins, currentUs
                   <th className={TH}>Name</th>
                   <th className={TH}>Email</th>
                   <th className={TH}>Role</th>
+                  <th className={TH}>Designation</th>
                   <th className={TH}>Status</th>
-                  <th className={TH}>Added</th>
                   {(isSuperAdmin || isPlatformAdmin) && <th className={TH}>Actions</th>}
                 </tr>
               </thead>
@@ -372,13 +373,11 @@ export default function PlatformUsersClient({ platformUsers, spAdmins, currentUs
                           {u.role === "super_admin" ? "Super Admin" : "Platform Admin"}
                         </span>
                       </td>
+                      <td className="px-4 py-3 text-[#6B7280]">{u.designation ?? "—"}</td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${u.is_active ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
                           {u.is_active ? "Active" : "Inactive"}
                         </span>
-                      </td>
-                      <td className="px-4 py-3 text-[#6B7280]">
-                        {new Date(u.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
                       </td>
                       {(isSuperAdmin || isPlatformAdmin) && (
                         <td className="px-4 py-3">
@@ -453,13 +452,12 @@ export default function PlatformUsersClient({ platformUsers, spAdmins, currentUs
                   <th className={TH}>Service Provider</th>
                   <th className={TH}>Designation</th>
                   <th className={TH}>Status</th>
-                  <th className={TH}>Added</th>
                   {(isSuperAdmin || isPlatformAdmin) && <th className={TH}>Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E5E7EB]">
                 {filteredSp.length === 0 ? (
-                  <tr><td colSpan={(isSuperAdmin || isPlatformAdmin) ? 8 : 7} className="px-4 py-12 text-center text-[#6B7280]">
+                  <tr><td colSpan={(isSuperAdmin || isPlatformAdmin) ? 7 : 6} className="px-4 py-12 text-center text-[#6B7280]">
                     {sHasFilters ? "No users match the selected filters." : "No SP admin users found."}
                   </td></tr>
                 ) : filteredSp.map((u, i) => {
@@ -475,9 +473,6 @@ export default function PlatformUsersClient({ platformUsers, spAdmins, currentUs
                         <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${u.is_active ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
                           {u.is_active ? "Active" : "Inactive"}
                         </span>
-                      </td>
-                      <td className="px-4 py-3 text-[#6B7280]">
-                        {new Date(u.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
                       </td>
                       {(isSuperAdmin || isPlatformAdmin) && (
                         <td className="px-4 py-3">

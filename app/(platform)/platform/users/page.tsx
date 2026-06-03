@@ -9,7 +9,7 @@ export default async function UsersPage() {
   const [{ data: platformUsers }, { data: spUsers }] = await Promise.all([
     supabase
       .from("users")
-      .select("id, first_name, middle_name, last_name, email, role, is_active, created_at")
+      .select("id, first_name, middle_name, last_name, email, role, designation, is_active, created_at")
       .in("role", ["super_admin", "platform_admin"])
       .is("deleted_at", null)
       .order("first_name"),
