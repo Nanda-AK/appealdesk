@@ -349,12 +349,12 @@ export default function PlatformUsersClient({ platformUsers, spAdmins, currentUs
                   <th className={TH}>Role</th>
                   <th className={TH}>Status</th>
                   <th className={TH}>Added</th>
-                  {isSuperAdmin && <th className={TH}>Actions</th>}
+                  {(isSuperAdmin || isPlatformAdmin) && <th className={TH}>Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E5E7EB]">
                 {filteredPlatform.length === 0 ? (
-                  <tr><td colSpan={isSuperAdmin ? 7 : 6} className="px-4 py-12 text-center text-[#6B7280]">
+                  <tr><td colSpan={(isSuperAdmin || isPlatformAdmin) ? 7 : 6} className="px-4 py-12 text-center text-[#6B7280]">
                     {pHasFilters ? "No users match the selected filters." : "No platform users found."}
                   </td></tr>
                 ) : filteredPlatform.map((u, i) => {
@@ -380,9 +380,10 @@ export default function PlatformUsersClient({ platformUsers, spAdmins, currentUs
                       <td className="px-4 py-3 text-[#6B7280]">
                         {new Date(u.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
                       </td>
-                      {isSuperAdmin && (
+                      {(isSuperAdmin || isPlatformAdmin) && (
                         <td className="px-4 py-3">
-                          {!isMe && (
+                          {/* platform_admin cannot toggle super_admin accounts */}
+                          {!isMe && (isSuperAdmin || u.role !== "super_admin") && (
                             <button
                               onClick={() => setPConfirm({ id: u.id, name, activate: !u.is_active })}
                               disabled={pToggling === u.id}
@@ -453,12 +454,12 @@ export default function PlatformUsersClient({ platformUsers, spAdmins, currentUs
                   <th className={TH}>Designation</th>
                   <th className={TH}>Status</th>
                   <th className={TH}>Added</th>
-                  {isSuperAdmin && <th className={TH}>Actions</th>}
+                  {(isSuperAdmin || isPlatformAdmin) && <th className={TH}>Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E5E7EB]">
                 {filteredSp.length === 0 ? (
-                  <tr><td colSpan={isSuperAdmin ? 8 : 7} className="px-4 py-12 text-center text-[#6B7280]">
+                  <tr><td colSpan={(isSuperAdmin || isPlatformAdmin) ? 8 : 7} className="px-4 py-12 text-center text-[#6B7280]">
                     {sHasFilters ? "No users match the selected filters." : "No SP admin users found."}
                   </td></tr>
                 ) : filteredSp.map((u, i) => {
@@ -478,7 +479,7 @@ export default function PlatformUsersClient({ platformUsers, spAdmins, currentUs
                       <td className="px-4 py-3 text-[#6B7280]">
                         {new Date(u.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
                       </td>
-                      {isSuperAdmin && (
+                      {(isSuperAdmin || isPlatformAdmin) && (
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-0.5">
                             <button

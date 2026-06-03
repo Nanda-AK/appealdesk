@@ -37,6 +37,7 @@ export default async function DocumentsPage() {
   ]);
 
   const canEdit = user?.role === "sp_admin" || user?.role === "sp_staff";
+  const canDelete = user?.role === "sp_admin";
 
   return (
     <div className="p-8">
@@ -50,6 +51,7 @@ export default async function DocumentsPage() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         acts={(acts ?? []) as any}
         canEdit={canEdit}
+        canDelete={canDelete}
       />
     </div>
   );
