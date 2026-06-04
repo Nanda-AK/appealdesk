@@ -124,7 +124,7 @@ export default function SpMastersClient({ records }: Props) {
                 {/* Act header */}
                 <div className="flex items-center gap-3 px-5 py-4 bg-[#F8F9FA]">
                   <button
-                    onClick={() => setExpandedActs(prev => { const s = new Set(prev); s.has(act.id) ? s.delete(act.id) : s.add(act.id); return s; })}
+                    onClick={() => setExpandedActs(prev => { const s = new Set(prev); if (s.has(act.id)) s.delete(act.id); else s.add(act.id); return s; })}
                     className="text-[#6B7280] hover:text-[#1A1A2E] transition flex-shrink-0">
                     <svg className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-90" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />

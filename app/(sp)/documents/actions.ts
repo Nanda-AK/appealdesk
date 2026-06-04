@@ -184,7 +184,6 @@ export async function updateTemplate(id: string, input: Pick<TemplateInput, "nam
   const { error } = await supabase.from("templates").update({
     name: input.name,
     description: input.description || null,
-    updated_at: new Date().toISOString(),
   }).eq("id", id).eq("service_provider_id", spId!);
 
   if (error) throw new Error(error.message);
@@ -247,7 +246,6 @@ export async function updateResource(id: string, input: ResourceInput) {
     rule: input.rule || null,
     description: input.description,
     author: input.author || null,
-    updated_at: new Date().toISOString(),
   }).eq("id", id).eq("service_provider_id", spId!);
 
   if (error) throw new Error(error.message);

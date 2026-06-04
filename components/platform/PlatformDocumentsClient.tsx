@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
   createForm, updateForm, deleteForm, FormInput,
-  createTemplate, updateTemplate, deleteTemplate, TemplateInput,
+  createTemplate, updateTemplate, deleteTemplate,
 } from "@/app/(platform)/platform/documents/actions";
 
 interface Form {
@@ -46,13 +46,6 @@ function fmtSize(bytes: number | null) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function fileTypeBadge(nameOrType: string) {
-  const ext = nameOrType.split(".").pop()?.toLowerCase() ?? nameOrType.toLowerCase();
-  if (ext === "pdf") return { bg: "bg-red-50", text: "text-red-600", label: "PDF" };
-  if (ext === "docx" || ext === "doc") return { bg: "bg-blue-50", text: "text-blue-600", label: ext.toUpperCase() };
-  if (ext === "xlsx" || ext === "xls") return { bg: "bg-green-50", text: "text-green-600", label: ext.toUpperCase() };
-  return { bg: "bg-gray-100", text: "text-gray-600", label: ext.toUpperCase() };
-}
 
 const blankForm: FormInput = { rule_no: "", rule_heading: "", form_no: "", page_no: "", parallel_rule_1962: "", url: "" };
 const inp = "w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]";
@@ -190,7 +183,7 @@ export default function PlatformDocumentsClient({ forms, templates, canEdit }: P
                   <th className="text-left px-4 py-3 font-semibold text-[#1A1A2E] border-r border-[#E5E7EB]">Form Description</th>
                   <th className="text-center px-4 py-3 font-semibold text-[#1A1A2E] w-24 border-r border-[#E5E7EB]">Form No.</th>
                   <th className="text-center px-4 py-3 font-semibold text-[#1A1A2E] w-24">Section</th>
-                  {canEdit && <th className="w-28 px-4 py-3" />}
+                  {canEdit && <th className="text-center px-4 py-3 font-semibold text-[#1A1A2E] w-28">Actions</th>}
                 </tr>
               </thead>
               <tbody>
@@ -235,42 +228,32 @@ export default function PlatformDocumentsClient({ forms, templates, canEdit }: P
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
             </svg>
             <p className="text-[#6B7280] text-sm">No templates uploaded yet.</p>
-            {canEdit && <p className="text-[#9CA3AF] text-xs mt-1">Click "Upload Template" to add your first template.</p>}
+            {canEdit && <p className="text-[#9CA3AF] text-xs mt-1">Click &quot;Upload Template&quot; to add your first template.</p>}
           </div>
         ) : (
           <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-[#F8F9FA] border-b border-[#E5E7EB]">
-                  <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Template Name</th>
-                  <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Description</th>
-                  <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Type</th>
-                  <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Size</th>
-                  <th className="text-left px-4 py-3 font-medium text-[#6B7280]">Uploaded</th>
-                  <th className="px-4 py-3 w-36" />
+                <tr className="bg-[#D1D9E6] border-b-2 border-[#B0BDD0]">
+                  <th className="text-left px-4 py-3 font-semibold text-[#1A1A2E] border-r border-[#E5E7EB]">Template Name</th>
+                  <th className="text-left px-4 py-3 font-semibold text-[#1A1A2E] border-r border-[#E5E7EB]">Description</th>
+                  <th className="text-center px-4 py-3 font-semibold text-[#1A1A2E] w-24 border-r border-[#E5E7EB]">Size</th>
+                  <th className="text-center px-4 py-3 font-semibold text-[#1A1A2E] w-28 border-r border-[#E5E7EB]">Uploaded</th>
+                  <th className="text-center px-4 py-3 font-semibold text-[#1A1A2E] w-28">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {templates.map((t, i) => {
-                  const badge = fileTypeBadge(t.file_type ?? t.name);
                   return (
                     <tr key={t.id} onClick={() => window.open(t.file_url, "_blank")}
                       className={`border-b border-[#E5E7EB] last:border-0 ${i % 2 === 0 ? "bg-white" : "bg-[#F8F9FA]"} hover:bg-[#EEF2FF] transition-colors cursor-pointer`}>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-9 h-9 rounded-lg ${badge.bg} flex items-center justify-center flex-shrink-0`}>
-                            <span className={`text-xs font-bold ${badge.text}`}>{badge.label}</span>
-                          </div>
-                          <span className="font-medium text-[#1A1A2E]">{t.name}</span>
-                        </div>
+                      <td className="px-4 py-3 border-r border-[#E5E7EB]">
+                        <span className="font-medium text-[#1A1A2E]">{t.name}</span>
                       </td>
-                      <td className="px-4 py-3 text-[#6B7280] max-w-[200px] truncate">{t.description ?? "—"}</td>
-                      <td className="px-4 py-3">
-                        {t.file_type && <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}>{t.file_type}</span>}
-                      </td>
-                      <td className="px-4 py-3 text-[#6B7280]">{fmtSize(t.file_size)}</td>
-                      <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">{fmtDate(t.created_at)}</td>
-                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                      <td className="px-4 py-3 text-[#6B7280] max-w-[200px] truncate border-r border-[#E5E7EB]">{t.description ?? "—"}</td>
+                      <td className="px-4 py-3 text-center text-[#6B7280] border-r border-[#E5E7EB]">{fmtSize(t.file_size)}</td>
+                      <td className="px-4 py-3 text-center text-[#6B7280] whitespace-nowrap border-r border-[#E5E7EB]">{fmtDate(t.created_at)}</td>
+                      <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center gap-0.5">
                           <a href={t.file_url} target="_blank" rel="noopener noreferrer" title="Download"
                             className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] inline-flex">
@@ -395,7 +378,7 @@ export default function PlatformDocumentsClient({ forms, templates, canEdit }: P
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl shadow-xl border border-[#E5E7EB] p-6 w-full max-w-sm mx-4">
             <h3 className="text-base font-semibold text-[#1A1A2E] mb-2">Delete Row?</h3>
-            <p className="text-sm text-[#6B7280] mb-5">"{confirmDeleteForm.rule_heading}" will be permanently removed.</p>
+            <p className="text-sm text-[#6B7280] mb-5">&quot;{confirmDeleteForm.rule_heading}&quot; will be permanently removed.</p>
             <div className="flex gap-3">
               <button onClick={() => setConfirmDeleteForm(null)} className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">Cancel</button>
               <button onClick={() => handleDeleteForm(confirmDeleteForm)} disabled={deletingFormId === confirmDeleteForm.id}
@@ -412,7 +395,7 @@ export default function PlatformDocumentsClient({ forms, templates, canEdit }: P
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl shadow-xl border border-[#E5E7EB] p-6 w-full max-w-sm mx-4">
             <h3 className="text-base font-semibold text-[#1A1A2E] mb-2">Delete Template?</h3>
-            <p className="text-sm text-[#6B7280] mb-5">"{confirmDeleteTpl.name}" will be permanently removed.</p>
+            <p className="text-sm text-[#6B7280] mb-5">&quot;{confirmDeleteTpl.name}&quot; will be permanently removed.</p>
             <div className="flex gap-3">
               <button onClick={() => setConfirmDeleteTpl(null)} className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">Cancel</button>
               <button onClick={() => handleDeleteTemplate(confirmDeleteTpl)} disabled={deletingTplId === confirmDeleteTpl.id}

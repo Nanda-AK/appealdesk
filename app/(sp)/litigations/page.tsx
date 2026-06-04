@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/user";
 import AppealsClient from "@/components/sp/AppealsClient";

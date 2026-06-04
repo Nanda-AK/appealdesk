@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toggleAdminStatus } from "@/app/(platform)/platform/admins/actions";
 import { toggleSpAdminStatus, deletePlatformSpAdmin } from "@/app/(platform)/platform/users/actions";
@@ -12,6 +12,7 @@ interface PlatformUser {
   last_name: string;
   email: string;
   role: string;
+  designation?: string | null;
   is_active: boolean;
   created_at: string;
 }
@@ -45,31 +46,153 @@ const HEADER = "bg-[#D1D9E6] border-b-2 border-[#B0BDD0]";
 const TH = "text-left px-4 py-3 font-medium text-[#1A1A2E]";
 const TH_C = "text-center px-4 py-3 font-medium text-[#1A1A2E] w-10";
 
-function SearchBar({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder: string }) {
-  return (
-    <div className="relative max-w-sm w-full">
-      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-      </svg>
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="w-full pl-9 pr-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] bg-white"
-      />
-    </div>
-  );
-}
+interface NamedRecord { id: string; name: string; }
 
-function SortIcon({ asc }: { asc: boolean }) {
-  return (
-    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      {asc
-        ? <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
-        : <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+const STATUS_OPTIONS: NamedRecord[] = [
+  { id: "active",   name: "Active" },
+  { id: "inactive", name: "Inactive" },
+];
+
+const PLATFORM_ROLE_OPTIONS: NamedRecord[] = [
+  { id: "super_admin",    name: "Super Admin" },
+  { id: "platform_admin", name: "Platform Admin" },
+];
+
+function MultiSelect({
+  options, values, onChange, placeholder, searchable = true,
+}: {
+  options: NamedRecord[];
+  values: string[];
+  onChange: (ids: string[]) => void;
+  placeholder: string;
+  searchable?: boolean;
+}) {
+  const [open, setOpen]       = useState(false);
+  const [pending, setPending] = useState<string[]>([]);
+  const [query, setQuery]     = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef     = useRef<HTMLInputElement>(null);
+  const pendingRef   = useRef<string[]>([]);
+
+  function openDropdown() {
+    const copy = [...values];
+    setPending(copy);
+    pendingRef.current = copy;
+    setQuery("");
+    setOpen(true);
+    if (searchable) setTimeout(() => inputRef.current?.focus(), 0);
+  }
+
+  function applyAndClose() {
+    onChange(pendingRef.current);
+    setOpen(false);
+    setQuery("");
+  }
+
+  useEffect(() => {
+    if (!open) return;
+    function handler(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        applyAndClose();
       }
-    </svg>
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function toggle(id: string) {
+    setPending((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      pendingRef.current = next;
+      return next;
+    });
+  }
+
+  const filtered = searchable && query
+    ? options.filter((o) => o.name.toLowerCase().includes(query.toLowerCase()))
+    : options;
+
+  let triggerText: string;
+  if (values.length === 0)      triggerText = placeholder;
+  else if (values.length === 1) triggerText = options.find((o) => o.id === values[0])?.name ?? "1 selected";
+  else                          triggerText = `${values.length} selected`;
+
+  const hasValue = values.length > 0;
+  const isMulti  = values.length > 1;
+
+  return (
+    <div ref={containerRef} className="relative">
+      <div
+        className="flex items-center gap-1.5 px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg bg-white cursor-pointer min-w-[144px] max-w-[200px] h-[38px] select-none"
+        onClick={() => (open ? applyAndClose() : openDropdown())}
+      >
+        <span className={`flex-1 truncate ${!hasValue ? "text-[#9CA3AF]" : isMulti ? "font-medium text-[#1E3A5F]" : "text-[#1A1A2E]"}`}>
+          {triggerText}
+        </span>
+        {hasValue ? (
+          <button
+            onMouseDown={(e) => { e.stopPropagation(); onChange([]); }}
+            className="text-[#9CA3AF] hover:text-[#1A1A2E] shrink-0 text-base leading-none"
+          >×</button>
+        ) : (
+          <svg className="w-3.5 h-3.5 shrink-0 text-[#9CA3AF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        )}
+      </div>
+
+      {open && (
+        <div className="absolute top-full left-0 mt-1 bg-white border border-[#E5E7EB] rounded-lg shadow-lg z-50 w-60 max-h-64 flex flex-col">
+          {searchable && (
+            <div className="p-2 border-b border-[#F3F4F6] shrink-0">
+              <input
+                ref={inputRef}
+                className="w-full px-2 py-1.5 text-sm border border-[#E5E7EB] rounded focus:outline-none focus:ring-1 focus:ring-[#4A6FA5]"
+                placeholder="Search…"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </div>
+          )}
+          {pending.length > 0 && (
+            <div className="px-3 py-1.5 border-b border-[#F3F4F6] flex items-center justify-between shrink-0">
+              <span className="text-xs text-[#6B7280]">{pending.length} selected</span>
+              <button
+                onMouseDown={(e) => { e.preventDefault(); setPending([]); pendingRef.current = []; }}
+                className="text-xs text-[#4A6FA5] hover:underline"
+              >Clear</button>
+            </div>
+          )}
+          <div className="overflow-y-auto flex-1 py-1">
+            {filtered.length === 0 ? (
+              <div className="px-3 py-2 text-sm text-[#9CA3AF]">No matches</div>
+            ) : (
+              filtered.map((o) => {
+                const isChecked = pending.includes(o.id);
+                return (
+                  <button
+                    key={o.id}
+                    onMouseDown={(e) => { e.preventDefault(); toggle(o.id); }}
+                    className={`w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-[#F8F9FA] ${isChecked ? "bg-blue-50/50" : ""}`}
+                  >
+                    <div className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors ${isChecked ? "bg-[#1E3A5F] border-[#1E3A5F]" : "border-[#D1D5DB]"}`}>
+                      {isChecked && (
+                        <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                    <span className={`text-sm flex-1 truncate ${isChecked ? "font-medium text-[#1A1A2E]" : "text-[#4B5563]"}`}>
+                      {o.name}
+                    </span>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -78,13 +201,16 @@ export default function PlatformUsersClient({ platformUsers, spAdmins, currentUs
   const [activeTab, setActiveTab] = useState<"platform" | "sp">("platform");
 
   // Platform users state
-  const [pSearch, setPSearch] = useState("");
+  const [pFilterRoles,    setPFilterRoles]    = useState<string[]>([]);
+  const [pFilterStatuses, setPFilterStatuses] = useState<string[]>([]);
   const [pSortAsc, setPSortAsc] = useState(true);
   const [pToggling, setPToggling] = useState<string | null>(null);
   const [pConfirm, setPConfirm] = useState<{ id: string; name: string; activate: boolean } | null>(null);
 
   // SP admins state
-  const [sSearch, setSSearch] = useState("");
+  const [sFilterSps,          setSFilterSps]          = useState<string[]>([]);
+  const [sFilterDesignations, setSFilterDesignations] = useState<string[]>([]);
+  const [sFilterStatuses,     setSFilterStatuses]     = useState<string[]>([]);
   const [sSortAsc, setSSortAsc] = useState(true);
   const [sToggling, setSToggling] = useState<string | null>(null);
   const [sConfirmToggle, setSConfirmToggle] = useState<{ id: string; name: string; activate: boolean } | null>(null);
@@ -92,38 +218,46 @@ export default function PlatformUsersClient({ platformUsers, spAdmins, currentUs
   const [sDeleting, setSDeleting] = useState<string | null>(null);
 
   // ── Platform users filtering
-  const pq = pSearch.toLowerCase();
   const filteredPlatform = platformUsers
     .filter((u) => {
-      const name = fullName(u).toLowerCase();
-      const role = u.role === "super_admin" ? "super admin" : "platform admin";
-      const status = u.is_active ? "active" : "inactive";
-      return name.includes(pq) || u.email.toLowerCase().includes(pq) || role.includes(pq) || status.includes(pq);
+      if (pFilterRoles.length    && !pFilterRoles.includes(u.role))                              return false;
+      if (pFilterStatuses.length && !pFilterStatuses.includes(u.is_active ? "active" : "inactive")) return false;
+      return true;
     })
     .sort((a, b) => {
       const na = fullName(a), nb = fullName(b);
       return pSortAsc ? na.localeCompare(nb) : nb.localeCompare(na);
     });
 
+  // ── Derive SP filter options from data
+  const spOrgOptions: NamedRecord[] = [
+    ...new Map(
+      spAdmins
+        .map((u) => u.organization)
+        .filter((o): o is NonNullable<typeof o> => !!o)
+        .map((o) => [o.id, { id: o.id, name: o.name }])
+    ).values(),
+  ].sort((a, b) => a.name.localeCompare(b.name));
+
+  const designationOptions: NamedRecord[] = [
+    ...new Set(spAdmins.map((u) => u.designation).filter((v): v is string => !!v)),
+  ].sort().map((v) => ({ id: v, name: v }));
+
   // ── SP admins filtering
-  const sq = sSearch.toLowerCase();
   const filteredSp = spAdmins
     .filter((u) => {
-      const name = fullName(u).toLowerCase();
-      const sp = (u.organization?.name ?? "").toLowerCase();
-      const status = u.is_active ? "active" : "inactive";
-      return (
-        name.includes(sq) ||
-        u.email.toLowerCase().includes(sq) ||
-        sp.includes(sq) ||
-        (u.designation ?? "").toLowerCase().includes(sq) ||
-        status.includes(sq)
-      );
+      if (sFilterSps.length          && !sFilterSps.includes(u.org_id))                                   return false;
+      if (sFilterDesignations.length && !sFilterDesignations.includes(u.designation ?? ""))               return false;
+      if (sFilterStatuses.length     && !sFilterStatuses.includes(u.is_active ? "active" : "inactive"))   return false;
+      return true;
     })
     .sort((a, b) => {
       const na = fullName(a), nb = fullName(b);
       return sSortAsc ? na.localeCompare(nb) : nb.localeCompare(na);
     });
+
+  const pHasFilters = pFilterRoles.length > 0 || pFilterStatuses.length > 0;
+  const sHasFilters = sFilterSps.length > 0 || sFilterDesignations.length > 0 || sFilterStatuses.length > 0;
 
   // ── Handlers
   async function handlePlatformToggle() {
@@ -178,30 +312,51 @@ export default function PlatformUsersClient({ platformUsers, spAdmins, currentUs
       {/* ── PLATFORM USERS TAB ── */}
       {activeTab === "platform" && (
         <>
-          <div className="mb-4">
-            <SearchBar value={pSearch} onChange={setPSearch} placeholder="Search platform users…" />
+          <div className="bg-white border border-[#E5E7EB] rounded-xl p-4 mb-4 flex flex-wrap gap-3 items-center">
+            <MultiSelect
+              options={PLATFORM_ROLE_OPTIONS}
+              values={pFilterRoles}
+              onChange={setPFilterRoles}
+              placeholder="All Roles"
+              searchable={false}
+            />
+            <MultiSelect
+              options={STATUS_OPTIONS}
+              values={pFilterStatuses}
+              onChange={setPFilterStatuses}
+              placeholder="All Statuses"
+              searchable={false}
+            />
+            <button
+              onClick={() => setPSortAsc(!pSortAsc)}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg hover:bg-[#F8F9FA] transition text-[#1A1A2E] h-[38px]"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                {pSortAsc
+                  ? <><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" /><path strokeLinecap="round" strokeLinejoin="round" d="M5 19h4" /></>
+                  : <><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /><path strokeLinecap="round" strokeLinejoin="round" d="M5 5h4" /></>
+                }
+              </svg>
+              {pSortAsc ? "A → Z" : "Z → A"}
+            </button>
           </div>
           <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className={HEADER}>
                   <th className={TH_C}>#</th>
-                  <th className={TH}>
-                    <button onClick={() => setPSortAsc(!pSortAsc)} className="inline-flex items-center gap-1 hover:text-[#1E3A5F] transition-colors">
-                      Name <SortIcon asc={pSortAsc} />
-                    </button>
-                  </th>
+                  <th className={TH}>Name</th>
                   <th className={TH}>Email</th>
                   <th className={TH}>Role</th>
+                  <th className={TH}>Designation</th>
                   <th className={TH}>Status</th>
-                  <th className={TH}>Added</th>
-                  {isSuperAdmin && <th className={TH}>Actions</th>}
+                  {(isSuperAdmin || isPlatformAdmin) && <th className={TH}>Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E5E7EB]">
                 {filteredPlatform.length === 0 ? (
-                  <tr><td colSpan={isSuperAdmin ? 7 : 6} className="px-4 py-12 text-center text-[#6B7280]">
-                    {pSearch ? `No results for "${pSearch}"` : "No platform users found."}
+                  <tr><td colSpan={(isSuperAdmin || isPlatformAdmin) ? 7 : 6} className="px-4 py-12 text-center text-[#6B7280]">
+                    {pHasFilters ? "No users match the selected filters." : "No platform users found."}
                   </td></tr>
                 ) : filteredPlatform.map((u, i) => {
                   const name = fullName(u);
@@ -218,17 +373,16 @@ export default function PlatformUsersClient({ platformUsers, spAdmins, currentUs
                           {u.role === "super_admin" ? "Super Admin" : "Platform Admin"}
                         </span>
                       </td>
+                      <td className="px-4 py-3 text-[#6B7280]">{u.designation ?? "—"}</td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${u.is_active ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
                           {u.is_active ? "Active" : "Inactive"}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-[#6B7280]">
-                        {new Date(u.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
-                      </td>
-                      {isSuperAdmin && (
+                      {(isSuperAdmin || isPlatformAdmin) && (
                         <td className="px-4 py-3">
-                          {!isMe && (
+                          {/* platform_admin cannot toggle super_admin accounts */}
+                          {!isMe && (isSuperAdmin || u.role !== "super_admin") && (
                             <button
                               onClick={() => setPConfirm({ id: u.id, name, activate: !u.is_active })}
                               disabled={pToggling === u.id}
@@ -255,31 +409,56 @@ export default function PlatformUsersClient({ platformUsers, spAdmins, currentUs
       {/* ── SP USERS TAB ── */}
       {activeTab === "sp" && (
         <>
-          <div className="mb-4">
-            <SearchBar value={sSearch} onChange={setSSearch} placeholder="Search SP users…" />
+          <div className="bg-white border border-[#E5E7EB] rounded-xl p-4 mb-4 flex flex-wrap gap-3 items-center">
+            <MultiSelect
+              options={spOrgOptions}
+              values={sFilterSps}
+              onChange={setSFilterSps}
+              placeholder="All Service Providers"
+            />
+            <MultiSelect
+              options={designationOptions}
+              values={sFilterDesignations}
+              onChange={setSFilterDesignations}
+              placeholder="All Designations"
+            />
+            <MultiSelect
+              options={STATUS_OPTIONS}
+              values={sFilterStatuses}
+              onChange={setSFilterStatuses}
+              placeholder="All Statuses"
+              searchable={false}
+            />
+            <button
+              onClick={() => setSSortAsc(!sSortAsc)}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg hover:bg-[#F8F9FA] transition text-[#1A1A2E] h-[38px]"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                {sSortAsc
+                  ? <><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" /><path strokeLinecap="round" strokeLinejoin="round" d="M5 19h4" /></>
+                  : <><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /><path strokeLinecap="round" strokeLinejoin="round" d="M5 5h4" /></>
+                }
+              </svg>
+              {sSortAsc ? "A → Z" : "Z → A"}
+            </button>
           </div>
           <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className={HEADER}>
                   <th className={TH_C}>#</th>
-                  <th className={TH}>
-                    <button onClick={() => setSSortAsc(!sSortAsc)} className="inline-flex items-center gap-1 hover:text-[#1E3A5F] transition-colors">
-                      Name <SortIcon asc={sSortAsc} />
-                    </button>
-                  </th>
+                  <th className={TH}>Name</th>
                   <th className={TH}>Email</th>
                   <th className={TH}>Service Provider</th>
                   <th className={TH}>Designation</th>
                   <th className={TH}>Status</th>
-                  <th className={TH}>Added</th>
-                  {isSuperAdmin && <th className={TH}>Actions</th>}
+                  {(isSuperAdmin || isPlatformAdmin) && <th className={TH}>Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E5E7EB]">
                 {filteredSp.length === 0 ? (
-                  <tr><td colSpan={isSuperAdmin ? 8 : 7} className="px-4 py-12 text-center text-[#6B7280]">
-                    {sSearch ? `No results for "${sSearch}"` : "No SP admin users found."}
+                  <tr><td colSpan={(isSuperAdmin || isPlatformAdmin) ? 7 : 6} className="px-4 py-12 text-center text-[#6B7280]">
+                    {sHasFilters ? "No users match the selected filters." : "No SP admin users found."}
                   </td></tr>
                 ) : filteredSp.map((u, i) => {
                   const name = fullName(u);
@@ -295,10 +474,7 @@ export default function PlatformUsersClient({ platformUsers, spAdmins, currentUs
                           {u.is_active ? "Active" : "Inactive"}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-[#6B7280]">
-                        {new Date(u.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
-                      </td>
-                      {isSuperAdmin && (
+                      {(isSuperAdmin || isPlatformAdmin) && (
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-0.5">
                             <button

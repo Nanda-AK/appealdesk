@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { createUser, UserInput } from "@/app/(sp)/users/actions";
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const COUNTRY_CODES = [
   { code: "+91", label: "🇮🇳 +91" },
   { code: "+1",  label: "🇺🇸 +1" },
@@ -35,7 +37,7 @@ function AvatarUpload({ value, onChange }: { value: string; onChange: (url: stri
     <div className="col-span-2 flex items-center gap-4 pb-4 border-b border-[#F3F4F6] mb-2">
       <div className="relative flex-shrink-0">
         {value ? (
-          <img src={value} alt="Avatar" className="w-16 h-16 rounded-full object-cover border-2 border-[#E5E7EB]" />
+          <Image src={value} alt="Avatar" width={64} height={64} className="w-16 h-16 rounded-full object-cover border-2 border-[#E5E7EB]" />
         ) : (
           <div className="w-16 h-16 rounded-full bg-[#F3F4F6] border-2 border-dashed border-[#D1D5DB] flex items-center justify-center">
             <svg className="w-6 h-6 text-[#9CA3AF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

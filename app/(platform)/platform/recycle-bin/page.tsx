@@ -8,6 +8,7 @@ export default async function PlatformRecycleBinPage() {
   if (!user || !["super_admin", "platform_admin"].includes(user.role)) redirect("/platform/dashboard");
 
   const supabase = await createClient();
+  // eslint-disable-next-line react-hooks/purity
   const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
   const [{ data: users }, { data: masters }, { data: providers }, { data: clients }] = await Promise.all([
@@ -52,6 +53,7 @@ export default async function PlatformRecycleBinPage() {
       .order("deleted_at", { ascending: false }),
   ]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const normalizedUsers = (users ?? []).map((u: any) => ({
     ...u,
     organization: Array.isArray(u.organization) ? (u.organization[0] ?? null) : u.organization,
@@ -66,7 +68,9 @@ export default async function PlatformRecycleBinPage() {
         </p>
       </div>
       <PlatformRecycleBinClient
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         users={normalizedUsers as any}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         masters={(masters ?? []) as any}
         providers={(providers ?? []) as any}
         clients={(clients ?? []) as any}

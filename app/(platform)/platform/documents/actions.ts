@@ -62,7 +62,6 @@ export async function updateForm(id: string, input: FormInput) {
     page_no: input.page_no || null,
     parallel_rule_1962: input.parallel_rule_1962 || null,
     url: input.url || null,
-    updated_at: new Date().toISOString(),
   }).eq("id", id).is("service_provider_id", null);
 
   if (error) throw new Error(error.message);
@@ -118,7 +117,6 @@ export async function updateTemplate(id: string, input: Pick<TemplateInput, "nam
   const { error } = await supabase.from("templates").update({
     name: input.name,
     description: input.description || null,
-    updated_at: new Date().toISOString(),
   }).eq("id", id).is("service_provider_id", null);
 
   if (error) throw new Error(error.message);

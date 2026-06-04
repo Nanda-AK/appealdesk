@@ -67,6 +67,7 @@ export default async function LogsPage({
   return (
     <div className="p-8">
       <LogsClient
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         logs={(logs ?? []) as any}
         clients={clientOrgs ?? []}
         totalCount={count ?? 0}

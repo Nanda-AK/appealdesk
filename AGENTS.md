@@ -6,7 +6,6 @@ color: yellow
 memory: project
 ---
 
-<<<<<<< HEAD
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
@@ -24,7 +23,6 @@ Read the following files in order before implementing or making any architectura
 Update `context/progress-tracker.md` after each meaningful implementation change.
 
 If implementation changes the architecture, scope, or standards documented in the context files, update the relevant file before continuing.
-=======
 ## Project Locations
 
 - **Local codebase:** `/Users/nandakumar/Documents/01 Other Projects/suresh/appealdesk`
@@ -267,4 +265,3 @@ For each finding, provide:
 Group findings by category: Dead Tables → Stale Columns → RLS Gaps → Missing Indexes → Data Integrity.
 
 End with a **Safe to run now** section (SQL that can be applied immediately with zero app risk) vs **Requires app code change first** section.
->>>>>>> 73023ddd6d99bd0310883e5a6040ce38cc4b88fe

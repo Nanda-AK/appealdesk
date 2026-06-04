@@ -27,9 +27,12 @@ export default async function PlatformLogsPage() {
       .order("name"),
   ]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const typedLogs = (logs ?? []) as any[];
+
   return (
     <div className="p-8">
-      <PlatformLogsClient logs={(logs ?? []) as any} providers={providers ?? []} />
+      <PlatformLogsClient logs={typedLogs} providers={providers ?? []} />
     </div>
   );
 }
