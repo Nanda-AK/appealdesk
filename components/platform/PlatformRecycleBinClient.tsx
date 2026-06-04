@@ -49,44 +49,52 @@ function RowActions({ onRestore, onPurge }: { onRestore: () => Promise<void>; on
   const router = useRouter();
   const [busy, setBusy] = useState<"restore" | "purge" | null>(null);
   const [confirmPurge, setConfirmPurge] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleRestore() {
+    setError(null);
     setBusy("restore");
     try { await onRestore(); router.refresh(); }
-    catch (err) { alert(err instanceof Error ? err.message : "Failed to restore."); }
+    catch (err) { setError(err instanceof Error ? err.message : "Failed to restore."); }
     finally { setBusy(null); }
   }
 
   async function handlePurge() {
     if (!confirmPurge) { setConfirmPurge(true); return; }
+    setError(null);
     setBusy("purge");
     try { await onPurge(); router.refresh(); }
-    catch (err) { alert(err instanceof Error ? err.message : "Failed to delete."); }
+    catch (err) { setError(err instanceof Error ? err.message : "Failed to delete."); }
     finally { setBusy(null); setConfirmPurge(false); }
   }
 
   return (
-    <div className="flex items-center gap-0.5 shrink-0">
-      <button onClick={handleRestore} disabled={!!busy} title="Restore item"
-        className="p-1.5 rounded hover:bg-[#EEF2FF] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] disabled:opacity-50 inline-flex">
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-      </button>
-      {confirmPurge ? (
-        <div className="flex items-center gap-1">
-          <span className="text-xs text-red-600 font-medium">Sure?</span>
-          <button onClick={handlePurge} disabled={!!busy}
-            className="px-2 py-1 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition disabled:opacity-50">
-            {busy === "purge" ? "…" : "Yes"}
-          </button>
-          <button onClick={() => setConfirmPurge(false)} className="px-1.5 py-1 text-xs text-[#6B7280] hover:text-[#1A1A2E]">
-            No
-          </button>
-        </div>
-      ) : (
-        <button onClick={handlePurge} disabled={!!busy}
-          className="px-3 py-1 text-xs font-medium text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition disabled:opacity-50">
-          Delete permanently
+    <div className="flex flex-col items-end gap-1">
+      <div className="flex items-center gap-0.5 shrink-0">
+        <button onClick={handleRestore} disabled={!!busy} title="Restore item"
+          className="p-1.5 rounded hover:bg-[#EEF2FF] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] disabled:opacity-50 inline-flex">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
         </button>
+        {confirmPurge ? (
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-red-600 font-medium">Sure?</span>
+            <button onClick={handlePurge} disabled={!!busy}
+              className="px-2 py-1 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition disabled:opacity-50">
+              {busy === "purge" ? "…" : "Yes"}
+            </button>
+            <button onClick={() => setConfirmPurge(false)} className="px-1.5 py-1 text-xs text-[#6B7280] hover:text-[#1A1A2E]">
+              No
+            </button>
+          </div>
+        ) : (
+          <button onClick={handlePurge} disabled={!!busy}
+            className="px-3 py-1 text-xs font-medium text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition disabled:opacity-50">
+            Delete permanently
+          </button>
+        )}
+      </div>
+      {error && (
+        <span className="text-xs text-[#DC2626] font-medium whitespace-nowrap">{error}</span>
       )}
     </div>
   );
