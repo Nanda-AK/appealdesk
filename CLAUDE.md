@@ -5,10 +5,12 @@
 AppealDesk is a **multi-tenant SaaS** for Chartered Accountant (CA) firms to manage client tax litigations (Income Tax, GST, Customs, etc.). It replaces Excel-based tracking with a structured, role-gated web application.
 
 **Two portals, one codebase:**
+
 - **Platform Portal** (`/platform/*`) — AppealDesk operators manage CA firm tenants (Service Providers)
 - **SP Portal** (`/*`) — CA firms manage their clients' litigations
 
 **Tech Stack:**
+
 - Frontend/Backend: Next.js 15+ (App Router, Server Components, Server Actions)
 - Database/Auth/Storage: Supabase (PostgreSQL + RLS + Auth + Storage)
 - Styling: Tailwind CSS v4 (utility classes only, no custom CSS)
@@ -19,7 +21,8 @@ AppealDesk is a **multi-tenant SaaS** for Chartered Accountant (CA) firms to man
 
 ## Repository Structure
 
-```
+```bash
+
 appealdesk/
 ├── app/
 │   ├── layout.tsx                    # Root layout — Inter font, metadata from platform_settings
@@ -106,6 +109,7 @@ AppealDesk Platform (operator)
 
 | Role | Portal | Key Permissions |
 |------|--------|-----------------|
+
 | `super_admin` | Platform | Everything — including managing other super admins and platform settings |
 | `platform_admin` | Platform | Manage SPs, users, masters, documents (cannot manage super admins) |
 | `sp_admin` | SP | Full SP access: clients, users, litigations, masters, logs, trash, settings |

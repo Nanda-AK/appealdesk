@@ -88,7 +88,7 @@ export default function LoginForm({ platformName, description, logoUrl, supportE
                 unoptimized
               />
             ) : (
-              <div className="w-28 h-28 rounded-2xl bg-[#1E3A5F] flex items-center justify-center flex-shrink-0">
+              <div className="w-28 h-28 rounded-2xl bg-[#1E3A5F] flex items-center justify-center shrink-0">
                 <svg viewBox="0 0 24 24" fill="none" className="w-14 h-14" xmlns="http://www.w3.org/2000/svg">
                   <path d="M9 12h6M9 16h4M7 4H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V8l-5-4H7z" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                   <path d="M14 4v4h4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
