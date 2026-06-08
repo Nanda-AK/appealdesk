@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
@@ -77,7 +76,7 @@ function RowActions({
 
   return (
     <div className="flex flex-col items-end gap-1">
-      <div className="flex items-center gap-0.5 flex-shrink-0">
+      <div className="flex items-center gap-0.5 shrink-0">
         <button onClick={handleRestore} disabled={!!busy} title="Restore item"
           className="p-1.5 rounded hover:bg-[#EEF2FF] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] disabled:opacity-50 inline-flex">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
@@ -245,6 +244,7 @@ export default function TrashClient({ appeals, clients, users, documents, procee
                 </p>
                 <p className="text-xs text-[#6B7280] truncate">
                   {p.proceeding_type?.name ?? ""}
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   {(p as any).appeal?.client_org?.name ? ` · ${(p as any).appeal.client_org.name}` : ""}
                 </p>
                 <p className="text-xs text-[#9CA3AF]">Deleted {fmtDate(p.deleted_at)}</p>
@@ -272,6 +272,7 @@ export default function TrashClient({ appeals, clients, users, documents, procee
                 </p>
                 <p className="text-xs text-[#6B7280] truncate">
                   {e.description ?? ""}
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   {(e as any).proceeding?.appeal?.client_org?.name
                     ? ` · ${(e as any).proceeding.appeal.client_org.name}`
                     : ""}

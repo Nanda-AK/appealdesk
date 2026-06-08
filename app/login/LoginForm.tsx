@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 
 interface Props {
@@ -26,11 +26,8 @@ export default function LoginForm({ platformName, description, logoUrl, supportE
   // (e.g. a stale/dead storage URL) so we never show a broken-image icon.
   const [logoFailed, setLogoFailed] = useState(false);
   const router = useRouter();
-
-  const searchParams = typeof window !== "undefined"
-    ? new URLSearchParams(window.location.search)
-    : null;
-  const errorCode = searchParams?.get("error") ?? null;
+  const searchParams = useSearchParams();
+  const errorCode = searchParams.get("error");
   // Map auth redirect error codes to user-facing messages.
   const errorMessages: Record<string, string> = {
     deactivated: "Your account has been deactivated. Contact your administrator.",
@@ -119,7 +116,7 @@ export default function LoginForm({ platformName, description, logoUrl, supportE
               <h2 className="text-lg font-semibold text-[#1A1A2E] mb-6">Sign in to your account</h2>
 
               {urlError && (
-                <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 mb-4">
+                <div role="alert" className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 mb-4">
                   {urlError}
                 </div>
               )}
@@ -159,7 +156,7 @@ export default function LoginForm({ platformName, description, logoUrl, supportE
                 </div>
 
                 {error && (
-                  <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+                  <div role="alert" className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
                     {error}
                   </div>
                 )}
@@ -228,7 +225,7 @@ export default function LoginForm({ platformName, description, logoUrl, supportE
                 </div>
 
                 {resetError && (
-                  <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+                  <div role="alert" className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
                     {resetError}
                   </div>
                 )}
