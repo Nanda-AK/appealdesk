@@ -99,7 +99,7 @@ function RowActions({
         )}
       </div>
       {error && (
-        <span className="text-xs text-[#DC2626] font-medium whitespace-nowrap">{error}</span>
+        <span role="alert" title={error} className="text-xs text-[#DC2626] font-medium max-w-[200px] truncate">{error}</span>
       )}
     </div>
   );
