@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { toggleProviderStatus, deleteProvider } from "@/app/(platform)/platform/providers/actions";
 import { UserRole } from "@/lib/types";
@@ -14,37 +14,237 @@ interface Provider {
   created_at: string;
 }
 
+interface NamedRecord {
+  id: string;
+  name: string;
+}
+
 interface Props {
   providers: Provider[];
   userRole: UserRole;
 }
 
+const STATUS_OPTIONS: NamedRecord[] = [
+  { id: "active",   name: "Active" },
+  { id: "inactive", name: "Inactive" },
+];
+
 const isPlatformRole = (role: UserRole) =>
   role === "super_admin" || role === "platform_admin";
 
+function MultiSelect({
+  options,
+  values,
+  onChange,
+  placeholder,
+  searchable = true,
+}: {
+  options: NamedRecord[];
+  values: string[];
+  onChange: (ids: string[]) => void;
+  placeholder: string;
+  searchable?: boolean;
+}) {
+  const [open, setOpen]       = useState(false);
+  const [pending, setPending] = useState<string[]>([]);
+  const [query, setQuery]     = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef     = useRef<HTMLInputElement>(null);
+  const pendingRef   = useRef<string[]>([]);
+
+  function openDropdown() {
+    const copy = [...values];
+    setPending(copy);
+    pendingRef.current = copy;
+    setQuery("");
+    setOpen(true);
+    if (searchable) setTimeout(() => inputRef.current?.focus(), 0);
+  }
+
+  function applyAndClose() {
+    onChange(pendingRef.current);
+    setOpen(false);
+    setQuery("");
+  }
+
+  useEffect(() => {
+    if (!open) return;
+    function handler(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        applyAndClose();
+      }
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function toggle(id: string) {
+    setPending((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      pendingRef.current = next;
+      return next;
+    });
+  }
+
+  const filtered = searchable && query
+    ? options.filter((o) => o.name.toLowerCase().includes(query.toLowerCase()))
+    : options;
+
+  let triggerText: string;
+  if (values.length === 0)      triggerText = placeholder;
+  else if (values.length === 1) triggerText = options.find((o) => o.id === values[0])?.name ?? "1 selected";
+  else                          triggerText = `${values.length} selected`;
+
+  const hasValue = values.length > 0;
+  const isMulti  = values.length > 1;
+
+  return (
+    <div ref={containerRef} className="relative">
+      <div
+        className="flex items-center gap-1.5 px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg bg-white cursor-pointer min-w-[144px] max-w-[200px] h-[38px] select-none"
+        onClick={() => (open ? applyAndClose() : openDropdown())}
+      >
+        <span
+          className={`flex-1 truncate ${
+            !hasValue ? "text-[#9CA3AF]" : isMulti ? "font-medium text-[#1E3A5F]" : "text-[#1A1A2E]"
+          }`}
+        >
+          {triggerText}
+        </span>
+        {hasValue ? (
+          <button
+            onMouseDown={(e) => { e.stopPropagation(); onChange([]); }}
+            className="text-[#9CA3AF] hover:text-[#1A1A2E] shrink-0 text-base leading-none"
+          >
+            ×
+          </button>
+        ) : (
+          <svg className="w-3.5 h-3.5 shrink-0 text-[#9CA3AF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        )}
+      </div>
+
+      {open && (
+        <div className="absolute top-full left-0 mt-1 bg-white border border-[#E5E7EB] rounded-lg shadow-lg z-50 w-60 max-h-64 flex flex-col">
+          {searchable && (
+            <div className="p-2 border-b border-[#F3F4F6] shrink-0">
+              <input
+                ref={inputRef}
+                className="w-full px-2 py-1.5 text-sm border border-[#E5E7EB] rounded focus:outline-none focus:ring-1 focus:ring-[#4A6FA5]"
+                placeholder="Search…"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </div>
+          )}
+          {pending.length > 0 && (
+            <div className="px-3 py-1.5 border-b border-[#F3F4F6] flex items-center justify-between shrink-0">
+              <span className="text-xs text-[#6B7280]">{pending.length} selected</span>
+              <button
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  setPending([]);
+                  pendingRef.current = [];
+                }}
+                className="text-xs text-[#4A6FA5] hover:underline"
+              >
+                Clear
+              </button>
+            </div>
+          )}
+          <div className="overflow-y-auto flex-1 py-1">
+            {filtered.length === 0 ? (
+              <div className="px-3 py-2 text-sm text-[#9CA3AF]">No matches</div>
+            ) : (
+              filtered.map((o) => {
+                const isChecked = pending.includes(o.id);
+                return (
+                  <button
+                    key={o.id}
+                    onMouseDown={(e) => { e.preventDefault(); toggle(o.id); }}
+                    className={`w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-[#F8F9FA] ${isChecked ? "bg-blue-50/50" : ""}`}
+                  >
+                    <div
+                      className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors ${
+                        isChecked ? "bg-[#1E3A5F] border-[#1E3A5F]" : "border-[#D1D5DB]"
+                      }`}
+                    >
+                      {isChecked && (
+                        <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                    <span className={`text-sm flex-1 truncate ${isChecked ? "font-medium text-[#1A1A2E]" : "text-[#4B5563]"}`}>
+                      {o.name}
+                    </span>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ProvidersClient({ providers, userRole }: Props) {
-  const [search, setSearch] = useState("");
-  const [sortAsc, setSortAsc] = useState(true);
-  const [loading, setLoading] = useState<string | null>(null);
+  const [filterName, setFilterName]               = useState("");
+  const [filterBusinessTypes, setFilterBusinessTypes] = useState<string[]>([]);
+  const [filterCities, setFilterCities]           = useState<string[]>([]);
+  const [filterStatuses, setFilterStatuses]       = useState<string[]>([]);
+  const [sortAsc, setSortAsc]                     = useState(false);
 
-  // Activate / deactivate confirm
-  const [confirm, setConfirm] = useState<{ id: string; name: string; activate: boolean } | null>(null);
-
-  // Delete confirm
+  const [loading, setLoading]           = useState<string | null>(null);
+  const [confirm, setConfirm]           = useState<{ id: string; name: string; activate: boolean } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteError, setDeleteError]   = useState<string | null>(null);
 
   const canDelete = isPlatformRole(userRole);
 
-  const q = search.toLowerCase();
+  // Derive unique options from loaded data
+  const businessTypeOptions: NamedRecord[] = Array.from(
+    new Set(providers.map((p) => p.business_type).filter(Boolean))
+  )
+    .sort()
+    .map((bt) => ({ id: bt!, name: bt! }));
+
+  const cityOptions: NamedRecord[] = Array.from(
+    new Set(providers.map((p) => p.city).filter(Boolean))
+  )
+    .sort()
+    .map((c) => ({ id: c!, name: c! }));
+
+  const q = filterName.toLowerCase();
   const filtered = providers
-    .filter((sp) =>
-      sp.name.toLowerCase().includes(q) ||
-      (sp.business_type ?? "").toLowerCase().includes(q) ||
-      (sp.city ?? "").toLowerCase().includes(q) ||
-      (sp.is_active ? "active" : "inactive").includes(q)
-    )
-    .sort((a, b) => sortAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name));
+    .filter((sp) => {
+      if (q && !sp.name.toLowerCase().includes(q)) return false;
+      if (filterBusinessTypes.length && !filterBusinessTypes.includes(sp.business_type ?? "")) return false;
+      if (filterCities.length && !filterCities.includes(sp.city ?? "")) return false;
+      if (filterStatuses.length) {
+        const statusKey = sp.is_active ? "active" : "inactive";
+        if (!filterStatuses.includes(statusKey)) return false;
+      }
+      return true;
+    })
+    .sort((a, b) =>
+      sortAsc
+        ? a.created_at.localeCompare(b.created_at)
+        : b.created_at.localeCompare(a.created_at)
+    );
+
+  const hasFilters =
+    !!filterName || filterBusinessTypes.length > 0 || filterCities.length > 0 || filterStatuses.length > 0;
+
+  function clearAll() {
+    setFilterName("");
+    setFilterBusinessTypes([]);
+    setFilterCities([]);
+    setFilterStatuses([]);
+    setSortAsc(false);
+  }
 
   async function handleToggle() {
     if (!confirm) return;
@@ -75,20 +275,80 @@ export default function ProvidersClient({ providers, userRole }: Props) {
 
   return (
     <>
-      {/* Search bar */}
-      <div className="mb-4">
-        <div className="relative max-w-sm">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      {/* Filter bar */}
+      <div className="bg-white border border-[#E5E7EB] rounded-xl p-4 mb-4 flex flex-wrap gap-3 items-center">
+        {/* Name search */}
+        <div className="relative">
+          <svg
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]"
+            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+          >
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
           </svg>
           <input
             type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search service providers…"
-            className="w-full pl-9 pr-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] bg-white"
+            value={filterName}
+            onChange={(e) => setFilterName(e.target.value)}
+            placeholder="Search name…"
+            className="pl-9 pr-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] h-[38px] w-48"
           />
+          {filterName && (
+            <button
+              onClick={() => setFilterName("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#1A1A2E] text-base leading-none"
+            >
+              ×
+            </button>
+          )}
         </div>
+
+        <MultiSelect
+          options={businessTypeOptions}
+          values={filterBusinessTypes}
+          onChange={setFilterBusinessTypes}
+          placeholder="Business Type"
+        />
+
+        <MultiSelect
+          options={cityOptions}
+          values={filterCities}
+          onChange={setFilterCities}
+          placeholder="City"
+        />
+
+        <MultiSelect
+          options={STATUS_OPTIONS}
+          values={filterStatuses}
+          onChange={setFilterStatuses}
+          placeholder="Status"
+          searchable={false}
+        />
+
+        {/* Sort by Added date */}
+        <button
+          onClick={() => setSortAsc((v) => !v)}
+          className="flex items-center gap-1.5 px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg hover:bg-[#F8F9FA] transition text-[#1A1A2E] h-[38px]"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            {sortAsc
+              ? <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+              : <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />}
+          </svg>
+          {sortAsc ? "Oldest first" : "Newest first"}
+        </button>
+
+        {hasFilters && (
+          <button
+            onClick={clearAll}
+            className="px-3 py-2 text-sm text-[#6B7280] hover:text-[#1A1A2E] border border-[#E5E7EB] rounded-lg transition"
+          >
+            Clear all
+          </button>
+        )}
+
+        <span className="ml-auto text-sm text-[#6B7280]">
+          {filtered.length}{hasFilters ? " matched" : ""} provider{filtered.length !== 1 ? "s" : ""}
+        </span>
       </div>
 
       <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
@@ -97,20 +357,7 @@ export default function ProvidersClient({ providers, userRole }: Props) {
             <thead>
               <tr className="bg-[#D1D9E6] border-b-2 border-[#B0BDD0]">
                 <th className="text-center px-4 py-3 font-medium text-[#1A1A2E] w-10">#</th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">
-                  <button
-                    onClick={() => setSortAsc(!sortAsc)}
-                    className="inline-flex items-center gap-1 hover:text-[#1E3A5F] transition-colors"
-                  >
-                    Name
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      {sortAsc
-                        ? <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
-                        : <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                      }
-                    </svg>
-                  </button>
-                </th>
+                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Name</th>
                 <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Business Type</th>
                 <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">City</th>
                 <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Status</th>
@@ -122,7 +369,7 @@ export default function ProvidersClient({ providers, userRole }: Props) {
               {filtered.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-12 text-center text-[#6B7280]">
-                    {search ? `No results for "${search}"` : "No service providers yet. Add the first one."}
+                    {hasFilters ? "No service providers match your filters." : "No service providers yet. Add the first one."}
                   </td>
                 </tr>
               ) : (
@@ -145,9 +392,14 @@ export default function ProvidersClient({ providers, userRole }: Props) {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-0.5">
                         {/* Edit */}
-                        <Link href={`/platform/providers/${sp.id}`} title="Edit service provider"
-                          className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] inline-flex">
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                        <Link
+                          href={`/platform/providers/${sp.id}`}
+                          title="Edit service provider"
+                          className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] inline-flex"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
                         </Link>
 
                         {/* Activate / Deactivate */}
@@ -155,12 +407,18 @@ export default function ProvidersClient({ providers, userRole }: Props) {
                           onClick={() => setConfirm({ id: sp.id, name: sp.name, activate: !sp.is_active })}
                           disabled={loading === sp.id}
                           title={sp.is_active ? "Deactivate provider" : "Activate provider"}
-                          className={`p-1.5 rounded hover:bg-[#F3F4F6] transition-colors disabled:opacity-50 inline-flex ${sp.is_active ? "text-amber-500 hover:text-amber-700" : "text-green-600 hover:text-green-800"}`}
+                          className={`p-1.5 rounded hover:bg-[#F3F4F6] transition-colors disabled:opacity-50 inline-flex ${
+                            sp.is_active ? "text-amber-500 hover:text-amber-700" : "text-green-600 hover:text-green-800"
+                          }`}
                         >
                           {sp.is_active ? (
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                            </svg>
                           ) : (
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
                           )}
                         </button>
 
