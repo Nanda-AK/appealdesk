@@ -759,7 +759,7 @@ function MultiSelect({ options, selected, onChange, placeholder }: {
     <div className="relative" ref={(el) => { ref.current = el; }}>
       <div
         onClick={() => setOpen(o => !o)}
-        className={`${inp} flex items-center justify-between gap-2 cursor-pointer min-h-[42px] flex-wrap`}
+        className={`${inp} flex items-center justify-between gap-2 cursor-pointer min-h-10.5 flex-wrap`}
       >
         {selectedLabels.length === 0 ? (
           <span className="text-[#9CA3AF] text-sm">{placeholder ?? "Select…"}</span>
@@ -1359,7 +1359,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
 
   // ── Render ──
   return (
-    <div className="space-y-4 max-w-4xl">
+    <div className="space-y-4">
 
       {/* Appeal Header */}
       <div className="bg-white border border-[#E5E7EB] rounded-xl p-5 shadow-sm flex items-start justify-between gap-4">

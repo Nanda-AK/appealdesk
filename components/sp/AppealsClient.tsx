@@ -42,21 +42,22 @@ interface Props {
 }
 
 const STATUS_DISPLAY: Record<string, { label: string; cls: string }> = {
-  open:          { label: "Open",        cls: "bg-blue-50 text-blue-700" },
+  open: { label: "Open", cls: "bg-blue-50 text-blue-700" },
   "in-progress": { label: "In Progress", cls: "bg-amber-50 text-amber-700" },
-  closed:        { label: "Closed",      cls: "bg-gray-100 text-gray-500" },
+  closed: { label: "Closed", cls: "bg-gray-100 text-gray-500" },
 };
 
 const STATUS_OPTIONS: NamedRecord[] = [
-  { id: "open",          name: "Open" },
-  { id: "in-progress",   name: "In Progress" },
-  { id: "closed",        name: "Closed" },
+  { id: "open", name: "Open" },
+  { id: "in-progress", name: "In Progress" },
+  { id: "closed", name: "Closed" },
 ];
 
 function pageNumbers(current: number, total: number): (number | "...")[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
   if (current <= 4) return [1, 2, 3, 4, 5, "...", total];
-  if (current >= total - 3) return [1, "...", total - 4, total - 3, total - 2, total - 1, total];
+  if (current >= total - 3)
+    return [1, "...", total - 4, total - 3, total - 2, total - 1, total];
   return [1, "...", current - 1, current, current + 1, "...", total];
 }
 
@@ -75,11 +76,11 @@ function MultiSelect({
   placeholder: string;
   searchable?: boolean;
 }) {
-  const [open, setOpen]       = useState(false);
+  const [open, setOpen] = useState(false);
   const [pending, setPending] = useState<string[]>([]);
-  const [query, setQuery]     = useState("");
+  const [query, setQuery] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
-  const inputRef     = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   // Ref so the click-outside handler always sees the latest pending without restating the effect
   const pendingRef = useRef<string[]>([]);
 
@@ -101,7 +102,10 @@ function MultiSelect({
   useEffect(() => {
     if (!open) return;
     function handler(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         applyAndClose();
       }
     }
@@ -111,49 +115,72 @@ function MultiSelect({
 
   function toggle(id: string) {
     setPending((prev) => {
-      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      const next = prev.includes(id)
+        ? prev.filter((x) => x !== id)
+        : [...prev, id];
       pendingRef.current = next;
       return next;
     });
   }
 
-  const filtered = searchable && query
-    ? options.filter((o) => o.name.toLowerCase().includes(query.toLowerCase()))
-    : options;
+  const filtered =
+    searchable && query
+      ? options.filter((o) =>
+          o.name.toLowerCase().includes(query.toLowerCase()),
+        )
+      : options;
 
   // Trigger label
   let triggerText: string;
-  if (values.length === 0)     triggerText = placeholder;
-  else if (values.length === 1) triggerText = options.find((o) => o.id === values[0])?.name ?? "1 selected";
-  else                          triggerText = `${values.length} selected`;
+  if (values.length === 0) triggerText = placeholder;
+  else if (values.length === 1)
+    triggerText = options.find((o) => o.id === values[0])?.name ?? "1 selected";
+  else triggerText = `${values.length} selected`;
 
   const hasValue = values.length > 0;
-  const isMulti  = values.length > 1;
+  const isMulti = values.length > 1;
 
   return (
     <div ref={containerRef} className="relative">
       {/* Trigger */}
       <div
-        className="flex items-center gap-1.5 px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg bg-white cursor-pointer min-w-[144px] max-w-[200px] h-[38px] select-none"
+        className="flex items-center gap-1.5 px-2.5 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg bg-white cursor-pointer min-w-25 max-w-32.5 h-9.5 select-none"
         onClick={() => (open ? applyAndClose() : openDropdown())}
       >
         <span
           className={`flex-1 truncate ${
-            !hasValue ? "text-[#9CA3AF]" : isMulti ? "font-medium text-[#1E3A5F]" : "text-[#1A1A2E]"
+            !hasValue
+              ? "text-[#9CA3AF]"
+              : isMulti
+                ? "font-medium text-[#1E3A5F]"
+                : "text-[#1A1A2E]"
           }`}
         >
           {triggerText}
         </span>
         {hasValue ? (
           <button
-            onMouseDown={(e) => { e.stopPropagation(); onChange([]); }}
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              onChange([]);
+            }}
             className="text-[#9CA3AF] hover:text-[#1A1A2E] shrink-0 text-base leading-none"
           >
             ×
           </button>
         ) : (
-          <svg className="w-3.5 h-3.5 shrink-0 text-[#9CA3AF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          <svg
+            className="w-3.5 h-3.5 shrink-0 text-[#9CA3AF]"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M19 9l-7 7-7-7"
+            />
           </svg>
         )}
       </div>
@@ -174,7 +201,9 @@ function MultiSelect({
           )}
           {pending.length > 0 && (
             <div className="px-3 py-1.5 border-b border-[#F3F4F6] flex items-center justify-between shrink-0">
-              <span className="text-xs text-[#6B7280]">{pending.length} selected</span>
+              <span className="text-xs text-[#6B7280]">
+                {pending.length} selected
+              </span>
               <button
                 onMouseDown={(e) => {
                   e.preventDefault();
@@ -196,21 +225,38 @@ function MultiSelect({
                 return (
                   <button
                     key={o.id}
-                    onMouseDown={(e) => { e.preventDefault(); toggle(o.id); }}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      toggle(o.id);
+                    }}
                     className={`w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-[#F8F9FA] ${isChecked ? "bg-blue-50/50" : ""}`}
                   >
                     <div
                       className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors ${
-                        isChecked ? "bg-[#1E3A5F] border-[#1E3A5F]" : "border-[#D1D5DB]"
+                        isChecked
+                          ? "bg-[#1E3A5F] border-[#1E3A5F]"
+                          : "border-[#D1D5DB]"
                       }`}
                     >
                       {isChecked && (
-                        <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        <svg
+                          className="w-2.5 h-2.5 text-white"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={3}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M5 13l4 4L19 7"
+                          />
                         </svg>
                       )}
                     </div>
-                    <span className={`text-sm flex-1 truncate ${isChecked ? "font-medium text-[#1A1A2E]" : "text-[#4B5563]"}`}>
+                    <span
+                      className={`text-sm flex-1 truncate ${isChecked ? "font-medium text-[#1A1A2E]" : "text-[#4B5563]"}`}
+                    >
                       {o.name}
                     </span>
                   </button>
@@ -224,21 +270,41 @@ function MultiSelect({
   );
 }
 
+// @CodeScene(disable:"Complex Method")
 export default function AppealsClient({
-  appeals, clients, acts, financialYears, assessmentYears, teamMembers,
-  canEdit, totalCount, page, perPage,
-  currentClients, currentActs, currentFYs, currentAYs, currentStatuses, currentAssigned, currentSortDir,
+  appeals,
+  clients,
+  acts,
+  financialYears,
+  assessmentYears,
+  teamMembers,
+  canEdit,
+  totalCount,
+  page,
+  perPage,
+  currentClients,
+  currentActs,
+  currentFYs,
+  currentAYs,
+  currentStatuses,
+  currentAssigned,
+  currentSortDir,
 }: Props) {
   const router = useRouter();
 
-  const [exporting, setExporting]         = useState<"excel" | "pdf" | "docx" | null>(null);
+  const [exporting, setExporting] = useState<"excel" | "pdf" | "docx" | null>(
+    null,
+  );
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!exportMenuOpen) return;
     function handler(e: MouseEvent) {
-      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) {
+      if (
+        exportMenuRef.current &&
+        !exportMenuRef.current.contains(e.target as Node)
+      ) {
         setExportMenuOpen(false);
       }
     }
@@ -260,10 +326,10 @@ export default function AppealsClient({
     setExportMenuOpen(false);
     try {
       const data = await exportLitigationsReport({
-        filterClients:  currentClients,
-        filterActs:     currentActs,
-        filterFYs:      currentFYs,
-        filterAYs:      currentAYs,
+        filterClients: currentClients,
+        filterActs: currentActs,
+        filterFYs: currentFYs,
+        filterAYs: currentAYs,
         filterStatuses: currentStatuses,
         filterAssigned: currentAssigned,
       });
@@ -276,7 +342,10 @@ export default function AppealsClient({
         triggerDownload(generatePDF(data), `litigations-${dateStamp}.pdf`);
       } else {
         const { generateDocx } = await import("@/lib/reports/docx");
-        triggerDownload(await generateDocx(data), `litigations-${dateStamp}.docx`);
+        triggerDownload(
+          await generateDocx(data),
+          `litigations-${dateStamp}.docx`,
+        );
       }
     } catch (err) {
       console.error("Export failed:", err);
@@ -288,22 +357,22 @@ export default function AppealsClient({
 
   function push(updates: Record<string, string>) {
     const merged: Record<string, string> = {
-      client:   currentClients.join(","),
-      act:      currentActs.join(","),
-      fy:       currentFYs.join(","),
-      ay:       currentAYs.join(","),
-      status:   currentStatuses.join(","),
+      client: currentClients.join(","),
+      act: currentActs.join(","),
+      fy: currentFYs.join(","),
+      ay: currentAYs.join(","),
+      status: currentStatuses.join(","),
       assigned: currentAssigned.join(","),
       sort_dir: currentSortDir,
-      page:     String(page),
+      page: String(page),
       per_page: String(perPage),
       ...updates,
     };
     const p = new URLSearchParams();
     Object.entries(merged).forEach(([k, v]) => {
       if (!v) return;
-      if (k === "page"     && v === "1")    return;
-      if (k === "per_page" && v === "25")   return;
+      if (k === "page" && v === "1") return;
+      if (k === "per_page" && v === "25") return;
       if (k === "sort_dir" && v === "desc") return;
       p.set(k, v);
     });
@@ -319,16 +388,20 @@ export default function AppealsClient({
   }
 
   const hasFilters =
-    currentClients.length > 0 || currentActs.length > 0 || currentFYs.length > 0 ||
-    currentAYs.length > 0 || currentStatuses.length > 0 || currentAssigned.length > 0;
+    currentClients.length > 0 ||
+    currentActs.length > 0 ||
+    currentFYs.length > 0 ||
+    currentAYs.length > 0 ||
+    currentStatuses.length > 0 ||
+    currentAssigned.length > 0;
 
-  const totalPages  = Math.ceil(totalCount / perPage);
-  const rowOffset   = (page - 1) * perPage;
+  const totalPages = Math.ceil(totalCount / perPage);
+  const rowOffset = (page - 1) * perPage;
   const showingFrom = totalCount === 0 ? 0 : rowOffset + 1;
-  const showingTo   = Math.min(rowOffset + perPage, totalCount);
+  const showingTo = Math.min(rowOffset + perPage, totalCount);
 
   const btnPage = (active: boolean) =>
-    `min-w-[36px] h-9 px-2 text-sm rounded-lg font-medium transition ${
+    `min-w-9 h-9 px-2 text-sm rounded-lg font-medium transition ${
       active
         ? "bg-[#1E3A5F] text-white"
         : "border border-[#E5E7EB] text-[#1A1A2E] hover:bg-[#F8F9FA]"
@@ -349,8 +422,18 @@ export default function AppealsClient({
             href="/litigations/new"
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#1E3A5F] hover:bg-[#162d4a] text-white text-sm font-medium rounded-lg transition"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 4v16m8-8H4"
+              />
             </svg>
             New Litigation
           </Link>
@@ -358,7 +441,7 @@ export default function AppealsClient({
       </div>
 
       {/* Filters — Client, Act, FY, AY, Status, Assigned To */}
-      <div className="bg-white border border-[#E5E7EB] rounded-xl p-4 mb-4 flex flex-wrap gap-3 items-center">
+      <div className="bg-white border border-[#E5E7EB] rounded-xl p-4 mb-4 flex flex-wrap gap-2 items-center">
         <MultiSelect
           options={clients}
           values={currentClients}
@@ -399,13 +482,34 @@ export default function AppealsClient({
 
         {/* Sort direction */}
         <button
-          onClick={() => push({ sort_dir: currentSortDir === "asc" ? "desc" : "asc", page: "1" })}
+          onClick={() =>
+            push({
+              sort_dir: currentSortDir === "asc" ? "desc" : "asc",
+              page: "1",
+            })
+          }
           className="flex items-center gap-1.5 px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg hover:bg-[#F8F9FA] transition text-[#1A1A2E]"
         >
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            {currentSortDir === "asc"
-              ? <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
-              : <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />}
+          <svg
+            className="w-3.5 h-3.5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            {currentSortDir === "asc" ? (
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M5 15l7-7 7 7"
+              />
+            ) : (
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M19 9l-7 7-7-7"
+              />
+            )}
           </svg>
           {currentSortDir === "asc" ? "Oldest first" : "Newest first"}
         </button>
@@ -424,16 +528,23 @@ export default function AppealsClient({
           <button
             onClick={() => setExportMenuOpen((v) => !v)}
             disabled={!!exporting || totalCount === 0}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg hover:bg-[#F8F9FA] disabled:opacity-50 disabled:cursor-not-allowed transition text-[#1A1A2E] h-[38px]"
+            title={
+              exporting ? `Exporting ${exporting.toUpperCase()}…` : "Export"
+            }
+            className="inline-flex items-center justify-center w-9.5 h-9.5 border-2 border-[#4A6FA5] rounded-lg hover:bg-[#F8F9FA] disabled:opacity-50 disabled:cursor-not-allowed transition text-[#4A6FA5]"
           >
-            <svg className="w-4 h-4 text-[#4A6FA5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            {exporting
-              ? `Exporting ${exporting.toUpperCase()}…`
-              : "Export"}
-            <svg className="w-3 h-3 text-[#9CA3AF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+              />
             </svg>
           </button>
 
@@ -446,8 +557,8 @@ export default function AppealsClient({
                   className="w-full text-left px-3 py-2 text-sm hover:bg-[#F8F9FA] text-[#1A1A2E] transition"
                 >
                   {fmt === "excel" && "Excel (.xlsx)"}
-                  {fmt === "pdf"   && "PDF (.pdf)"}
-                  {fmt === "docx"  && "Word (.docx)"}
+                  {fmt === "pdf" && "PDF (.pdf)"}
+                  {fmt === "docx" && "Word (.docx)"}
                 </button>
               ))}
             </div>
@@ -461,23 +572,38 @@ export default function AppealsClient({
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="border-b-2 border-[#B0BDD0] bg-[#D1D9E6]">
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] w-10">#</th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">Client</th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">FY</th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">AY</th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">Act</th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">Status</th>
+                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] w-10">
+                  #
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">
+                  Client
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">
+                  FY
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">
+                  AY
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">
+                  Act
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">
+                  Status
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E5E7EB]">
               {appeals.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-16 text-center text-[#6B7280]">
+                  <td
+                    colSpan={6}
+                    className="px-4 py-16 text-center text-[#6B7280]"
+                  >
                     {hasFilters
                       ? "No litigations match your filters."
                       : canEdit
-                      ? "No litigations yet. Click 'New Litigation' to get started."
-                      : "No litigations found."}
+                        ? "No litigations yet. Click 'New Litigation' to get started."
+                        : "No litigations found."}
                   </td>
                 </tr>
               ) : (
@@ -487,8 +613,10 @@ export default function AppealsClient({
                     className="hover:bg-[#F8F9FA] transition-colors cursor-pointer"
                     onClick={() => router.push(`/litigations/${appeal.id}`)}
                   >
-                    <td className="px-4 py-3 text-[#9CA3AF] text-xs">{rowOffset + i + 1}</td>
-                    <td className="px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap max-w-[180px] truncate">
+                    <td className="px-4 py-3 text-[#9CA3AF] text-xs">
+                      {rowOffset + i + 1}
+                    </td>
+                    <td className="px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap max-w-45 truncate">
                       {appeal.client_org?.name ?? "—"}
                     </td>
                     <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap text-xs">
@@ -497,15 +625,21 @@ export default function AppealsClient({
                     <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap text-xs">
                       {appeal.assessment_year?.name ?? "—"}
                     </td>
-                    <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap max-w-[140px] truncate">
+                    <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap max-w-35 truncate">
                       {appeal.act_regulation?.name ?? "—"}
                     </td>
                     <td className="px-4 py-3">
                       {(() => {
                         const s = STATUS_DISPLAY[appeal.status ?? "open"];
-                        return s
-                          ? <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${s.cls}`}>{s.label}</span>
-                          : <span className="text-[#9CA3AF]">—</span>;
+                        return s ? (
+                          <span
+                            className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${s.cls}`}
+                          >
+                            {s.label}
+                          </span>
+                        ) : (
+                          <span className="text-[#9CA3AF]">—</span>
+                        );
                       })()}
                     </td>
                   </tr>
@@ -520,7 +654,9 @@ export default function AppealsClient({
       {totalCount > 0 && (
         <div className="mt-4 flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3 text-sm text-[#6B7280]">
-            <span>Showing {showingFrom}–{showingTo} of {totalCount} litigations</span>
+            <span>
+              Showing {showingFrom}–{showingTo} of {totalCount} litigations
+            </span>
             <div className="flex items-center gap-1.5">
               <span className="text-xs">Show</span>
               <select
@@ -529,7 +665,9 @@ export default function AppealsClient({
                 className="px-2 py-1 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]"
               >
                 {PER_PAGE_OPTIONS.map((n) => (
-                  <option key={n} value={n}>{n}</option>
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
                 ))}
               </select>
               <span className="text-xs">per page</span>
@@ -547,12 +685,21 @@ export default function AppealsClient({
               </button>
               {pageNumbers(page, totalPages).map((p, i) =>
                 p === "..." ? (
-                  <span key={`ellipsis-${i}`} className="px-1 text-[#9CA3AF] text-sm select-none">…</span>
+                  <span
+                    key={`ellipsis-${i}`}
+                    className="px-1 text-[#9CA3AF] text-sm select-none"
+                  >
+                    …
+                  </span>
                 ) : (
-                  <button key={p} onClick={() => push({ page: String(p) })} className={btnPage(p === page)}>
+                  <button
+                    key={p}
+                    onClick={() => push({ page: String(p) })}
+                    className={btnPage(p === page)}
+                  >
                     {p}
                   </button>
-                )
+                ),
               )}
               <button
                 onClick={() => push({ page: String(page + 1) })}
