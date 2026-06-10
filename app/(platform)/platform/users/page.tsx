@@ -24,8 +24,8 @@ export default async function UsersPage() {
   return (
     <div className="p-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-[#1A1A2E]">Users</h1>
-        <p className="text-[#6B7280] text-sm mt-0.5">
+        <h1 className="text-2xl font-semibold text-heading">Users</h1>
+        <p className="text-secondary text-sm mt-0.5">
           Platform and service provider admin accounts
         </p>
       </div>

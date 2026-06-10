@@ -144,16 +144,16 @@ function MultiSelect({
     <div ref={containerRef} className="relative">
       {/* Trigger */}
       <div
-        className="flex items-center gap-1.5 px-2.5 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg bg-white cursor-pointer min-w-25 max-w-32.5 h-9.5 select-none"
+        className="flex items-center gap-1.5 px-2.5 py-2 text-sm border-2 border-accent rounded-lg bg-white cursor-pointer min-w-25 max-w-32.5 h-9.5 select-none"
         onClick={() => (open ? applyAndClose() : openDropdown())}
       >
         <span
           className={`flex-1 truncate ${
             !hasValue
-              ? "text-[#9CA3AF]"
+              ? "text-muted"
               : isMulti
-                ? "font-medium text-[#1E3A5F]"
-                : "text-[#1A1A2E]"
+                ? "font-medium text-primary"
+                : "text-heading"
           }`}
         >
           {triggerText}
@@ -164,13 +164,13 @@ function MultiSelect({
               e.stopPropagation();
               onChange([]);
             }}
-            className="text-[#9CA3AF] hover:text-[#1A1A2E] shrink-0 text-base leading-none"
+            className="text-muted hover:text-heading shrink-0 text-base leading-none"
           >
             ×
           </button>
         ) : (
           <svg
-            className="w-3.5 h-3.5 shrink-0 text-[#9CA3AF]"
+            className="w-3.5 h-3.5 shrink-0 text-muted"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -187,12 +187,12 @@ function MultiSelect({
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute top-full left-0 mt-1 bg-white border border-[#E5E7EB] rounded-lg shadow-lg z-50 w-60 max-h-64 flex flex-col">
+        <div className="absolute top-full left-0 mt-1 bg-white border border-border rounded-lg shadow-lg z-50 w-60 max-h-64 flex flex-col">
           {searchable && (
-            <div className="p-2 border-b border-[#F3F4F6] shrink-0">
+            <div className="p-2 border-b border-surface-hover shrink-0">
               <input
                 ref={inputRef}
-                className="w-full px-2 py-1.5 text-sm border border-[#E5E7EB] rounded focus:outline-none focus:ring-1 focus:ring-[#4A6FA5]"
+                className="w-full px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-accent"
                 placeholder="Search…"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -200,8 +200,8 @@ function MultiSelect({
             </div>
           )}
           {pending.length > 0 && (
-            <div className="px-3 py-1.5 border-b border-[#F3F4F6] flex items-center justify-between shrink-0">
-              <span className="text-xs text-[#6B7280]">
+            <div className="px-3 py-1.5 border-b border-surface-hover flex items-center justify-between shrink-0">
+              <span className="text-xs text-secondary">
                 {pending.length} selected
               </span>
               <button
@@ -210,7 +210,7 @@ function MultiSelect({
                   setPending([]);
                   pendingRef.current = [];
                 }}
-                className="text-xs text-[#4A6FA5] hover:underline"
+                className="text-xs text-accent hover:underline"
               >
                 Clear
               </button>
@@ -218,7 +218,7 @@ function MultiSelect({
           )}
           <div className="overflow-y-auto flex-1 py-1">
             {filtered.length === 0 ? (
-              <div className="px-3 py-2 text-sm text-[#9CA3AF]">No matches</div>
+              <div className="px-3 py-2 text-sm text-muted">No matches</div>
             ) : (
               filtered.map((o) => {
                 const isChecked = pending.includes(o.id);
@@ -229,13 +229,13 @@ function MultiSelect({
                       e.preventDefault();
                       toggle(o.id);
                     }}
-                    className={`w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-[#F8F9FA] ${isChecked ? "bg-blue-50/50" : ""}`}
+                    className={`w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-page ${isChecked ? "bg-blue-50/50" : ""}`}
                   >
                     <div
                       className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors ${
                         isChecked
-                          ? "bg-[#1E3A5F] border-[#1E3A5F]"
-                          : "border-[#D1D5DB]"
+                          ? "bg-primary border-primary"
+                          : "border-border-strong"
                       }`}
                     >
                       {isChecked && (
@@ -255,7 +255,7 @@ function MultiSelect({
                       )}
                     </div>
                     <span
-                      className={`text-sm flex-1 truncate ${isChecked ? "font-medium text-[#1A1A2E]" : "text-[#4B5563]"}`}
+                      className={`text-sm flex-1 truncate ${isChecked ? "font-medium text-heading" : "text-secondary"}`}
                     >
                       {o.name}
                     </span>
@@ -403,8 +403,8 @@ export default function AppealsClient({
   const btnPage = (active: boolean) =>
     `min-w-9 h-9 px-2 text-sm rounded-lg font-medium transition ${
       active
-        ? "bg-[#1E3A5F] text-white"
-        : "border border-[#E5E7EB] text-[#1A1A2E] hover:bg-[#F8F9FA]"
+        ? "bg-primary text-white"
+        : "border border-border text-heading hover:bg-page"
     }`;
 
   return (
@@ -412,15 +412,15 @@ export default function AppealsClient({
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-[#1A1A2E]">Litigations</h1>
-          <p className="text-[#6B7280] text-sm mt-0.5">
+          <h1 className="text-2xl font-semibold text-heading">Litigations</h1>
+          <p className="text-secondary text-sm mt-0.5">
             {totalCount} {hasFilters ? "matched" : ""} litigations
           </p>
         </div>
         {canEdit && (
           <Link
             href="/litigations/new"
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#1E3A5F] hover:bg-[#162d4a] text-white text-sm font-medium rounded-lg transition"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary-dark text-white text-sm font-medium rounded-lg transition"
           >
             <svg
               className="w-4 h-4"
@@ -441,7 +441,7 @@ export default function AppealsClient({
       </div>
 
       {/* Filters — Client, Act, FY, AY, Status, Assigned To */}
-      <div className="bg-white border border-[#E5E7EB] rounded-xl p-4 mb-4 flex flex-wrap gap-2 items-center">
+      <div className="bg-white border border-border rounded-xl p-4 mb-4 flex flex-wrap gap-2 items-center">
         <MultiSelect
           options={clients}
           values={currentClients}
@@ -488,7 +488,7 @@ export default function AppealsClient({
               page: "1",
             })
           }
-          className="flex items-center gap-1.5 px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg hover:bg-[#F8F9FA] transition text-[#1A1A2E]"
+          className="flex items-center gap-1.5 px-3 py-2 text-sm border-2 border-accent rounded-lg hover:bg-page transition text-heading"
         >
           <svg
             className="w-3.5 h-3.5"
@@ -517,7 +517,7 @@ export default function AppealsClient({
         {hasFilters && (
           <button
             onClick={clearAll}
-            className="px-3 py-2 text-sm text-[#6B7280] hover:text-[#1A1A2E] border border-[#E5E7EB] rounded-lg transition"
+            className="px-3 py-2 text-sm text-secondary hover:text-heading border border-border rounded-lg transition"
           >
             Clear all
           </button>
@@ -531,7 +531,7 @@ export default function AppealsClient({
             title={
               exporting ? `Exporting ${exporting.toUpperCase()}…` : "Export"
             }
-            className="inline-flex items-center justify-center w-9.5 h-9.5 border-2 border-[#4A6FA5] rounded-lg hover:bg-[#F8F9FA] disabled:opacity-50 disabled:cursor-not-allowed transition text-[#4A6FA5]"
+            className="inline-flex items-center justify-center w-9.5 h-9.5 border-2 border-accent rounded-lg hover:bg-page disabled:opacity-50 disabled:cursor-not-allowed transition text-accent"
           >
             <svg
               className="w-4 h-4"
@@ -549,12 +549,12 @@ export default function AppealsClient({
           </button>
 
           {exportMenuOpen && (
-            <div className="absolute right-0 top-full mt-1 bg-white border border-[#E5E7EB] rounded-lg shadow-lg z-50 w-44 py-1">
+            <div className="absolute right-0 top-full mt-1 bg-white border border-border rounded-lg shadow-lg z-50 w-44 py-1">
               {(["excel", "pdf", "docx"] as const).map((fmt) => (
                 <button
                   key={fmt}
                   onClick={() => handleExport(fmt)}
-                  className="w-full text-left px-3 py-2 text-sm hover:bg-[#F8F9FA] text-[#1A1A2E] transition"
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-page text-heading transition"
                 >
                   {fmt === "excel" && "Excel (.xlsx)"}
                   {fmt === "pdf" && "PDF (.pdf)"}
@@ -567,37 +567,37 @@ export default function AppealsClient({
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-[#E5E7EB] rounded-xl overflow-hidden shadow-sm">
+      <div className="bg-white border border-border rounded-xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
             <thead>
-              <tr className="border-b-2 border-[#B0BDD0] bg-[#D1D9E6]">
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] w-10">
+              <tr className="border-b-2 border-table-header-border bg-table-header">
+                <th className="text-left px-4 py-3 font-semibold text-heading w-10">
                   #
                 </th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">
+                <th className="text-left px-4 py-3 font-semibold text-heading whitespace-nowrap">
                   Client
                 </th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">
+                <th className="text-left px-4 py-3 font-semibold text-heading whitespace-nowrap w-24">
                   FY
                 </th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">
+                <th className="text-left px-4 py-3 font-semibold text-heading whitespace-nowrap w-24">
                   AY
                 </th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">
+                <th className="text-left px-4 py-3 font-semibold text-heading whitespace-nowrap">
                   Act
                 </th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">
+                <th className="text-left px-4 py-3 font-semibold text-heading whitespace-nowrap w-28">
                   Status
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#E5E7EB]">
+            <tbody className="divide-y divide-border">
               {appeals.length === 0 ? (
                 <tr>
                   <td
                     colSpan={6}
-                    className="px-4 py-16 text-center text-[#6B7280]"
+                    className="px-4 py-16 text-center text-secondary"
                   >
                     {hasFilters
                       ? "No litigations match your filters."
@@ -610,22 +610,22 @@ export default function AppealsClient({
                 appeals.map((appeal, i) => (
                   <tr
                     key={appeal.id}
-                    className="hover:bg-[#F8F9FA] transition-colors cursor-pointer"
+                    className="hover:bg-page transition-colors cursor-pointer"
                     onClick={() => router.push(`/litigations/${appeal.id}`)}
                   >
-                    <td className="px-4 py-3 text-[#9CA3AF] text-xs">
+                    <td className="px-4 py-3 text-muted text-xs">
                       {rowOffset + i + 1}
                     </td>
-                    <td className="px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap max-w-45 truncate">
+                    <td className="px-4 py-3 text-secondary whitespace-nowrap max-w-80 truncate" title={appeal.client_org?.name ?? "—"}>
                       {appeal.client_org?.name ?? "—"}
                     </td>
-                    <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap text-xs">
+                    <td className="px-4 py-3 text-secondary whitespace-nowrap text-sm">
                       {appeal.financial_year?.name ?? "—"}
                     </td>
-                    <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap text-xs">
+                    <td className="px-4 py-3 text-secondary whitespace-nowrap text-sm">
                       {appeal.assessment_year?.name ?? "—"}
                     </td>
-                    <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap max-w-35 truncate">
+                    <td className="px-4 py-3 text-secondary whitespace-nowrap max-w-72 truncate" title={appeal.act_regulation?.name ?? "—"}>
                       {appeal.act_regulation?.name ?? "—"}
                     </td>
                     <td className="px-4 py-3">
@@ -638,7 +638,7 @@ export default function AppealsClient({
                             {s.label}
                           </span>
                         ) : (
-                          <span className="text-[#9CA3AF]">—</span>
+                          <span className="text-muted">—</span>
                         );
                       })()}
                     </td>
@@ -653,7 +653,7 @@ export default function AppealsClient({
       {/* Pagination footer */}
       {totalCount > 0 && (
         <div className="mt-4 flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-3 text-sm text-[#6B7280]">
+          <div className="flex items-center gap-3 text-sm text-secondary">
             <span>
               Showing {showingFrom}–{showingTo} of {totalCount} litigations
             </span>
@@ -662,7 +662,7 @@ export default function AppealsClient({
               <select
                 value={perPage}
                 onChange={(e) => push({ per_page: e.target.value, page: "1" })}
-                className="px-2 py-1 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]"
+                className="px-2 py-1 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 {PER_PAGE_OPTIONS.map((n) => (
                   <option key={n} value={n}>
@@ -679,7 +679,7 @@ export default function AppealsClient({
               <button
                 onClick={() => push({ page: String(page - 1) })}
                 disabled={page === 1}
-                className="h-9 px-3 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] disabled:opacity-40 disabled:cursor-not-allowed transition"
+                className="h-9 px-3 text-sm border border-border rounded-lg text-heading hover:bg-page disabled:opacity-40 disabled:cursor-not-allowed transition"
               >
                 ← Prev
               </button>
@@ -687,7 +687,7 @@ export default function AppealsClient({
                 p === "..." ? (
                   <span
                     key={`ellipsis-${i}`}
-                    className="px-1 text-[#9CA3AF] text-sm select-none"
+                    className="px-1 text-muted text-sm select-none"
                   >
                     …
                   </span>
@@ -704,7 +704,7 @@ export default function AppealsClient({
               <button
                 onClick={() => push({ page: String(page + 1) })}
                 disabled={page === totalPages}
-                className="h-9 px-3 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] disabled:opacity-40 disabled:cursor-not-allowed transition"
+                className="h-9 px-3 text-sm border border-border rounded-lg text-heading hover:bg-page disabled:opacity-40 disabled:cursor-not-allowed transition"
               >
                 Next →
               </button>

@@ -14,8 +14,8 @@ export default async function PlatformSettingsPage() {
   return (
     <div className="p-8 max-w-2xl">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-[#1A1A2E]">Platform Settings</h1>
-        <p className="text-[#6B7280] text-sm mt-0.5">
+        <h1 className="text-2xl font-semibold text-heading">Platform Settings</h1>
+        <p className="text-secondary text-sm mt-0.5">
           {user?.role === "super_admin"
             ? "Manage platform branding, support details, and your account."
             : "View platform settings and manage your account."}

@@ -18,14 +18,14 @@ export default async function ProvidersPage() {
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-[#1A1A2E]">Service Providers</h1>
-          <p className="text-[#6B7280] text-sm mt-0.5">
+          <h1 className="text-2xl font-semibold text-heading">Service Providers</h1>
+          <p className="text-secondary text-sm mt-0.5">
             {providers?.length ?? 0} registered service providers
           </p>
         </div>
         <Link
           href="/platform/providers/new"
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#1E3A5F] hover:bg-[#162d4a] text-white text-sm font-medium rounded-lg transition"
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary-dark text-white text-sm font-medium rounded-lg transition"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />

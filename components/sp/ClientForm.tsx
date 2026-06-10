@@ -254,8 +254,8 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
     }
   }
 
-  const fieldClass = `w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] ${readOnly ? "bg-[#F8F9FA] text-[#6B7280] cursor-not-allowed" : ""}`;
-  const inp = `w-full px-2.5 py-1.5 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] ${readOnly ? "bg-[#F8F9FA] text-[#6B7280] cursor-not-allowed" : ""}`;
+  const fieldClass = `w-full px-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${readOnly ? "bg-page text-secondary cursor-not-allowed" : ""}`;
+  const inp = `w-full px-2.5 py-1.5 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${readOnly ? "bg-page text-secondary cursor-not-allowed" : ""}`;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
@@ -264,12 +264,12 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
       )}
 
       {/* Basic Information */}
-      <section className="bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-sm">
-        <h2 className="text-sm font-semibold text-[#1A1A2E] mb-4 pb-3 border-b border-[#E5E7EB]">Basic Information</h2>
+      <section className="bg-white border border-border rounded-xl p-6 shadow-sm">
+        <h2 className="text-sm font-semibold text-heading mb-4 pb-3 border-b border-border">Basic Information</h2>
         <div className="max-w-2xl">
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
-            <label className="block text-xs font-medium text-[#6B7280] mb-1.5">
+            <label className="block text-xs font-medium text-secondary mb-1.5">
               Client Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -281,7 +281,7 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Client File Number</label>
+            <label className="block text-xs font-medium text-secondary mb-1.5">Client File Number</label>
             <input
               value={fileNumber}
               onChange={(e) => setFileNumber(e.target.value)}
@@ -291,7 +291,7 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Business Type</label>
+            <label className="block text-xs font-medium text-secondary mb-1.5">Business Type</label>
             <select
               value={businessType}
               onChange={(e) => setBusinessType(e.target.value)}
@@ -303,7 +303,7 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Date of Incorporation</label>
+            <label className="block text-xs font-medium text-secondary mb-1.5">Date of Incorporation</label>
             <input
               type="date"
               value={dateOfIncorporation}
@@ -314,14 +314,14 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
           </div>
           {!readOnly && (
             <div className="col-span-2">
-              <label className="block text-xs font-medium text-[#6B7280] mb-1.5">
-                Logo <span className="text-[#9CA3AF]">(JPG/PNG, max 2MB)</span>
+              <label className="block text-xs font-medium text-secondary mb-1.5">
+                Logo <span className="text-muted">(JPG/PNG, max 2MB)</span>
               </label>
               <div className="flex items-center gap-4">
                 {logoUrl && (
-                  <Image src={logoUrl} alt="Logo" width={48} height={48} className="w-12 h-12 rounded-lg object-cover border border-[#E5E7EB]" />
+                  <Image src={logoUrl} alt="Logo" width={48} height={48} className="w-12 h-12 rounded-lg object-cover border border-border" />
                 )}
-                <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F8F9FA] transition">
+                <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 text-sm border border-border rounded-lg text-secondary hover:bg-page transition">
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
@@ -333,8 +333,8 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
           )}
           {readOnly && logoUrl && (
             <div className="col-span-2">
-              <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Logo</label>
-              <Image src={logoUrl} alt="Logo" width={64} height={64} className="w-16 h-16 rounded-lg object-cover border border-[#E5E7EB]" />
+              <label className="block text-xs font-medium text-secondary mb-1.5">Logo</label>
+              <Image src={logoUrl} alt="Logo" width={64} height={64} className="w-16 h-16 rounded-lg object-cover border border-border" />
             </div>
           )}
         </div>
@@ -342,24 +342,24 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
       </section>
 
       {/* Address */}
-      <section className="bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-sm">
-        <h2 className="text-sm font-semibold text-[#1A1A2E] mb-4 pb-3 border-b border-[#E5E7EB]">Address</h2>
+      <section className="bg-white border border-border rounded-xl p-6 shadow-sm">
+        <h2 className="text-sm font-semibold text-heading mb-4 pb-3 border-b border-border">Address</h2>
         <div className="max-w-2xl">
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
-            <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Address Line 1 <span className="text-[#9CA3AF]">(Building, Road)</span></label>
+            <label className="block text-xs font-medium text-secondary mb-1.5">Address Line 1 <span className="text-muted">(Building, Road)</span></label>
             <input value={address1} onChange={(e) => setAddress1(e.target.value)} disabled={readOnly} className={fieldClass} />
           </div>
           <div className="col-span-2">
-            <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Address Line 2 <span className="text-[#9CA3AF]">(Area, Locality)</span></label>
+            <label className="block text-xs font-medium text-secondary mb-1.5">Address Line 2 <span className="text-muted">(Area, Locality)</span></label>
             <input value={address2} onChange={(e) => setAddress2(e.target.value)} disabled={readOnly} className={fieldClass} />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#6B7280] mb-1.5">City</label>
+            <label className="block text-xs font-medium text-secondary mb-1.5">City</label>
             <input value={city} onChange={(e) => setCity(e.target.value)} disabled={readOnly} className={fieldClass} />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#6B7280] mb-1.5">State</label>
+            <label className="block text-xs font-medium text-secondary mb-1.5">State</label>
             <select
               value={stateOther ? "Other" : state}
               onChange={(e) => {
@@ -381,11 +381,11 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
             )}
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#6B7280] mb-1.5">PIN Code</label>
+            <label className="block text-xs font-medium text-secondary mb-1.5">PIN Code</label>
             <input value={pinCode} onChange={(e) => setPinCode(e.target.value)} maxLength={6} disabled={readOnly} className={fieldClass} />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Country</label>
+            <label className="block text-xs font-medium text-secondary mb-1.5">Country</label>
             <input value={country} onChange={(e) => setCountry(e.target.value)} disabled={readOnly} className={fieldClass} />
           </div>
         </div>
@@ -393,29 +393,29 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
       </section>
 
       {/* Compliance Details */}
-      <section className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-[#E5E7EB]">
-          <h2 className="text-sm font-semibold text-[#1A1A2E]">
-            Compliance Details <span className="text-[#9CA3AF] font-normal">(Optional)</span>
+      <section className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-border">
+          <h2 className="text-sm font-semibold text-heading">
+            Compliance Details <span className="text-muted font-normal">(Optional)</span>
           </h2>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="bg-[#F8F9FA] border-b border-[#E5E7EB]">
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280] whitespace-nowrap w-40">ID Type</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280] min-w-[180px]">ID</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280] min-w-[180px]">Login ID</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280] w-44">Password</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6B7280] w-36">Attachment</th>
+              <tr className="bg-page border-b border-border">
+                <th className="text-left px-4 py-3 font-medium text-secondary whitespace-nowrap w-40">ID Type</th>
+                <th className="text-left px-4 py-3 font-medium text-secondary min-w-[180px]">ID</th>
+                <th className="text-left px-4 py-3 font-medium text-secondary min-w-[180px]">Login ID</th>
+                <th className="text-left px-4 py-3 font-medium text-secondary w-44">Password</th>
+                <th className="text-left px-4 py-3 font-medium text-secondary w-36">Attachment</th>
                 <th className="w-8" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#E5E7EB]">
+            <tbody className="divide-y divide-border">
               {/* Fixed rows */}
               {COMPLIANCE_TYPES.map(({ key, label }) => (
-                <tr key={key} className="hover:bg-[#FAFAFA]">
-                  <td className="px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">{label}</td>
+                <tr key={key} className="hover:bg-stripe">
+                  <td className="px-4 py-3 font-medium text-heading whitespace-nowrap">{label}</td>
                   <td className="px-4 py-3">
                     <input value={compliance[key].number} onChange={(e) => updateCompliance(key, "number", e.target.value)} disabled={readOnly} placeholder={`${label} number`} className={inp} />
                   </td>
@@ -425,7 +425,7 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
                   <td className="px-4 py-3">
                     <div className="relative">
                       <input type={compliance[key].showCredential ? "text" : "password"} value={compliance[key].credential} onChange={(e) => updateCompliance(key, "credential", e.target.value)} disabled={readOnly} placeholder="Password" autoComplete="new-password" className={`${inp} pr-8`} />
-                      <button type="button" onClick={() => updateCompliance(key, "showCredential", !compliance[key].showCredential)} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#6B7280]">
+                      <button type="button" onClick={() => updateCompliance(key, "showCredential", !compliance[key].showCredential)} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-secondary">
                         <EyeIcon visible={compliance[key].showCredential} />
                       </button>
                     </div>
@@ -434,13 +434,13 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
                     <div className="flex items-center gap-0.5">
                       {compliance[key].attachment_url && (
                         <a href={compliance[key].attachment_url} target="_blank" rel="noopener noreferrer" title="View attachment"
-                          className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] inline-flex">
+                          className="p-1.5 rounded hover:bg-surface-hover transition-colors text-accent hover:text-primary inline-flex">
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                         </a>
                       )}
                       {!readOnly && (
                         <label title={compliance[key].attachment_url ? "Replace attachment" : "Upload attachment"}
-                          className="cursor-pointer p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#6B7280] hover:text-[#1A1A2E] inline-flex">
+                          className="cursor-pointer p-1.5 rounded hover:bg-surface-hover transition-colors text-secondary hover:text-heading inline-flex">
                           {compliance[key].uploading
                             ? <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
                             : <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
@@ -450,7 +450,7 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
                       )}
                       {!readOnly && compliance[key].attachment_url && (
                         <button type="button" onClick={() => clearComplianceAttachment(key)} title="Remove attachment"
-                          className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-red-400 hover:text-red-600 inline-flex">
+                          className="p-1.5 rounded hover:bg-surface-hover transition-colors text-red-400 hover:text-red-600 inline-flex">
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                         </button>
                       )}
@@ -462,10 +462,10 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
 
               {/* Extra rows */}
               {extraRows.map((row) => (
-                <tr key={row.rowId} className="hover:bg-[#FAFAFA]">
+                <tr key={row.rowId} className="hover:bg-stripe">
                   <td className="px-4 py-3">
                     {readOnly ? (
-                      <span className="font-medium text-[#1A1A2E]">{row.type}</span>
+                      <span className="font-medium text-heading">{row.type}</span>
                     ) : (
                       <select value={row.type} onChange={(e) => updateExtraRow(row.rowId, "type", e.target.value)} className={`${inp} text-xs`}>
                         {[...EXTRA_ID_TYPES].sort().map((t) => <option key={t} value={t}>{t}</option>)}
@@ -481,7 +481,7 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
                   <td className="px-4 py-3">
                     <div className="relative">
                       <input type={row.showCredential ? "text" : "password"} value={row.credential} onChange={(e) => updateExtraRow(row.rowId, "credential", e.target.value)} disabled={readOnly} placeholder="Password" autoComplete="new-password" className={`${inp} pr-8`} />
-                      <button type="button" onClick={() => updateExtraRow(row.rowId, "showCredential", !row.showCredential)} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#6B7280]">
+                      <button type="button" onClick={() => updateExtraRow(row.rowId, "showCredential", !row.showCredential)} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-secondary">
                         <EyeIcon visible={row.showCredential} />
                       </button>
                     </div>
@@ -490,13 +490,13 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
                     <div className="flex items-center gap-0.5">
                       {row.attachment_url && (
                         <a href={row.attachment_url} target="_blank" rel="noopener noreferrer" title="View attachment"
-                          className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] inline-flex">
+                          className="p-1.5 rounded hover:bg-surface-hover transition-colors text-accent hover:text-primary inline-flex">
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                         </a>
                       )}
                       {!readOnly && (
                         <label title={row.attachment_url ? "Replace attachment" : "Upload attachment"}
-                          className="cursor-pointer p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#6B7280] hover:text-[#1A1A2E] inline-flex">
+                          className="cursor-pointer p-1.5 rounded hover:bg-surface-hover transition-colors text-secondary hover:text-heading inline-flex">
                           {row.uploading
                             ? <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
                             : <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
@@ -506,7 +506,7 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
                       )}
                       {!readOnly && row.attachment_url && (
                         <button type="button" onClick={() => clearExtraAttachment(row.rowId)} title="Remove attachment"
-                          className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-red-400 hover:text-red-600 inline-flex">
+                          className="p-1.5 rounded hover:bg-surface-hover transition-colors text-red-400 hover:text-red-600 inline-flex">
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                         </button>
                       )}
@@ -514,7 +514,7 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
                   </td>
                   <td className="px-2 py-3">
                     {!readOnly && (
-                      <button type="button" onClick={() => removeExtraRow(row.rowId)} className="text-[#9CA3AF] hover:text-red-500 transition" title="Remove row">
+                      <button type="button" onClick={() => removeExtraRow(row.rowId)} className="text-muted hover:text-red-500 transition" title="Remove row">
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                         </svg>
@@ -526,9 +526,9 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
 
               {/* Add Row */}
               {!readOnly && (
-                <tr className="bg-[#FAFAFA]">
+                <tr className="bg-stripe">
                   <td colSpan={6} className="px-4 py-2.5">
-                    <button type="button" onClick={addExtraRow} className="inline-flex items-center gap-1.5 text-xs text-[#4A6FA5] hover:text-[#1E3A5F] transition font-medium">
+                    <button type="button" onClick={addExtraRow} className="inline-flex items-center gap-1.5 text-xs text-accent hover:text-primary transition font-medium">
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                       </svg>
@@ -548,14 +548,14 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
           <button
             type="button"
             onClick={() => router.push("/clients")}
-            className="px-5 py-2.5 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition"
+            className="px-5 py-2.5 text-sm border border-border rounded-lg text-heading hover:bg-page transition"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="px-5 py-2.5 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60"
+            className="px-5 py-2.5 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition disabled:opacity-60"
           >
             {saving ? "Saving…" : mode === "create" ? "Add Client" : "Save Changes"}
           </button>
@@ -567,7 +567,7 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
           <button
             type="button"
             onClick={() => router.push("/clients")}
-            className="px-5 py-2.5 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition"
+            className="px-5 py-2.5 text-sm border border-border rounded-lg text-heading hover:bg-page transition"
           >
             Back to Clients
           </button>

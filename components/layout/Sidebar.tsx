@@ -495,7 +495,7 @@ export default function Sidebar({
 
   return (
     <aside
-      className={`relative shrink-0 bg-[#1E3A5F] flex flex-col h-full transition-all duration-300 ${
+      className={`relative shrink-0 bg-primary flex flex-col h-full transition-all duration-300 ${
         collapsed ? "w-16" : "w-56"
       }`}
     >
@@ -685,14 +685,14 @@ export default function Sidebar({
       {/* Change Password Modal */}
       {showChangePw && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl border border-[#E5E7EB] w-full max-w-sm">
-            <div className="px-6 py-4 border-b border-[#E5E7EB] flex items-center justify-between">
-              <h3 className="text-base font-semibold text-[#1A1A2E]">
+          <div className="bg-white rounded-xl shadow-xl border border-border w-full max-w-sm">
+            <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+              <h3 className="text-base font-semibold text-heading">
                 Change Password
               </h3>
               <button
                 onClick={() => setShowChangePw(false)}
-                className="text-[#9CA3AF] hover:text-[#6B7280]"
+                className="text-muted hover:text-secondary"
               >
                 <svg
                   className="w-5 h-5"
@@ -727,15 +727,15 @@ export default function Sidebar({
                     />
                   </svg>
                 </div>
-                <p className="text-sm font-medium text-[#1A1A2E] mb-1">
+                <p className="text-sm font-medium text-heading mb-1">
                   Password updated!
                 </p>
-                <p className="text-xs text-[#6B7280] mb-4">
+                <p className="text-xs text-secondary mb-4">
                   Your new password is active immediately.
                 </p>
                 <button
                   onClick={() => setShowChangePw(false)}
-                  className="px-5 py-2 text-sm bg-[#1E3A5F] text-white rounded-lg font-medium hover:bg-[#162d4a] transition"
+                  className="px-5 py-2 text-sm bg-primary text-white rounded-lg font-medium hover:bg-primary-dark transition"
                 >
                   Done
                 </button>
@@ -753,7 +753,7 @@ export default function Sidebar({
                 )}
 
                 <div>
-                  <label className="block text-xs font-medium text-[#6B7280] mb-1.5">
+                  <label className="block text-xs font-medium text-secondary mb-1.5">
                     Current Password <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
@@ -763,12 +763,12 @@ export default function Sidebar({
                       onChange={(e) => setCurrentPassword(e.target.value)}
                       placeholder="Enter your current password"
                       autoComplete="current-password"
-                      className="w-full px-3 py-2 pr-9 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]"
+                      className="w-full px-3 py-2 pr-9 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                     <button
                       type="button"
                       onClick={() => setShowCurrentPw(!showCurrentPw)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#6B7280]"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-secondary"
                     >
                       <svg
                         className="w-4 h-4"
@@ -803,7 +803,7 @@ export default function Sidebar({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-[#6B7280] mb-1.5">
+                  <label className="block text-xs font-medium text-secondary mb-1.5">
                     New Password <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
@@ -813,12 +813,12 @@ export default function Sidebar({
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="Min. 8 characters"
                       autoComplete="new-password"
-                      className="w-full px-3 py-2 pr-9 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]"
+                      className="w-full px-3 py-2 pr-9 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                     <button
                       type="button"
                       onClick={() => setShowNewPw(!showNewPw)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#6B7280]"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-secondary"
                     >
                       <svg
                         className="w-4 h-4"
@@ -853,7 +853,7 @@ export default function Sidebar({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-[#6B7280] mb-1.5">
+                  <label className="block text-xs font-medium text-secondary mb-1.5">
                     Confirm Password <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -862,7 +862,7 @@ export default function Sidebar({
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Repeat new password"
                     autoComplete="new-password"
-                    className="w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]"
+                    className="w-full px-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
 
@@ -870,14 +870,14 @@ export default function Sidebar({
                   <button
                     type="button"
                     onClick={() => setShowChangePw(false)}
-                    className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition"
+                    className="flex-1 px-4 py-2 text-sm border border-border rounded-lg text-heading hover:bg-page transition"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={pwLoading}
-                    className="flex-1 px-4 py-2 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60"
+                    className="flex-1 px-4 py-2 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition disabled:opacity-60"
                   >
                     {pwLoading ? "Updating…" : "Update"}
                   </button>
@@ -891,7 +891,7 @@ export default function Sidebar({
       {/* Collapse toggle button — centered on right edge */}
       <button
         onClick={toggleCollapsed}
-        className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[#1E3A5F] border-2 border-white/20 flex items-center justify-center hover:border-white/50 transition-colors z-10"
+        className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-primary border-2 border-white/20 flex items-center justify-center hover:border-white/50 transition-colors z-10"
         title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
       >
         <svg

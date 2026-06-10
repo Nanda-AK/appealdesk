@@ -71,7 +71,7 @@ function EyeIcon({ visible }: { visible: boolean }) {
 
 export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
   const ro = !isAdmin; // read-only for non-admins
-  const fieldClass = `w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] ${ro ? "bg-[#F8F9FA] text-[#6B7280] cursor-not-allowed" : ""}`;
+  const fieldClass = `w-full px-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${ro ? "bg-page text-secondary cursor-not-allowed" : ""}`;
 
   // Profile state
   const [name, setName] = useState(org?.name ?? "");
@@ -227,34 +227,34 @@ export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
     }
   }
 
-  const cellInp = `w-full px-2.5 py-1.5 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] ${ro ? "bg-[#F8F9FA] text-[#6B7280] cursor-not-allowed" : ""}`;
+  const cellInp = `w-full px-2.5 py-1.5 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${ro ? "bg-page text-secondary cursor-not-allowed" : ""}`;
 
   return (
     <div className="space-y-6">
 
       {/* ── Organisation Profile ── */}
-      <section className="bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-sm">
-        <h2 className="text-sm font-semibold text-[#1A1A2E] pb-3 border-b border-[#E5E7EB] mb-4 flex items-center justify-between">
+      <section className="bg-white border border-border rounded-xl p-6 shadow-sm">
+        <h2 className="text-sm font-semibold text-heading pb-3 border-b border-border mb-4 flex items-center justify-between">
           Organisation Profile
-          {ro && <span className="text-xs font-normal text-[#9CA3AF]">Read-only</span>}
+          {ro && <span className="text-xs font-normal text-muted">Read-only</span>}
         </h2>
 
         <form onSubmit={handleSaveProfile} className="space-y-4" autoComplete="off">
           <div className="max-w-2xl space-y-4">
           {/* Logo */}
           <div>
-            <label className="block text-xs font-medium text-[#6B7280] mb-2">Logo <span className="text-[#9CA3AF]">(JPG/PNG, max 2MB)</span></label>
+            <label className="block text-xs font-medium text-secondary mb-2">Logo <span className="text-muted">(JPG/PNG, max 2MB)</span></label>
             <div className="flex items-center gap-4">
               {logoUrl ? (
-                <Image src={logoUrl} alt="Logo" width={56} height={56} className="w-14 h-14 rounded-xl object-cover border border-[#E5E7EB]" />
+                <Image src={logoUrl} alt="Logo" width={56} height={56} className="w-14 h-14 rounded-xl object-cover border border-border" />
               ) : (
-                <div className="w-14 h-14 rounded-xl bg-[#1E3A5F] flex items-center justify-center flex-shrink-0">
+                <div className="w-14 h-14 rounded-xl bg-primary flex items-center justify-center flex-shrink-0">
                   <span className="text-white font-bold text-xl">{name.charAt(0).toUpperCase() || "S"}</span>
                 </div>
               )}
               {!ro && (
                 <div className="space-y-1">
-                  <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F8F9FA] transition">
+                  <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 text-sm border border-border rounded-lg text-secondary hover:bg-page transition">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
@@ -272,18 +272,18 @@ export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
           {/* Name + Business Type */}
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Organisation Name <span className="text-red-500">*</span></label>
+              <label className="block text-xs font-medium text-secondary mb-1.5">Organisation Name <span className="text-red-500">*</span></label>
               <input value={name} onChange={(e) => setName(e.target.value)} disabled={ro} className={fieldClass} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Business Type</label>
+              <label className="block text-xs font-medium text-secondary mb-1.5">Business Type</label>
               <select value={businessType} onChange={(e) => setBusinessType(e.target.value)} disabled={ro} className={fieldClass}>
                 <option value="">Select type</option>
                 {[...BUSINESS_TYPES].sort().map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Date of Incorporation</label>
+              <label className="block text-xs font-medium text-secondary mb-1.5">Date of Incorporation</label>
               <input type="date" value={dateOfIncorporation} onChange={(e) => setDateOfIncorporation(e.target.value)} disabled={ro} className={fieldClass} />
             </div>
           </div>
@@ -291,19 +291,19 @@ export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
           {/* Address */}
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Address Line 1</label>
+              <label className="block text-xs font-medium text-secondary mb-1.5">Address Line 1</label>
               <input value={address1} onChange={(e) => setAddress1(e.target.value)} disabled={ro} className={fieldClass} />
             </div>
             <div className="col-span-2">
-              <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Address Line 2</label>
+              <label className="block text-xs font-medium text-secondary mb-1.5">Address Line 2</label>
               <input value={address2} onChange={(e) => setAddress2(e.target.value)} disabled={ro} className={fieldClass} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-[#6B7280] mb-1.5">City</label>
+              <label className="block text-xs font-medium text-secondary mb-1.5">City</label>
               <input value={city} onChange={(e) => setCity(e.target.value)} disabled={ro} className={fieldClass} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-[#6B7280] mb-1.5">State</label>
+              <label className="block text-xs font-medium text-secondary mb-1.5">State</label>
               <select
                 value={stateOther ? "Other" : state}
                 onChange={(e) => {
@@ -322,11 +322,11 @@ export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
               )}
             </div>
             <div>
-              <label className="block text-xs font-medium text-[#6B7280] mb-1.5">PIN Code</label>
+              <label className="block text-xs font-medium text-secondary mb-1.5">PIN Code</label>
               <input value={pinCode} onChange={(e) => setPinCode(e.target.value)} maxLength={6} disabled={ro} className={fieldClass} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Country</label>
+              <label className="block text-xs font-medium text-secondary mb-1.5">Country</label>
               <input value={country} onChange={(e) => setCountry(e.target.value)} disabled={ro} className={fieldClass} />
             </div>
           </div>
@@ -334,27 +334,27 @@ export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
           </div>{/* end max-w-2xl */}
 
           {/* Compliance table */}
-          <div className="border border-[#E5E7EB] rounded-xl overflow-hidden">
-            <div className="px-4 py-3 bg-[#F8F9FA] border-b border-[#E5E7EB]">
-              <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Compliance Details</p>
+          <div className="border border-border rounded-xl overflow-hidden">
+            <div className="px-4 py-3 bg-page border-b border-border">
+              <p className="text-xs font-semibold text-secondary uppercase tracking-wide">Compliance Details</p>
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
                 <thead>
-                  <tr className="border-b border-[#E5E7EB] bg-white">
-                    <th className="text-left px-4 py-3 font-medium text-[#6B7280] whitespace-nowrap w-36">ID Type</th>
-                    <th className="text-left px-4 py-3 font-medium text-[#6B7280] min-w-[180px]">ID</th>
-                    <th className="text-left px-4 py-3 font-medium text-[#6B7280] min-w-[180px]">Login ID</th>
-                    <th className="text-left px-4 py-3 font-medium text-[#6B7280] min-w-[180px]">Password</th>
-                    <th className="text-left px-4 py-3 font-medium text-[#6B7280] w-36">Attachment</th>
+                  <tr className="border-b border-border bg-white">
+                    <th className="text-left px-4 py-3 font-medium text-secondary whitespace-nowrap w-36">ID Type</th>
+                    <th className="text-left px-4 py-3 font-medium text-secondary min-w-[180px]">ID</th>
+                    <th className="text-left px-4 py-3 font-medium text-secondary min-w-[180px]">Login ID</th>
+                    <th className="text-left px-4 py-3 font-medium text-secondary min-w-[180px]">Password</th>
+                    <th className="text-left px-4 py-3 font-medium text-secondary w-36">Attachment</th>
                     <th className="w-8" />
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#E5E7EB]">
+                <tbody className="divide-y divide-border">
                   {/* Fixed rows */}
                   {COMPLIANCE_TYPES.map(({ key, label }) => (
-                    <tr key={key} className="hover:bg-[#FAFAFA]">
-                      <td className="px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">{label}</td>
+                    <tr key={key} className="hover:bg-stripe">
+                      <td className="px-4 py-3 font-medium text-heading whitespace-nowrap">{label}</td>
                       <td className="px-4 py-3">
                         <input value={complianceState[key].number} onChange={(e) => updateCompliance(key, "number", e.target.value)} disabled={ro} placeholder={`${label} number`} className={cellInp} />
                       </td>
@@ -364,7 +364,7 @@ export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
                       <td className="px-4 py-3">
                         <div className="relative">
                           <input type={complianceState[key].showCredential ? "text" : "password"} value={complianceState[key].credential} onChange={(e) => updateCompliance(key, "credential", e.target.value)} disabled={ro} placeholder="Password" autoComplete="new-password" className={`${cellInp} pr-8`} />
-                          <button type="button" onClick={() => updateCompliance(key, "showCredential", !complianceState[key].showCredential)} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#6B7280]">
+                          <button type="button" onClick={() => updateCompliance(key, "showCredential", !complianceState[key].showCredential)} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-secondary">
                             <EyeIcon visible={complianceState[key].showCredential} />
                           </button>
                         </div>
@@ -372,7 +372,7 @@ export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2 flex-wrap">
                           {complianceState[key].attachment_url && (
-                            <a href={complianceState[key].attachment_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-[#4A6FA5] hover:underline">
+                            <a href={complianceState[key].attachment_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-accent hover:underline">
                               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                               </svg>
@@ -380,7 +380,7 @@ export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
                             </a>
                           )}
                           {!ro && (
-                            <label className="cursor-pointer inline-flex items-center gap-1 px-2 py-1 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F8F9FA] transition whitespace-nowrap">
+                            <label className="cursor-pointer inline-flex items-center gap-1 px-2 py-1 text-xs border border-border rounded-lg text-secondary hover:bg-page transition whitespace-nowrap">
                               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                               </svg>
@@ -396,10 +396,10 @@ export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
 
                   {/* Extra rows */}
                   {extraRows.map((row) => (
-                    <tr key={row.rowId} className="hover:bg-[#FAFAFA]">
+                    <tr key={row.rowId} className="hover:bg-stripe">
                       <td className="px-4 py-3">
                         {ro ? (
-                          <span className="font-medium text-[#1A1A2E]">{row.type}</span>
+                          <span className="font-medium text-heading">{row.type}</span>
                         ) : (
                           <select value={row.type} onChange={(e) => updateExtraRow(row.rowId, "type", e.target.value)} className={`${cellInp} text-xs`}>
                             {[...EXTRA_ID_TYPES].sort().map((t) => <option key={t} value={t}>{t}</option>)}
@@ -415,7 +415,7 @@ export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
                       <td className="px-4 py-3">
                         <div className="relative">
                           <input type={row.showCredential ? "text" : "password"} value={row.credential} onChange={(e) => updateExtraRow(row.rowId, "credential", e.target.value)} disabled={ro} placeholder="Password" autoComplete="new-password" className={`${cellInp} pr-8`} />
-                          <button type="button" onClick={() => updateExtraRow(row.rowId, "showCredential", !row.showCredential)} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#6B7280]">
+                          <button type="button" onClick={() => updateExtraRow(row.rowId, "showCredential", !row.showCredential)} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-secondary">
                             <EyeIcon visible={row.showCredential} />
                           </button>
                         </div>
@@ -423,7 +423,7 @@ export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2 flex-wrap">
                           {row.attachment_url && (
-                            <a href={row.attachment_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-[#4A6FA5] hover:underline">
+                            <a href={row.attachment_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-accent hover:underline">
                               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                               </svg>
@@ -431,7 +431,7 @@ export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
                             </a>
                           )}
                           {!ro && (
-                            <label className="cursor-pointer inline-flex items-center gap-1 px-2 py-1 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F8F9FA] transition whitespace-nowrap">
+                            <label className="cursor-pointer inline-flex items-center gap-1 px-2 py-1 text-xs border border-border rounded-lg text-secondary hover:bg-page transition whitespace-nowrap">
                               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                               </svg>
@@ -443,7 +443,7 @@ export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
                       </td>
                       <td className="px-2 py-3">
                         {!ro && (
-                          <button type="button" onClick={() => removeExtraRow(row.rowId)} className="text-[#9CA3AF] hover:text-red-500 transition" title="Remove row">
+                          <button type="button" onClick={() => removeExtraRow(row.rowId)} className="text-muted hover:text-red-500 transition" title="Remove row">
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                             </svg>
@@ -455,9 +455,9 @@ export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
 
                   {/* Add Row */}
                   {!ro && (
-                    <tr className="bg-[#FAFAFA]">
+                    <tr className="bg-stripe">
                       <td colSpan={6} className="px-4 py-3">
-                        <button type="button" onClick={addExtraRow} className="inline-flex items-center gap-1.5 text-xs text-[#4A6FA5] hover:text-[#1E3A5F] transition font-medium">
+                        <button type="button" onClick={addExtraRow} className="inline-flex items-center gap-1.5 text-xs text-accent hover:text-primary transition font-medium">
                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                           </svg>
@@ -476,7 +476,7 @@ export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
               {profileError && <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{profileError}</div>}
               {profileSuccess && <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">Profile saved successfully.</div>}
               <div className="flex justify-end">
-                <button type="submit" disabled={profileSaving} className="px-5 py-3 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60">
+                <button type="submit" disabled={profileSaving} className="px-5 py-3 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition disabled:opacity-60">
                   {profileSaving ? "Saving…" : "Save Profile"}
                 </button>
               </div>

@@ -45,7 +45,7 @@ interface Props {
   clientUsersByOrg: Record<string, { id: string; first_name: string; last_name: string }[]>;
 }
 
-const inp = "w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]";
+const inp = "w-full px-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary";
 
 function MultiSelect({ options, selected, onChange, placeholder, disabled }: {
   options: { value: string; label: string }[];
@@ -63,35 +63,35 @@ function MultiSelect({ options, selected, onChange, placeholder, disabled }: {
     <div className="relative">
       <div
         onClick={() => !disabled && setOpen(o => !o)}
-        className={`${inp} flex items-center justify-between gap-2 min-h-10.5 flex-wrap ${disabled ? "opacity-50 cursor-not-allowed bg-[#F3F4F6]" : "cursor-pointer"}`}
+        className={`${inp} flex items-center justify-between gap-2 min-h-10.5 flex-wrap ${disabled ? "opacity-50 cursor-not-allowed bg-surface-hover" : "cursor-pointer"}`}
       >
         {selectedLabels.length === 0 ? (
-          <span className="text-[#9CA3AF] text-sm">{placeholder ?? "Select…"}</span>
+          <span className="text-muted text-sm">{placeholder ?? "Select…"}</span>
         ) : (
           <div className="flex flex-wrap gap-1 flex-1">
             {selectedLabels.map((label, i) => (
-              <span key={i} className="inline-flex px-2 py-0.5 bg-[#EEF2FF] text-[#4A6FA5] rounded text-xs font-medium">{label}</span>
+              <span key={i} className="inline-flex px-2 py-0.5 bg-accent-light text-accent rounded text-xs font-medium">{label}</span>
             ))}
           </div>
         )}
-        <svg className={`w-4 h-4 shrink-0 text-[#6B7280] transition-transform ${open ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg className={`w-4 h-4 shrink-0 text-secondary transition-transform ${open ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
       </div>
       {open && !disabled && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-[#E5E7EB] rounded-lg shadow-lg max-h-48 overflow-y-auto">
+          <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
             {options.length === 0 ? (
-              <div className="px-3 py-2 text-xs text-[#9CA3AF]">No options available</div>
+              <div className="px-3 py-2 text-xs text-muted">No options available</div>
             ) : options.map(opt => (
-              <div key={opt.value} onClick={() => toggle(opt.value)} className="flex items-center gap-2 px-3 py-2 hover:bg-[#F3F4F6] cursor-pointer">
-                <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 ${selected.includes(opt.value) ? "bg-[#1E3A5F] border-[#1E3A5F]" : "border-[#D1D5DB]"}`}>
+              <div key={opt.value} onClick={() => toggle(opt.value)} className="flex items-center gap-2 px-3 py-2 hover:bg-surface-hover cursor-pointer">
+                <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 ${selected.includes(opt.value) ? "bg-primary border-primary" : "border-border-strong"}`}>
                   {selected.includes(opt.value) && (
                     <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                   )}
                 </div>
-                <span className="text-sm text-[#1A1A2E]">{opt.label}</span>
+                <span className="text-sm text-heading">{opt.label}</span>
               </div>
             ))}
           </div>
@@ -104,7 +104,7 @@ function MultiSelect({ options, selected, onChange, placeholder, disabled }: {
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-[#6B7280] mb-1.5">
+      <label className="block text-xs font-medium text-secondary mb-1.5">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
       {children}
@@ -226,8 +226,8 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Section 1 */}
-      <section className="bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-sm">
-        <h2 className="text-sm font-semibold text-[#1A1A2E] pb-3 border-b border-[#E5E7EB] mb-5">Litigation Details</h2>
+      <section className="bg-white border border-border rounded-xl p-6 shadow-sm">
+        <h2 className="text-sm font-semibold text-heading pb-3 border-b border-border mb-5">Litigation Details</h2>
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
             <Field label="Client Organisation" required>
@@ -255,7 +255,7 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
           </div>
           {!hideAY && (
             <Field label="Assessment Year">
-              <div className="w-full px-3 py-2 text-sm border-2 rounded-lg bg-[#F3F4F6] border-[#E5E7EB] text-[#6B7280] cursor-not-allowed">
+              <div className="w-full px-3 py-2 text-sm border-2 rounded-lg bg-surface-hover border-border text-secondary cursor-not-allowed">
                 {ayDisabled
                   ? "Not applicable"
                   : (mastersByType["assessment_year"] ?? []).find(m => m.id === assessmentYearId)?.name ?? "—"}
@@ -273,8 +273,8 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
       </section>
 
       {/* Section 2 */}
-      <section className="bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-sm">
-        <h2 className="text-sm font-semibold text-[#1A1A2E] pb-3 border-b border-[#E5E7EB] mb-5">Proceeding</h2>
+      <section className="bg-white border border-border rounded-xl p-6 shadow-sm">
+        <h2 className="text-sm font-semibold text-heading pb-3 border-b border-border mb-5">Proceeding</h2>
         <div className="grid grid-cols-2 gap-4">
           <Field label={`Proceeding${actRegulationId ? "" : " (select Act first)"}`}>
             <select value={proceedingTypeId} onChange={(e) => setProceedingTypeId(e.target.value)} className={inp} disabled={!actRegulationId}>
@@ -353,7 +353,7 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
         </div>
 
         {/* Attachments */}
-        <div className="border-t border-[#E5E7EB] mt-4 pt-4">
+        <div className="border-t border-border mt-4 pt-4">
           <PendingAttachments files={pendingFiles} onChange={setPendingFiles} />
         </div>
       </section>
@@ -364,11 +364,11 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
 
       <div className="flex gap-3 justify-end">
         <button type="button" onClick={() => router.push("/litigations")}
-          className="px-5 py-2.5 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">
+          className="px-5 py-2.5 text-sm border border-border rounded-lg text-heading hover:bg-page transition">
           Cancel
         </button>
         <button type="submit" disabled={saving}
-          className="px-5 py-2.5 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60">
+          className="px-5 py-2.5 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition disabled:opacity-60">
           {saving ? "Creating…" : "Create Litigation"}
         </button>
       </div>

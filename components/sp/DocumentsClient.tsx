@@ -193,11 +193,11 @@ function FormAttachments({ formId, files, canEdit, canDelete }: { formId: string
     <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">
+        <span className="text-xs font-semibold text-secondary uppercase tracking-wide">
           Attachments ({activeFiles.length})
         </span>
         {canEdit && (
-          <label className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg cursor-pointer transition">
+          <label className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs bg-primary hover:bg-primary-dark text-white rounded-lg cursor-pointer transition">
             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
@@ -211,18 +211,18 @@ function FormAttachments({ formId, files, canEdit, canDelete }: { formId: string
 
       {/* Pending files */}
       {pendingFiles.length > 0 && (
-        <div className="mb-2 border border-[#E5E7EB] rounded-lg divide-y divide-[#F3F4F6] overflow-hidden">
+        <div className="mb-2 border border-border rounded-lg divide-y divide-surface-hover overflow-hidden">
           {pendingFiles.map((file, idx) => {
             const badge = fileTypeBadge(file.name);
             return (
-              <div key={idx} className="flex items-center gap-3 px-3 py-2 bg-[#FFFBEB]">
+              <div key={idx} className="flex items-center gap-3 px-3 py-2 bg-warning-light">
                 <div className={`w-7 h-7 rounded ${badge.bg} flex items-center justify-center flex-shrink-0`}>
                   <span className={`text-xs font-bold ${badge.text}`}>{badge.label}</span>
                 </div>
-                <span className="text-xs text-[#1A1A2E] flex-1 min-w-0 truncate">{file.name}</span>
-                <span className="text-xs text-[#9CA3AF] flex-shrink-0">{fmtSize(file.size)}</span>
+                <span className="text-xs text-heading flex-1 min-w-0 truncate">{file.name}</span>
+                <span className="text-xs text-muted flex-shrink-0">{fmtSize(file.size)}</span>
                 <button type="button" onClick={() => removePending(idx)}
-                  className="p-1 rounded hover:bg-[#F3F4F6] text-red-400 hover:text-red-600 flex-shrink-0">
+                  className="p-1 rounded hover:bg-surface-hover text-red-400 hover:text-red-600 flex-shrink-0">
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
@@ -230,15 +230,15 @@ function FormAttachments({ formId, files, canEdit, canDelete }: { formId: string
               </div>
             );
           })}
-          <div className="px-3 py-2 bg-[#FFFBEB] flex items-center justify-between gap-3">
+          <div className="px-3 py-2 bg-warning-light flex items-center justify-between gap-3">
             {error && <p className="text-xs text-red-600 flex-1">{error}</p>}
             <div className="flex gap-2 ml-auto">
               <button type="button" onClick={() => setPendingFiles([])}
-                className="px-2.5 py-1 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F8F9FA] transition">
+                className="px-2.5 py-1 text-xs border border-border rounded-lg text-secondary hover:bg-page transition">
                 Clear
               </button>
               <button type="button" onClick={handleUploadAll} disabled={uploading}
-                className="px-2.5 py-1 text-xs bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg transition disabled:opacity-60">
+                className="px-2.5 py-1 text-xs bg-primary hover:bg-primary-dark text-white rounded-lg transition disabled:opacity-60">
                 {uploading ? "Uploading…" : `Upload ${pendingFiles.length} file${pendingFiles.length !== 1 ? "s" : ""}`}
               </button>
             </div>
@@ -248,19 +248,19 @@ function FormAttachments({ formId, files, canEdit, canDelete }: { formId: string
 
       {/* Uploaded files list */}
       {activeFiles.length > 0 ? (
-        <div className="border border-[#E5E7EB] rounded-lg divide-y divide-[#E5E7EB] overflow-hidden">
+        <div className="border border-border rounded-lg divide-y divide-border overflow-hidden">
           {activeFiles.map((f) => {
             const badge = fileTypeBadge(f.file_type ?? f.file_name);
             return (
-              <div key={f.id} className="flex items-center gap-2.5 px-3 py-2.5 bg-white hover:bg-[#F8F9FA] transition">
+              <div key={f.id} className="flex items-center gap-2.5 px-3 py-2.5 bg-white hover:bg-page transition">
                 <div className={`w-7 h-7 rounded ${badge.bg} flex items-center justify-center flex-shrink-0`}>
                   <span className={`text-xs font-bold ${badge.text}`}>{badge.label}</span>
                 </div>
-                <span className="text-xs font-medium text-[#1A1A2E] flex-1 min-w-0 truncate">{f.file_name}</span>
-                {f.file_size && <span className="text-xs text-[#9CA3AF] flex-shrink-0">{fmtSize(f.file_size)}</span>}
+                <span className="text-xs font-medium text-heading flex-1 min-w-0 truncate">{f.file_name}</span>
+                {f.file_size && <span className="text-xs text-muted flex-shrink-0">{fmtSize(f.file_size)}</span>}
                 <div className="flex items-center gap-0.5 flex-shrink-0">
                   <a href={f.file_url} target="_blank" rel="noopener noreferrer" title="View"
-                    className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] inline-flex">
+                    className="p-1.5 rounded hover:bg-surface-hover transition-colors text-accent hover:text-primary inline-flex">
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -268,7 +268,7 @@ function FormAttachments({ formId, files, canEdit, canDelete }: { formId: string
                   </a>
                   {canDelete && (
                     <button type="button" onClick={() => setConfirmDelete(f)} title="Delete file"
-                      className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-red-400 hover:text-red-600 inline-flex">
+                      className="p-1.5 rounded hover:bg-surface-hover transition-colors text-red-400 hover:text-red-600 inline-flex">
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
@@ -280,7 +280,7 @@ function FormAttachments({ formId, files, canEdit, canDelete }: { formId: string
           })}
         </div>
       ) : pendingFiles.length === 0 ? (
-        <p className="text-xs text-[#9CA3AF] py-1">No files attached yet.</p>
+        <p className="text-xs text-muted py-1">No files attached yet.</p>
       ) : null}
 
       {error && pendingFiles.length === 0 && (
@@ -290,12 +290,12 @@ function FormAttachments({ formId, files, canEdit, canDelete }: { formId: string
       {/* Confirm delete popup */}
       {confirmDelete && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl shadow-xl border border-[#E5E7EB] p-5 w-full max-w-xs mx-4">
-            <h3 className="text-sm font-semibold text-[#1A1A2E] mb-1">Delete file?</h3>
-            <p className="text-xs text-[#6B7280] mb-4 truncate">&quot;{confirmDelete.file_name}&quot; will be permanently removed.</p>
+          <div className="bg-white rounded-xl shadow-xl border border-border p-5 w-full max-w-xs mx-4">
+            <h3 className="text-sm font-semibold text-heading mb-1">Delete file?</h3>
+            <p className="text-xs text-secondary mb-4 truncate">&quot;{confirmDelete.file_name}&quot; will be permanently removed.</p>
             <div className="flex gap-2">
               <button type="button" onClick={() => setConfirmDelete(null)}
-                className="flex-1 px-3 py-1.5 text-xs border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">
+                className="flex-1 px-3 py-1.5 text-xs border border-border rounded-lg text-heading hover:bg-page transition">
                 Cancel
               </button>
               <button type="button" onClick={handleDelete} disabled={deleting}
@@ -624,11 +624,11 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
     return [1, "...", current - 1, current, current + 1, "...", total];
   }
   const btnPage = (active: boolean) =>
-    `min-w-[36px] h-9 px-2 text-sm rounded-lg font-medium transition ${active ? "bg-[#1E3A5F] text-white" : "border border-[#E5E7EB] text-[#1A1A2E] hover:bg-[#F8F9FA]"}`;
+    `min-w-[36px] h-9 px-2 text-sm rounded-lg font-medium transition ${active ? "bg-primary text-white" : "border border-border text-heading hover:bg-page"}`;
 
   // ── Shared UI helpers ──────────────────────────────────────────────
 
-  const inp = "w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]";
+  const inp = "w-full px-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary";
 
   const tabs = [
     { key: "resources" as const, label: "Resources", count: resources.length },
@@ -642,22 +642,22 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
     <div>
       {/* Header + Tabs */}
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-[#1A1A2E]">Documents</h1>
-        <p className="text-[#6B7280] text-sm mt-0.5">Forms reference and templates library</p>
+        <h1 className="text-2xl font-semibold text-heading">Documents</h1>
+        <p className="text-secondary text-sm mt-0.5">Forms reference and templates library</p>
       </div>
 
       <div className="flex items-center justify-between mb-5">
-        <div className="flex gap-1 bg-[#F0F2F5] p-1 rounded-lg">
+        <div className="flex gap-1 bg-surface-hover p-1 rounded-lg">
           {tabs.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={`px-4 py-2 text-sm font-medium rounded-md transition ${
-                activeTab === tab.key ? "bg-[#1E3A5F] text-white shadow-sm" : "text-[#6B7280] hover:text-[#1A1A2E]"
+                activeTab === tab.key ? "bg-primary text-white shadow-sm" : "text-secondary hover:text-heading"
               }`}
             >
               {tab.label}
-              <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-full ${activeTab === tab.key ? "bg-white/20 text-white" : "bg-white text-[#6B7280]"}`}>
+              <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-full ${activeTab === tab.key ? "bg-white/20 text-white" : "bg-white text-secondary"}`}>
                 {tab.count}
               </span>
             </button>
@@ -665,19 +665,19 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
         </div>
 
         {canEdit && activeTab === "forms" && (
-          <button onClick={openAddForm} className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#1E3A5F] hover:bg-[#162d4a] text-white text-sm font-medium rounded-lg transition">
+          <button onClick={openAddForm} className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary-dark text-white text-sm font-medium rounded-lg transition">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
             Add Form
           </button>
         )}
         {canEdit && activeTab === "templates" && (
-          <button onClick={openAddTemplate} className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#1E3A5F] hover:bg-[#162d4a] text-white text-sm font-medium rounded-lg transition">
+          <button onClick={openAddTemplate} className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary-dark text-white text-sm font-medium rounded-lg transition">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
             Upload Template
           </button>
         )}
         {canEdit && activeTab === "resources" && (
-          <button onClick={openAddResource} className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#1E3A5F] hover:bg-[#162d4a] text-white text-sm font-medium rounded-lg transition">
+          <button onClick={openAddResource} className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary-dark text-white text-sm font-medium rounded-lg transition">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
             Add Resource
           </button>
@@ -689,32 +689,33 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
         <div className="space-y-3">
           {/* Search */}
           <div className="relative max-w-sm">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
             </svg>
             <input type="text" value={frmSearch} onChange={(e) => { setFrmSearch(e.target.value); setFrmPage(1); }}
               placeholder="Search form no., description, rule no., uploaded on…"
-              className="w-full pl-9 pr-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] bg-white" />
+              className="w-full pl-9 pr-3 py-2 text-sm border-2 border-accent rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white" />
           </div>
-          <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
+          <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-[#D1D9E6] border-b-2 border-[#B0BDD0]">
-                    <th className="text-center px-4 py-3 font-semibold text-[#1A1A2E] w-24 border-r border-[#E5E7EB]">Form No.</th>
-                    <th className="text-left px-4 py-3 font-semibold text-[#1A1A2E] border-r border-[#E5E7EB]">Form Description</th>
-                    <th className="text-center px-4 py-3 font-semibold text-[#1A1A2E] w-24 border-r border-[#E5E7EB]">Rule No.</th>
-                    <th className="text-center px-4 py-3 font-semibold text-[#1A1A2E] w-24 border-r border-[#E5E7EB]">Section</th>
-                    <th className="text-center px-4 py-3 font-semibold text-[#1A1A2E] w-32 border-r border-[#E5E7EB]">Uploaded on</th>
-                    <th className="text-center px-4 py-3 font-semibold text-[#1A1A2E] w-20 border-r border-[#E5E7EB]">Files</th>
-                    <th className="text-center px-4 py-3 font-semibold text-[#1A1A2E] w-28 border-r border-[#E5E7EB]">Link</th>
-                    <th className="text-center px-4 py-3 font-semibold text-[#1A1A2E] w-28">Actions</th>
+                  <tr className="bg-table-header border-b-2 border-table-header-border">
+                    <th className="text-center px-4 py-3 font-semibold text-heading w-10">#</th>
+                    <th className="text-center px-4 py-3 font-semibold text-heading w-20">Form No.</th>
+                    <th className="text-left px-4 py-3 font-semibold text-heading">Form Description</th>
+                    <th className="text-center px-4 py-3 font-semibold text-heading w-20">Rule No.</th>
+                    <th className="text-center px-4 py-3 font-semibold text-heading w-20">Section</th>
+                    <th className="text-center px-4 py-3 font-semibold text-heading w-28 whitespace-nowrap">Uploaded on</th>
+                    <th className="text-center px-4 py-3 font-semibold text-heading w-16">Files</th>
+                    <th className="text-center px-4 py-3 font-semibold text-heading w-24">Link</th>
+                    <th className="text-center px-4 py-3 font-semibold text-heading w-28">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {pagedForms.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="px-4 py-12 text-center text-[#6B7280]">
+                      <td colSpan={9} className="px-4 py-12 text-center text-secondary">
                         {frmSearch ? `No results for "${frmSearch}"` : (forms.length === 0 ? `No forms added yet.${canEdit ? " Click \"Add Form\" to get started." : ""}` : "No results.")}
                       </td>
                     </tr>
@@ -723,18 +724,19 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
                       <tr
                         key={f.id}
                         onClick={() => canEdit && openEditForm(f)}
-                        className={`border-b border-[#E5E7EB] ${i % 2 === 0 ? "bg-white" : "bg-[#F8F9FA]"} hover:bg-[#EEF2FF] transition-colors ${canEdit ? "cursor-pointer" : ""}`}
+                        className={`border-b border-border ${i % 2 === 0 ? "bg-white" : "bg-page"} hover:bg-accent-light transition-colors ${canEdit ? "cursor-pointer" : ""}`}
                       >
-                        <td className="px-4 py-3 text-center text-[#6B7280] border-r border-[#E5E7EB]">{f.form_no || "—"}</td>
-                        <td className="px-4 py-3 text-[#1A1A2E] border-r border-[#E5E7EB]">{f.rule_heading}</td>
-                        <td className="px-4 py-3 text-center text-[#1A1A2E] font-medium border-r border-[#E5E7EB]">{f.rule_no || "—"}</td>
-                        <td className="px-4 py-3 text-center text-[#6B7280] border-r border-[#E5E7EB]">{f.page_no || "—"}</td>
-                        <td className="px-4 py-3 text-center text-[#6B7280] whitespace-nowrap border-r border-[#E5E7EB]">{fmtDate(f.created_at)}</td>
-                        <td className="px-4 py-3 text-center border-r border-[#E5E7EB]">
+                        <td className="px-4 py-3 text-center text-muted text-xs">{frmFrom + i}</td>
+                        <td className="px-4 py-3 text-center text-secondary">{f.form_no || "—"}</td>
+                        <td className="px-4 py-3 text-secondary" title={f.rule_heading}>{f.rule_heading}</td>
+                        <td className="px-4 py-3 text-center text-secondary">{f.rule_no || "—"}</td>
+                        <td className="px-4 py-3 text-center text-secondary">{f.page_no || "—"}</td>
+                        <td className="px-4 py-3 text-center text-secondary whitespace-nowrap">{fmtDate(f.created_at)}</td>
+                        <td className="px-4 py-3 text-center">
                           {(f.form_files ?? []).length === 0 ? (
-                            <span className="text-[#9CA3AF] text-xs">—</span>
+                            <span className="text-muted text-xs">—</span>
                           ) : (
-                            <div className="inline-flex items-center gap-1.5 text-[#4A6FA5]">
+                            <div className="inline-flex items-center gap-1.5 text-accent">
                               <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                               </svg>
@@ -742,16 +744,16 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
                             </div>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-center border-r border-[#E5E7EB]" onClick={(e) => e.stopPropagation()}>
+                        <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
                           {f.url
-                            ? <a href={f.url} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-[#4A6FA5] hover:text-[#1E3A5F] hover:underline">Click Here</a>
-                            : <span className="text-[#D1D5DB]">—</span>}
+                            ? <a href={f.url} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-accent hover:text-primary hover:underline">Click Here</a>
+                            : <span className="text-border-strong">—</span>}
                         </td>
                         <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-center gap-0.5">
                             {canEdit && (
                               <button onClick={() => openEditForm(f)} title="Edit form"
-                                className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] inline-flex">
+                                className="p-1.5 rounded hover:bg-surface-hover transition-colors text-accent hover:text-primary inline-flex">
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                               </button>
                             )}
@@ -772,12 +774,12 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
           </div>
           {/* Pagination */}
           <div className="mt-1 flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3 text-sm text-[#6B7280]">
+            <div className="flex items-center gap-3 text-sm text-secondary">
               <span>Showing {frmFrom}–{frmTo} of {frmTotal} form{frmTotal !== 1 ? "s" : ""}</span>
               <div className="flex items-center gap-1.5">
                 <span className="text-xs">Show</span>
                 <select value={frmPerPage} onChange={(e) => { setFrmPerPage(Number(e.target.value)); setFrmPage(1); }}
-                  className="px-2 py-1 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]">
+                  className="px-2 py-1 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
                   {PER_PAGE_OPTIONS.map((n) => <option key={n} value={n}>{n}</option>)}
                 </select>
                 <span className="text-xs">per page</span>
@@ -786,13 +788,13 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
             {frmTotalPages > 1 && (
               <div className="flex items-center gap-1">
                 <button onClick={() => setFrmPage(p => Math.max(1, p - 1))} disabled={frmPageSafe === 1}
-                  className="h-9 px-3 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] disabled:opacity-40 disabled:cursor-not-allowed transition">← Prev</button>
+                  className="h-9 px-3 text-sm border border-border rounded-lg text-heading hover:bg-page disabled:opacity-40 disabled:cursor-not-allowed transition">← Prev</button>
                 {pageNums(frmPageSafe, frmTotalPages).map((p, i) =>
-                  p === "..." ? <span key={`e${i}`} className="px-1 text-[#9CA3AF] text-sm select-none">…</span>
+                  p === "..." ? <span key={`e${i}`} className="px-1 text-muted text-sm select-none">…</span>
                   : <button key={p} onClick={() => setFrmPage(p as number)} className={btnPage(p === frmPageSafe)}>{p}</button>
                 )}
                 <button onClick={() => setFrmPage(p => Math.min(frmTotalPages, p + 1))} disabled={frmPageSafe === frmTotalPages}
-                  className="h-9 px-3 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] disabled:opacity-40 disabled:cursor-not-allowed transition">Next →</button>
+                  className="h-9 px-3 text-sm border border-border rounded-lg text-heading hover:bg-page disabled:opacity-40 disabled:cursor-not-allowed transition">Next →</button>
               </div>
             )}
           </div>
@@ -804,29 +806,30 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
         <div className="space-y-3">
           {/* Search */}
           <div className="relative max-w-sm">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
             </svg>
             <input type="text" value={tplSearch} onChange={(e) => { setTplSearch(e.target.value); setTplPage(1); }}
               placeholder="Search template name or description…"
-              className="w-full pl-9 pr-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] bg-white" />
+              className="w-full pl-9 pr-3 py-2 text-sm border-2 border-accent rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white" />
           </div>
-          <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
+          <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-[#D1D9E6] border-b-2 border-[#B0BDD0]">
-                    <th className="text-left px-4 py-3 font-semibold text-[#1A1A2E] w-44 border-r border-[#E5E7EB]">Template Name</th>
-                    <th className="text-left px-4 py-3 font-semibold text-[#1A1A2E] border-r border-[#E5E7EB]">Description</th>
-                    <th className="text-center px-4 py-3 font-semibold text-[#1A1A2E] w-24 border-r border-[#E5E7EB]">Size</th>
-                    <th className="text-center px-4 py-3 font-semibold text-[#1A1A2E] w-32 border-r border-[#E5E7EB]">Uploaded on</th>
-                    <th className="text-center px-4 py-3 font-semibold text-[#1A1A2E] w-28">Actions</th>
+                  <tr className="bg-table-header border-b-2 border-table-header-border">
+                    <th className="text-center px-4 py-3 font-semibold text-heading w-10">#</th>
+                    <th className="text-left px-4 py-3 font-semibold text-heading w-72">Template Name</th>
+                    <th className="text-left px-4 py-3 font-semibold text-heading">Description</th>
+                    <th className="text-center px-4 py-3 font-semibold text-heading w-20">Size</th>
+                    <th className="text-center px-4 py-3 font-semibold text-heading w-28 whitespace-nowrap">Uploaded on</th>
+                    <th className="text-center px-4 py-3 font-semibold text-heading w-28">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {pagedTemplates.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-4 py-12 text-center text-[#6B7280]">
+                      <td colSpan={6} className="px-4 py-12 text-center text-secondary">
                         {tplSearch ? `No results for "${tplSearch}"` : (templates.length === 0 ? `No templates uploaded yet.${canEdit ? " Click \"Upload Template\" to get started." : ""}` : "No results.")}
                       </td>
                     </tr>
@@ -835,25 +838,26 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
                       <tr
                         key={t.id}
                         onClick={() => window.open(t.file_url, "_blank")}
-                        className={`border-b border-[#E5E7EB] last:border-0 ${i % 2 === 0 ? "bg-white" : "bg-[#F8F9FA]"} hover:bg-[#EEF2FF] transition-colors cursor-pointer`}
+                        className={`border-b border-border last:border-0 ${i % 2 === 0 ? "bg-white" : "bg-page"} hover:bg-accent-light transition-colors cursor-pointer`}
                       >
-                        <td className="px-4 py-3 border-r border-[#E5E7EB]">
-                          <span className="font-medium text-[#1A1A2E]">{t.name}</span>
+                        <td className="px-4 py-3 text-center text-muted text-xs">{tplFrom + i}</td>
+                        <td className="px-4 py-3 text-secondary" title={t.name}>
+                          {t.name}
                         </td>
-                        <td className="px-4 py-3 text-[#6B7280] border-r border-[#E5E7EB] truncate">{t.description ?? "—"}</td>
-                        <td className="px-4 py-3 text-center text-[#6B7280] border-r border-[#E5E7EB]">{fmtSize(t.file_size)}</td>
-                        <td className="px-4 py-3 text-center text-[#6B7280] whitespace-nowrap border-r border-[#E5E7EB]">{fmtDate(t.created_at)}</td>
+                        <td className="px-4 py-3 text-secondary truncate" title={t.description ?? ""}>{t.description ?? "—"}</td>
+                        <td className="px-4 py-3 text-center text-secondary">{fmtSize(t.file_size)}</td>
+                        <td className="px-4 py-3 text-center text-secondary whitespace-nowrap">{fmtDate(t.created_at)}</td>
                         <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center gap-0.5">
                             <a href={t.file_url} target="_blank" rel="noopener noreferrer" title="Download"
-                              className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] inline-flex">
+                              className="p-1.5 rounded hover:bg-surface-hover transition-colors text-accent hover:text-primary inline-flex">
                               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                               </svg>
                             </a>
                             {canEdit && (
                               <button onClick={() => openEditTemplate(t)} title="Edit template"
-                                className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] inline-flex">
+                                className="p-1.5 rounded hover:bg-surface-hover transition-colors text-accent hover:text-primary inline-flex">
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                               </button>
                             )}
@@ -874,12 +878,12 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
           </div>
           {/* Pagination */}
           <div className="mt-1 flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3 text-sm text-[#6B7280]">
+            <div className="flex items-center gap-3 text-sm text-secondary">
               <span>Showing {tplFrom}–{tplTo} of {tplTotal} template{tplTotal !== 1 ? "s" : ""}</span>
               <div className="flex items-center gap-1.5">
                 <span className="text-xs">Show</span>
                 <select value={tplPerPage} onChange={(e) => { setTplPerPage(Number(e.target.value)); setTplPage(1); }}
-                  className="px-2 py-1 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]">
+                  className="px-2 py-1 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
                   {PER_PAGE_OPTIONS.map((n) => <option key={n} value={n}>{n}</option>)}
                 </select>
                 <span className="text-xs">per page</span>
@@ -888,13 +892,13 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
             {tplTotalPages > 1 && (
               <div className="flex items-center gap-1">
                 <button onClick={() => setTplPage(p => Math.max(1, p - 1))} disabled={tplPageSafe === 1}
-                  className="h-9 px-3 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] disabled:opacity-40 disabled:cursor-not-allowed transition">← Prev</button>
+                  className="h-9 px-3 text-sm border border-border rounded-lg text-heading hover:bg-page disabled:opacity-40 disabled:cursor-not-allowed transition">← Prev</button>
                 {pageNums(tplPageSafe, tplTotalPages).map((p, i) =>
-                  p === "..." ? <span key={`e${i}`} className="px-1 text-[#9CA3AF] text-sm select-none">…</span>
+                  p === "..." ? <span key={`e${i}`} className="px-1 text-muted text-sm select-none">…</span>
                   : <button key={p} onClick={() => setTplPage(p as number)} className={btnPage(p === tplPageSafe)}>{p}</button>
                 )}
                 <button onClick={() => setTplPage(p => Math.min(tplTotalPages, p + 1))} disabled={tplPageSafe === tplTotalPages}
-                  className="h-9 px-3 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] disabled:opacity-40 disabled:cursor-not-allowed transition">Next →</button>
+                  className="h-9 px-3 text-sm border border-border rounded-lg text-heading hover:bg-page disabled:opacity-40 disabled:cursor-not-allowed transition">Next →</button>
               </div>
             )}
           </div>
@@ -906,30 +910,31 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
         <div className="space-y-3">
           {/* Search */}
           <div className="relative max-w-sm">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
             </svg>
             <input type="text" value={resSearch} onChange={(e) => { setResSearch(e.target.value); setResPage(1); }}
               placeholder="Search act, description, author, uploaded on…"
-              className="w-full pl-9 pr-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] bg-white" />
+              className="w-full pl-9 pr-3 py-2 text-sm border-2 border-accent rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white" />
           </div>
-          <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
+          <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-[#D1D9E6] border-b-2 border-[#B0BDD0]">
-                    <th className="text-left px-4 py-3 font-semibold text-[#1A1A2E] w-44 border-r border-[#E5E7EB]">Act</th>
-                    <th className="text-left px-4 py-3 font-semibold text-[#1A1A2E] border-r border-[#E5E7EB]">Description</th>
-                    <th className="text-left px-4 py-3 font-semibold text-[#1A1A2E] w-36 border-r border-[#E5E7EB]">Author</th>
-                    <th className="text-center px-4 py-3 font-semibold text-[#1A1A2E] w-32 border-r border-[#E5E7EB]">Uploaded on</th>
-                    <th className="text-center px-4 py-3 font-semibold text-[#1A1A2E] w-20 border-r border-[#E5E7EB]">Files</th>
-                    <th className="text-center px-4 py-3 font-semibold text-[#1A1A2E] w-28">Actions</th>
+                  <tr className="bg-table-header border-b-2 border-table-header-border">
+                    <th className="text-center px-4 py-3 font-semibold text-heading w-10">#</th>
+                    <th className="text-left px-4 py-3 font-semibold text-heading w-72">Act</th>
+                    <th className="text-left px-4 py-3 font-semibold text-heading">Description</th>
+                    <th className="text-left px-4 py-3 font-semibold text-heading w-44">Author</th>
+                    <th className="text-center px-4 py-3 font-semibold text-heading w-28 whitespace-nowrap">Uploaded on</th>
+                    <th className="text-center px-4 py-3 font-semibold text-heading w-16">Files</th>
+                    <th className="text-center px-4 py-3 font-semibold text-heading w-28">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {pagedResources.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-4 py-12 text-center text-[#6B7280]">
+                      <td colSpan={7} className="px-4 py-12 text-center text-secondary">
                         {resSearch ? `No results for "${resSearch}"` : (resources.length === 0 ? `No resources added yet.${canEdit ? " Click \"Add Resource\" to get started." : ""}` : "No results.")}
                       </td>
                     </tr>
@@ -938,17 +943,18 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
                       <tr
                         key={r.id}
                         onClick={() => canEdit && openEditResource(r)}
-                        className={`border-b border-[#E5E7EB] last:border-0 ${canEdit ? "cursor-pointer" : ""} ${i % 2 === 0 ? "bg-white" : "bg-[#F8F9FA]"} hover:bg-[#EEF2FF] transition-colors`}
+                        className={`border-b border-border last:border-0 ${canEdit ? "cursor-pointer" : ""} ${i % 2 === 0 ? "bg-white" : "bg-page"} hover:bg-accent-light transition-colors`}
                       >
-                        <td className="px-4 py-3 font-medium text-[#1A1A2E] border-r border-[#E5E7EB] truncate max-w-0">{r.act?.name ?? "—"}</td>
-                        <td className="px-4 py-3 text-[#6B7280] border-r border-[#E5E7EB] truncate">{r.description}</td>
-                        <td className="px-4 py-3 text-[#6B7280] border-r border-[#E5E7EB]">{r.author ?? "—"}</td>
-                        <td className="px-4 py-3 text-center text-[#6B7280] whitespace-nowrap border-r border-[#E5E7EB]">{fmtDate(r.created_at)}</td>
-                        <td className="px-4 py-3 text-center border-r border-[#E5E7EB]">
+                        <td className="px-4 py-3 text-center text-muted text-xs">{resFrom + i}</td>
+                        <td className="px-4 py-3 text-secondary truncate max-w-0" title={r.act?.name ?? ""}>{r.act?.name ?? "—"}</td>
+                        <td className="px-4 py-3 text-secondary truncate" title={r.description ?? ""}>{r.description}</td>
+                        <td className="px-4 py-3 text-secondary">{r.author ?? "—"}</td>
+                        <td className="px-4 py-3 text-center text-secondary whitespace-nowrap">{fmtDate(r.created_at)}</td>
+                        <td className="px-4 py-3 text-center">
                           {(r.resource_files ?? []).length === 0 ? (
-                            <span className="text-[#9CA3AF] text-xs">—</span>
+                            <span className="text-muted text-xs">—</span>
                           ) : (
-                            <div className="inline-flex items-center gap-1.5 text-[#4A6FA5]">
+                            <div className="inline-flex items-center gap-1.5 text-accent">
                               <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                               </svg>
@@ -960,7 +966,7 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
                           <div className="flex items-center justify-center gap-0.5">
                             {canEdit && (
                               <button onClick={() => openEditResource(r)} title="Edit resource"
-                                className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] inline-flex">
+                                className="p-1.5 rounded hover:bg-surface-hover transition-colors text-accent hover:text-primary inline-flex">
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                               </button>
                             )}
@@ -981,12 +987,12 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
           </div>
           {/* Pagination */}
           <div className="mt-1 flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3 text-sm text-[#6B7280]">
+            <div className="flex items-center gap-3 text-sm text-secondary">
               <span>Showing {resFrom}–{resTo} of {resTotal} resource{resTotal !== 1 ? "s" : ""}</span>
               <div className="flex items-center gap-1.5">
                 <span className="text-xs">Show</span>
                 <select value={resPerPage} onChange={(e) => { setResPerPage(Number(e.target.value)); setResPage(1); }}
-                  className="px-2 py-1 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]">
+                  className="px-2 py-1 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
                   {PER_PAGE_OPTIONS.map((n) => <option key={n} value={n}>{n}</option>)}
                 </select>
                 <span className="text-xs">per page</span>
@@ -995,13 +1001,13 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
             {resTotalPages > 1 && (
               <div className="flex items-center gap-1">
                 <button onClick={() => setResPage(p => Math.max(1, p - 1))} disabled={resPageSafe === 1}
-                  className="h-9 px-3 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] disabled:opacity-40 disabled:cursor-not-allowed transition">← Prev</button>
+                  className="h-9 px-3 text-sm border border-border rounded-lg text-heading hover:bg-page disabled:opacity-40 disabled:cursor-not-allowed transition">← Prev</button>
                 {pageNums(resPageSafe, resTotalPages).map((p, i) =>
-                  p === "..." ? <span key={`e${i}`} className="px-1 text-[#9CA3AF] text-sm select-none">…</span>
+                  p === "..." ? <span key={`e${i}`} className="px-1 text-muted text-sm select-none">…</span>
                   : <button key={p} onClick={() => setResPage(p as number)} className={btnPage(p === resPageSafe)}>{p}</button>
                 )}
                 <button onClick={() => setResPage(p => Math.min(resTotalPages, p + 1))} disabled={resPageSafe === resTotalPages}
-                  className="h-9 px-3 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] disabled:opacity-40 disabled:cursor-not-allowed transition">Next →</button>
+                  className="h-9 px-3 text-sm border border-border rounded-lg text-heading hover:bg-page disabled:opacity-40 disabled:cursor-not-allowed transition">Next →</button>
               </div>
             )}
           </div>
@@ -1012,10 +1018,10 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
       {showFormModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white rounded-t-2xl px-6 pt-6 pb-4 border-b border-[#E5E7EB]">
+            <div className="sticky top-0 bg-white rounded-t-2xl px-6 pt-6 pb-4 border-b border-border">
               <div className="flex items-center justify-between">
-                <h2 className="text-base font-semibold text-[#1A1A2E]">{editingForm ? "Edit Form" : "Add New Form"}</h2>
-                <button onClick={() => setShowFormModal(false)} className="text-[#9CA3AF] hover:text-[#6B7280]">
+                <h2 className="text-base font-semibold text-heading">{editingForm ? "Edit Form" : "Add New Form"}</h2>
+                <button onClick={() => setShowFormModal(false)} className="text-muted hover:text-secondary">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
@@ -1024,24 +1030,24 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
               {formError && <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">{formError}</div>}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-[#6B7280] mb-1">Rule No.</label>
+                  <label className="block text-xs font-medium text-secondary mb-1">Rule No.</label>
                   <input value={formData.rule_no ?? ""} onChange={(e) => setFormData((p) => ({ ...p, rule_no: e.target.value }))} className={inp} />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-[#6B7280] mb-1">Form No.</label>
+                  <label className="block text-xs font-medium text-secondary mb-1">Form No.</label>
                   <input value={formData.form_no ?? ""} onChange={(e) => setFormData((p) => ({ ...p, form_no: e.target.value }))} className={inp} />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#6B7280] mb-1">Form Description <span className="text-red-500">*</span></label>
+                <label className="block text-xs font-medium text-secondary mb-1">Form Description <span className="text-red-500">*</span></label>
                 <input value={formData.rule_heading} onChange={(e) => setFormData((p) => ({ ...p, rule_heading: e.target.value }))} className={inp} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#6B7280] mb-1">Section</label>
+                <label className="block text-xs font-medium text-secondary mb-1">Section</label>
                 <input value={formData.page_no ?? ""} onChange={(e) => setFormData((p) => ({ ...p, page_no: e.target.value }))} className={inp} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#6B7280] mb-1">URL <span className="text-[#9CA3AF]">(link to form document)</span></label>
+                <label className="block text-xs font-medium text-secondary mb-1">URL <span className="text-muted">(link to form document)</span></label>
                 <input
                   type="url"
                   value={formData.url ?? ""}
@@ -1059,27 +1065,27 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
               {/* Files — inline picker for Add mode */}
               {!editingForm && canEdit && (
                 <div>
-                  <label className="block text-xs font-medium text-[#6B7280] mb-2">Attachments</label>
+                  <label className="block text-xs font-medium text-secondary mb-2">Attachments</label>
                   <input
                     type="file"
                     multiple
                     accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
                     onChange={(e) => setFormNewFiles((prev) => [...prev, ...Array.from(e.target.files ?? [])])}
-                    className="block w-full text-sm text-[#6B7280] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-[#1E3A5F] file:text-white hover:file:bg-[#162d4a] file:cursor-pointer cursor-pointer"
+                    className="block w-full text-sm text-secondary file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-primary file:text-white hover:file:bg-primary-dark file:cursor-pointer cursor-pointer"
                   />
                   {formNewFiles.length > 0 && (
-                    <div className="mt-2 border border-[#E5E7EB] rounded-lg divide-y divide-[#F3F4F6] overflow-hidden">
+                    <div className="mt-2 border border-border rounded-lg divide-y divide-surface-hover overflow-hidden">
                       {formNewFiles.map((file, idx) => {
                         const badge = fileTypeBadge(file.name);
                         return (
-                          <div key={idx} className="flex items-center gap-3 px-3 py-2 bg-[#FFFBEB]">
+                          <div key={idx} className="flex items-center gap-3 px-3 py-2 bg-warning-light">
                             <div className={`w-7 h-7 rounded ${badge.bg} flex items-center justify-center flex-shrink-0`}>
                               <span className={`text-xs font-bold ${badge.text}`}>{badge.label}</span>
                             </div>
-                            <span className="text-xs text-[#1A1A2E] flex-1 min-w-0 truncate">{file.name}</span>
-                            <span className="text-xs text-[#9CA3AF] flex-shrink-0">{fmtSize(file.size)}</span>
+                            <span className="text-xs text-heading flex-1 min-w-0 truncate">{file.name}</span>
+                            <span className="text-xs text-muted flex-shrink-0">{fmtSize(file.size)}</span>
                             <button type="button" onClick={() => setFormNewFiles((prev) => prev.filter((_, i) => i !== idx))}
-                              className="p-1 rounded hover:bg-[#F3F4F6] text-red-400 hover:text-red-600 flex-shrink-0">
+                              className="p-1 rounded hover:bg-surface-hover text-red-400 hover:text-red-600 flex-shrink-0">
                               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                               </svg>
@@ -1089,15 +1095,15 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
                       })}
                     </div>
                   )}
-                  <p className="text-xs text-[#9CA3AF] mt-1">PDF, Word, Excel, PowerPoint — multiple files allowed</p>
+                  <p className="text-xs text-muted mt-1">PDF, Word, Excel, PowerPoint — multiple files allowed</p>
                 </div>
               )}
 
               {/* Add mode footer — inside form so submit works */}
               {!editingForm && (
                 <div className="flex gap-3 pt-2">
-                  <button type="button" onClick={() => setShowFormModal(false)} className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">Cancel</button>
-                  <button type="submit" disabled={formSaving} className="flex-1 px-4 py-2 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60">
+                  <button type="button" onClick={() => setShowFormModal(false)} className="flex-1 px-4 py-2 text-sm border border-border rounded-lg text-heading hover:bg-page transition">Cancel</button>
+                  <button type="submit" disabled={formSaving} className="flex-1 px-4 py-2 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition disabled:opacity-60">
                     {formSaving ? "Saving…" : "Add Form"}
                   </button>
                 </div>
@@ -1106,7 +1112,7 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
 
             {/* Attachments — full manager shown in edit mode */}
             {editingForm && (
-              <div className="border-t border-[#E5E7EB] px-6 py-4">
+              <div className="border-t border-border px-6 py-4">
                 <FormAttachments
                   formId={editingForm.id}
                   files={editingForm.form_files ?? []}
@@ -1118,16 +1124,16 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
 
             {/* Edit mode footer — below attachments */}
             {editingForm && (
-              <div className="border-t border-[#E5E7EB] px-6 py-4 flex gap-3">
+              <div className="border-t border-border px-6 py-4 flex gap-3">
                 {canDelete && (
                   <button type="button" onClick={() => { setShowFormModal(false); setConfirmDeleteForm(editingForm); }}
                     className="px-4 py-2 text-sm border border-red-200 text-red-600 hover:bg-red-50 rounded-lg transition">
                     Delete
                   </button>
                 )}
-                <button type="button" onClick={() => setShowFormModal(false)} className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">Cancel</button>
+                <button type="button" onClick={() => setShowFormModal(false)} className="flex-1 px-4 py-2 text-sm border border-border rounded-lg text-heading hover:bg-page transition">Cancel</button>
                 <button type="button" onClick={() => handleFormSubmit()} disabled={formSaving}
-                  className="flex-1 px-4 py-2 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60">
+                  className="flex-1 px-4 py-2 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition disabled:opacity-60">
                   {formSaving ? "Saving…" : "Save Changes"}
                 </button>
               </div>
@@ -1141,37 +1147,37 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 mx-4">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-base font-semibold text-[#1A1A2E]">{editingTemplate ? "Edit Template" : "Upload Template"}</h2>
-              <button onClick={() => setShowTemplateModal(false)} className="text-[#9CA3AF] hover:text-[#6B7280]">
+              <h2 className="text-base font-semibold text-heading">{editingTemplate ? "Edit Template" : "Upload Template"}</h2>
+              <button onClick={() => setShowTemplateModal(false)} className="text-muted hover:text-secondary">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
             <form onSubmit={handleTemplateSubmit} className="space-y-3">
               {tplError && <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">{tplError}</div>}
               <div>
-                <label className="block text-xs font-medium text-[#6B7280] mb-1">Template Name <span className="text-red-500">*</span></label>
+                <label className="block text-xs font-medium text-secondary mb-1">Template Name <span className="text-red-500">*</span></label>
                 <input value={tplName} onChange={(e) => setTplName(e.target.value)} placeholder="e.g. Adjournment Letter" className={inp} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#6B7280] mb-1">Description</label>
+                <label className="block text-xs font-medium text-secondary mb-1">Description</label>
                 <textarea value={tplDesc} onChange={(e) => setTplDesc(e.target.value)} rows={2} placeholder="Brief description…" className={`${inp} resize-none`} />
               </div>
               {!editingTemplate ? (
                 <div>
-                  <label className="block text-xs font-medium text-[#6B7280] mb-1">File <span className="text-red-500">*</span></label>
+                  <label className="block text-xs font-medium text-secondary mb-1">File <span className="text-red-500">*</span></label>
                   <input
                     type="file"
                     accept=".pdf,.doc,.docx,.xls,.xlsx"
                     onChange={(e) => setTplFile(e.target.files?.[0] ?? null)}
-                    className="block w-full text-sm text-[#6B7280] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-[#1E3A5F] file:text-white hover:file:bg-[#162d4a] file:cursor-pointer cursor-pointer"
+                    className="block w-full text-sm text-secondary file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-primary file:text-white hover:file:bg-primary-dark file:cursor-pointer cursor-pointer"
                   />
-                  <p className="text-xs text-[#9CA3AF] mt-1">Supported: PDF, Word (.doc, .docx), Excel (.xls, .xlsx)</p>
+                  <p className="text-xs text-muted mt-1">Supported: PDF, Word (.doc, .docx), Excel (.xls, .xlsx)</p>
                 </div>
               ) : (
                 <div>
-                  <label className="block text-xs font-medium text-[#6B7280] mb-1">File</label>
-                  <p className="text-xs text-[#6B7280] bg-[#F8F9FA] rounded-lg px-3 py-2 truncate">{editingTemplate.file_url.split("/").pop()}</p>
-                  <p className="text-xs text-[#9CA3AF] mt-1">To replace the file, delete this template and upload a new one.</p>
+                  <label className="block text-xs font-medium text-secondary mb-1">File</label>
+                  <p className="text-xs text-secondary bg-page rounded-lg px-3 py-2 truncate">{editingTemplate.file_url.split("/").pop()}</p>
+                  <p className="text-xs text-muted mt-1">To replace the file, delete this template and upload a new one.</p>
                 </div>
               )}
               <div className="flex gap-3 pt-2">
@@ -1181,8 +1187,8 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
                     Delete
                   </button>
                 )}
-                <button type="button" onClick={() => setShowTemplateModal(false)} className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">Cancel</button>
-                <button type="submit" disabled={tplUploading} className="flex-1 px-4 py-2 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60">
+                <button type="button" onClick={() => setShowTemplateModal(false)} className="flex-1 px-4 py-2 text-sm border border-border rounded-lg text-heading hover:bg-page transition">Cancel</button>
+                <button type="submit" disabled={tplUploading} className="flex-1 px-4 py-2 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition disabled:opacity-60">
                   {tplUploading ? (editingTemplate ? "Saving…" : "Uploading…") : editingTemplate ? "Save Changes" : "Upload"}
                 </button>
               </div>
@@ -1194,11 +1200,11 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
       {/* ── CONFIRM: Delete Form Row ── */}
       {confirmDeleteForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl shadow-xl border border-[#E5E7EB] p-6 w-full max-w-sm mx-4">
-            <h3 className="text-base font-semibold text-[#1A1A2E] mb-2">Delete Form?</h3>
-            <p className="text-sm text-[#6B7280] mb-5">&quot;{confirmDeleteForm.rule_heading}&quot; will be permanently removed.</p>
+          <div className="bg-white rounded-xl shadow-xl border border-border p-6 w-full max-w-sm mx-4">
+            <h3 className="text-base font-semibold text-heading mb-2">Delete Form?</h3>
+            <p className="text-sm text-secondary mb-5">&quot;{confirmDeleteForm.rule_heading}&quot; will be permanently removed.</p>
             <div className="flex gap-3">
-              <button onClick={() => setConfirmDeleteForm(null)} className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">Cancel</button>
+              <button onClick={() => setConfirmDeleteForm(null)} className="flex-1 px-4 py-2 text-sm border border-border rounded-lg text-heading hover:bg-page transition">Cancel</button>
               <button onClick={() => handleDeleteForm(confirmDeleteForm)} disabled={deletingFormId === confirmDeleteForm.id} className="flex-1 px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition disabled:opacity-60">
                 {deletingFormId === confirmDeleteForm.id ? "Deleting…" : "Delete"}
               </button>
@@ -1210,11 +1216,11 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
       {/* ── CONFIRM: Delete Template ── */}
       {confirmDeleteTpl && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl shadow-xl border border-[#E5E7EB] p-6 w-full max-w-sm mx-4">
-            <h3 className="text-base font-semibold text-[#1A1A2E] mb-2">Delete Template?</h3>
-            <p className="text-sm text-[#6B7280] mb-5">&quot;{confirmDeleteTpl.name}&quot; will be permanently removed.</p>
+          <div className="bg-white rounded-xl shadow-xl border border-border p-6 w-full max-w-sm mx-4">
+            <h3 className="text-base font-semibold text-heading mb-2">Delete Template?</h3>
+            <p className="text-sm text-secondary mb-5">&quot;{confirmDeleteTpl.name}&quot; will be permanently removed.</p>
             <div className="flex gap-3">
-              <button onClick={() => setConfirmDeleteTpl(null)} className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">Cancel</button>
+              <button onClick={() => setConfirmDeleteTpl(null)} className="flex-1 px-4 py-2 text-sm border border-border rounded-lg text-heading hover:bg-page transition">Cancel</button>
               <button onClick={() => handleDeleteTemplate(confirmDeleteTpl)} disabled={deletingTplId === confirmDeleteTpl.id} className="flex-1 px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition disabled:opacity-60">
                 {deletingTplId === confirmDeleteTpl.id ? "Deleting…" : "Delete"}
               </button>
@@ -1227,10 +1233,10 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
       {showResourceModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white rounded-t-2xl px-6 pt-6 pb-4 border-b border-[#E5E7EB]">
+            <div className="sticky top-0 bg-white rounded-t-2xl px-6 pt-6 pb-4 border-b border-border">
               <div className="flex items-center justify-between">
-                <h2 className="text-base font-semibold text-[#1A1A2E]">{editingResource ? "Edit Resource" : "Add Resource"}</h2>
-                <button onClick={() => setShowResourceModal(false)} className="text-[#9CA3AF] hover:text-[#6B7280]">
+                <h2 className="text-base font-semibold text-heading">{editingResource ? "Edit Resource" : "Add Resource"}</h2>
+                <button onClick={() => setShowResourceModal(false)} className="text-muted hover:text-secondary">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
@@ -1239,7 +1245,7 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
               {resError && <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">{resError}</div>}
 
               <div>
-                <label className="block text-xs font-medium text-[#6B7280] mb-1">Act / Regulation <span className="text-red-500">*</span></label>
+                <label className="block text-xs font-medium text-secondary mb-1">Act / Regulation <span className="text-red-500">*</span></label>
                 <select value={resData.act_id} onChange={(e) => setResData((p) => ({ ...p, act_id: e.target.value }))} className={inp}>
                   <option value="">Select Act…</option>
                   {acts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -1248,51 +1254,51 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-[#6B7280] mb-1">Section</label>
+                  <label className="block text-xs font-medium text-secondary mb-1">Section</label>
                   <input value={resData.section ?? ""} onChange={(e) => setResData((p) => ({ ...p, section: e.target.value }))} placeholder="e.g. 148A" className={inp} />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-[#6B7280] mb-1">Rule</label>
+                  <label className="block text-xs font-medium text-secondary mb-1">Rule</label>
                   <input value={resData.rule ?? ""} onChange={(e) => setResData((p) => ({ ...p, rule: e.target.value }))} placeholder="e.g. Rule 12" className={inp} />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-[#6B7280] mb-1">Description <span className="text-red-500">*</span></label>
+                <label className="block text-xs font-medium text-secondary mb-1">Description <span className="text-red-500">*</span></label>
                 <textarea value={resData.description} onChange={(e) => setResData((p) => ({ ...p, description: e.target.value }))} rows={3} placeholder="Brief description of this resource…" className={`${inp} resize-none`} />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-[#6B7280] mb-1">Author</label>
+                <label className="block text-xs font-medium text-secondary mb-1">Author</label>
                 <input value={resData.author ?? ""} onChange={(e) => setResData((p) => ({ ...p, author: e.target.value }))} placeholder="e.g. CBDT, ITAT" className={inp} />
               </div>
 
               {/* Files section */}
               <div>
-                <label className="block text-xs font-medium text-[#6B7280] mb-2">
+                <label className="block text-xs font-medium text-secondary mb-2">
                   {editingResource ? "Files" : "Upload Files"} {!editingResource && <span className="text-red-500">*</span>}
                 </label>
 
                 {editingResource && localResFiles.length > 0 && (
-                  <div className="mb-3 border border-[#E5E7EB] rounded-lg divide-y divide-[#E5E7EB] overflow-hidden">
+                  <div className="mb-3 border border-border rounded-lg divide-y divide-border overflow-hidden">
                     {localResFiles.map((f) => {
                       const badge = fileTypeBadge(f.file_type ?? f.file_name);
                       return (
-                        <div key={f.id} className="px-3 py-2.5 flex items-center justify-between gap-3 bg-white hover:bg-[#F8F9FA]">
+                        <div key={f.id} className="px-3 py-2.5 flex items-center justify-between gap-3 bg-white hover:bg-page">
                           <div className="flex items-center gap-2.5 min-w-0">
                             <div className={`w-8 h-8 rounded-lg ${badge.bg} flex items-center justify-center flex-shrink-0`}>
                               <span className={`text-xs font-bold ${badge.text}`}>{badge.label}</span>
                             </div>
-                            <span className="text-xs font-medium text-[#1A1A2E] truncate">{f.file_name}</span>
-                            {f.file_size && <span className="text-xs text-[#9CA3AF] flex-shrink-0">{(f.file_size / 1024).toFixed(0)} KB</span>}
+                            <span className="text-xs font-medium text-heading truncate">{f.file_name}</span>
+                            {f.file_size && <span className="text-xs text-muted flex-shrink-0">{(f.file_size / 1024).toFixed(0)} KB</span>}
                           </div>
                           <div className="flex items-center gap-0.5 flex-shrink-0">
                             <a href={f.file_url} target="_blank" rel="noopener noreferrer" title="View file"
-                              className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] inline-flex">
+                              className="p-1.5 rounded hover:bg-surface-hover transition-colors text-accent hover:text-primary inline-flex">
                               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                             </a>
                             <a href={f.file_url} download={f.file_name} title="Download"
-                              className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#6B7280] hover:text-[#1A1A2E] inline-flex">
+                              className="p-1.5 rounded hover:bg-surface-hover transition-colors text-secondary hover:text-heading inline-flex">
                               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                             </a>
                             {canEdit && (
@@ -1313,7 +1319,7 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
                   multiple
                   accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
                   onChange={(e) => setResNewFiles(Array.from(e.target.files ?? []))}
-                  className="block w-full text-sm text-[#6B7280] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-[#1E3A5F] file:text-white hover:file:bg-[#162d4a] file:cursor-pointer cursor-pointer"
+                  className="block w-full text-sm text-secondary file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-primary file:text-white hover:file:bg-primary-dark file:cursor-pointer cursor-pointer"
                 />
                 {resNewFiles.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1.5">
@@ -1327,7 +1333,7 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
                     })}
                   </div>
                 )}
-                <p className="text-xs text-[#9CA3AF] mt-1">PDF, Word, Excel, PowerPoint — multiple files allowed</p>
+                <p className="text-xs text-muted mt-1">PDF, Word, Excel, PowerPoint — multiple files allowed</p>
               </div>
 
               <div className="flex gap-3 pt-2 pb-2">
@@ -1337,8 +1343,8 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
                     Delete
                   </button>
                 )}
-                <button type="button" onClick={() => setShowResourceModal(false)} className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">Cancel</button>
-                <button type="submit" disabled={resSaving} className="flex-1 px-4 py-2 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60">
+                <button type="button" onClick={() => setShowResourceModal(false)} className="flex-1 px-4 py-2 text-sm border border-border rounded-lg text-heading hover:bg-page transition">Cancel</button>
+                <button type="submit" disabled={resSaving} className="flex-1 px-4 py-2 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition disabled:opacity-60">
                   {resSaving ? (editingResource ? "Saving…" : "Uploading…") : editingResource ? "Save Changes" : "Add Resource"}
                 </button>
               </div>
@@ -1350,11 +1356,11 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
       {/* ── CONFIRM: Delete Resource ── */}
       {confirmDeleteRes && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl shadow-xl border border-[#E5E7EB] p-6 w-full max-w-sm mx-4">
-            <h3 className="text-base font-semibold text-[#1A1A2E] mb-2">Delete Resource?</h3>
-            <p className="text-sm text-[#6B7280] mb-5">This resource and all its files will be permanently removed.</p>
+          <div className="bg-white rounded-xl shadow-xl border border-border p-6 w-full max-w-sm mx-4">
+            <h3 className="text-base font-semibold text-heading mb-2">Delete Resource?</h3>
+            <p className="text-sm text-secondary mb-5">This resource and all its files will be permanently removed.</p>
             <div className="flex gap-3">
-              <button onClick={() => setConfirmDeleteRes(null)} className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">Cancel</button>
+              <button onClick={() => setConfirmDeleteRes(null)} className="flex-1 px-4 py-2 text-sm border border-border rounded-lg text-heading hover:bg-page transition">Cancel</button>
               <button onClick={() => handleDeleteResource(confirmDeleteRes)} disabled={deletingResId === confirmDeleteRes.id} className="flex-1 px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition disabled:opacity-60">
                 {deletingResId === confirmDeleteRes.id ? "Deleting…" : "Delete"}
               </button>

@@ -62,7 +62,7 @@ export default function AdminsClient({ admins, currentUserId, isSuperAdmin }: Pr
     <>
       <div className="flex items-center justify-between mb-4">
         <div className="relative max-w-sm w-full">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
           </svg>
           <input
@@ -70,13 +70,13 @@ export default function AdminsClient({ admins, currentUserId, isSuperAdmin }: Pr
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search admins…"
-            className="w-full pl-9 pr-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] bg-white"
+            className="w-full pl-9 pr-3 py-2 text-sm border-2 border-accent rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white"
           />
         </div>
         {isSuperAdmin && (
           <button
             onClick={() => router.push("/platform/admins/new")}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#1E3A5F] hover:bg-[#162d4a] text-white text-sm font-medium rounded-lg transition"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary-dark text-white text-sm font-medium rounded-lg transition"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -86,13 +86,13 @@ export default function AdminsClient({ admins, currentUserId, isSuperAdmin }: Pr
         )}
       </div>
 
-      <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-[#D1D9E6] border-b-2 border-[#B0BDD0]">
-              <th className="text-center px-4 py-3 font-medium text-[#1A1A2E] w-10">#</th>
-              <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">
-                <button onClick={() => setSortAsc(!sortAsc)} className="inline-flex items-center gap-1 hover:text-[#1E3A5F] transition-colors">
+            <tr className="bg-table-header border-b-2 border-table-header-border">
+              <th className="text-center px-4 py-3 font-semibold text-heading w-10">#</th>
+              <th className="text-left px-4 py-3 font-semibold text-heading">
+                <button onClick={() => setSortAsc(!sortAsc)} className="inline-flex items-center gap-1 hover:text-primary transition-colors">
                   Name
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     {sortAsc
@@ -102,17 +102,17 @@ export default function AdminsClient({ admins, currentUserId, isSuperAdmin }: Pr
                   </svg>
                 </button>
               </th>
-              <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Email</th>
-              <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Role</th>
-              <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Status</th>
-              <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Added</th>
-              {isSuperAdmin && <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Actions</th>}
+              <th className="text-left px-4 py-3 font-semibold text-heading">Email</th>
+              <th className="text-left px-4 py-3 font-semibold text-heading">Role</th>
+              <th className="text-left px-4 py-3 font-semibold text-heading w-24">Status</th>
+              <th className="text-left px-4 py-3 font-semibold text-heading w-28">Added</th>
+              {isSuperAdmin && <th className="text-left px-4 py-3 font-semibold text-heading w-24">Actions</th>}
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#E5E7EB]">
+          <tbody className="divide-y divide-border">
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={isSuperAdmin ? 7 : 6} className="px-4 py-12 text-center text-[#6B7280]">
+                <td colSpan={isSuperAdmin ? 7 : 6} className="px-4 py-12 text-center text-secondary">
                   {search ? `No results for "${search}"` : "No platform admins found."}
                 </td>
               </tr>
@@ -121,15 +121,15 @@ export default function AdminsClient({ admins, currentUserId, isSuperAdmin }: Pr
                 const fullName = [admin.first_name, admin.middle_name, admin.last_name].filter(Boolean).join(" ");
                 const isMe = admin.id === currentUserId;
                 return (
-                  <tr key={admin.id} className={`hover:bg-[#F8F9FA] transition-colors ${i % 2 === 1 ? "bg-[#FAFAFA]" : ""}`}>
-                    <td className="px-4 py-3 text-center text-[#9CA3AF] text-xs">{i + 1}</td>
-                    <td className="px-4 py-3 font-medium text-[#1A1A2E]">
-                      {fullName} {isMe && <span className="text-xs text-[#9CA3AF]">(you)</span>}
+                  <tr key={admin.id} className={`hover:bg-page transition-colors ${i % 2 === 1 ? "bg-stripe" : ""}`}>
+                    <td className="px-4 py-3 text-center text-muted text-xs">{i + 1}</td>
+                    <td className="px-4 py-3 text-secondary">
+                      {fullName} {isMe && <span className="text-xs text-muted">(you)</span>}
                     </td>
-                    <td className="px-4 py-3 text-[#6B7280]">{admin.email}</td>
+                    <td className="px-4 py-3 text-secondary">{admin.email}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                        admin.role === "super_admin" ? "bg-[#EEF2FF] text-[#4A6FA5]" : "bg-gray-100 text-gray-700"
+                        admin.role === "super_admin" ? "bg-accent-light text-accent" : "bg-gray-100 text-gray-700"
                       }`}>
                         {admin.role === "super_admin" ? "Super Admin" : "Platform Admin"}
                       </span>
@@ -139,7 +139,7 @@ export default function AdminsClient({ admins, currentUserId, isSuperAdmin }: Pr
                         {admin.is_active ? "Active" : "Inactive"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-[#6B7280]">
+                    <td className="px-4 py-3 text-secondary">
                       {new Date(admin.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
                     </td>
                     {isSuperAdmin && (
@@ -149,7 +149,7 @@ export default function AdminsClient({ admins, currentUserId, isSuperAdmin }: Pr
                             onClick={() => setConfirm({ id: admin.id, name: fullName, activate: !admin.is_active })}
                             disabled={toggling === admin.id}
                             title={admin.is_active ? "Deactivate admin" : "Activate admin"}
-                            className={`p-1.5 rounded hover:bg-[#F3F4F6] transition-colors disabled:opacity-50 inline-flex ${admin.is_active ? "text-amber-500 hover:text-amber-700" : "text-green-600 hover:text-green-800"}`}
+                            className={`p-1.5 rounded hover:bg-surface-hover transition-colors disabled:opacity-50 inline-flex ${admin.is_active ? "text-amber-500 hover:text-amber-700" : "text-green-600 hover:text-green-800"}`}
                           >
                             {admin.is_active ? (
                               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
@@ -171,13 +171,13 @@ export default function AdminsClient({ admins, currentUserId, isSuperAdmin }: Pr
       {/* Confirm toggle */}
       {confirm && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl border border-[#E5E7EB] p-6 w-full max-w-sm mx-4">
-            <h3 className="text-base font-semibold text-[#1A1A2E] mb-2">{confirm.activate ? "Activate" : "Deactivate"} Admin?</h3>
-            <p className="text-sm text-[#6B7280] mb-5">
+          <div className="bg-white rounded-xl shadow-xl border border-border p-6 w-full max-w-sm mx-4">
+            <h3 className="text-base font-semibold text-heading mb-2">{confirm.activate ? "Activate" : "Deactivate"} Admin?</h3>
+            <p className="text-sm text-secondary mb-5">
               {confirm.activate ? `"${confirm.name}" will be able to log in again.` : `"${confirm.name}" will be blocked from logging in.`}
             </p>
             <div className="flex gap-3">
-              <button onClick={() => setConfirm(null)} className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">Cancel</button>
+              <button onClick={() => setConfirm(null)} className="flex-1 px-4 py-2 text-sm border border-border rounded-lg text-heading hover:bg-page transition">Cancel</button>
               <button onClick={handleToggle} disabled={!!toggling} className={`flex-1 px-4 py-2 text-sm rounded-lg text-white font-medium transition disabled:opacity-60 ${confirm.activate ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}`}>
                 {toggling ? "Processing…" : confirm.activate ? "Activate" : "Deactivate"}
               </button>

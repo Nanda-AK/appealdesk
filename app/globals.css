@@ -1,47 +1,74 @@
 @import "tailwindcss";
 
-:root {
-  /* Brand */
-  --color-primary: #1E3A5F;
-  --color-primary-dark: #162d4a;
-  --color-accent: #4A6FA5;
-  --color-accent-light: #EEF2FF;
+/*
+ * ─────────────────────────────────────────────────────────────────────────
+ *  AppealDesk Design System — single source of truth
+ *
+ *  Every token below is declared inside @theme, so Tailwind v4 generates
+ *  real utility classes from it:
+ *      --color-primary  →  bg-primary, text-primary, border-primary,
+ *                          ring-primary, divide-primary, …
+ *
+ *  To rebrand or retune the portal, change the hex here and rebuild.
+ *  Do NOT hardcode hex values in components (bg-[#1E3A5F] is banned);
+ *  always use the token utilities (bg-primary).
+ * ─────────────────────────────────────────────────────────────────────────
+ */
+@theme {
+  /* ── Brand ─────────────────────────────────────────────────────────── */
+  --color-primary: #1e3a5f; /* sidebar, buttons, headings accents  */
+  --color-primary-dark: #162d4a; /* primary hover                       */
+  --color-accent: #4a6fa5; /* input borders, links, icons         */
+  --color-accent-light: #eef2ff; /* hover bg on light surfaces          */
+  --color-accent-faint: #f8faff; /* event rows inside proceedings       */
+  --color-accent-tint: #ebf1f9; /* proceeding section background       */
+  --color-accent-tint-hover: #d8e3f5; /* hover on tinted blue surfaces    */
 
-  /* Backgrounds */
-  --color-bg: #F8F9FA;
-  --color-surface: #ffffff;
+  /* ── Surfaces ──────────────────────────────────────────────────────── */
+  --color-page: #f8f9fa; /* page background                     */
+  --color-surface: #ffffff; /* cards, tables                       */
+  --color-surface-hover: #f3f4f6; /* neutral hover / tab strip bg        */
+  --color-stripe: #fafafa; /* alternating table row stripe        */
 
-  /* Text */
-  --color-text-primary: #1A1A2E;
-  --color-text-secondary: #6B7280;
-  --color-text-muted: #9CA3AF;
+  /* ── Text ──────────────────────────────────────────────────────────── */
+  --color-heading: #1a1a2e; /* headings, table header text         */
+  --color-secondary: #6b7280; /*  body / data-cell text optional grey:#1E293B      */
+  --color-muted: #9ca3af; /* placeholders, row numbers, hints    */
 
-  /* Borders */
-  --color-border: #E5E7EB;
-  --color-border-strong: #D1D5DB;
+  /* ── Borders ───────────────────────────────────────────────────────── */
+  --color-border: #e5e7eb; /* default border + row dividers       */
+  --color-border-strong: #d1d5db; /* emphasized borders, scrollbar thumb */
 
-  /* Status */
-  --color-success: #16A34A;
-  --color-warning: #D97706;
-  --color-danger: #DC2626;
-  --color-info: #2563EB;
+  /* ── Tables ────────────────────────────────────────────────────────── */
+  --color-table-header: #d1d9e6; /* thead background (fixed)       */
+  --color-table-header-border: #b0bdd0; /* thead bottom border            */
 
-  /* Importance */
-  --color-critical: #DC2626;
-  --color-high: #D97706;
-  --color-medium: #2563EB;
-  --color-low: #16A34A;
+  /* ── Status ────────────────────────────────────────────────────────── */
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-warning-light: #fffbeb; /* warning banner background           */
+  --color-danger: #dc2626;
+  --color-info: #2563eb;
 
-  /* Outcome */
-  --color-favourable: #16A34A;
-  --color-doubtful: #D97706;
-  --color-unfavourable: #DC2626;
+  /* ── Importance (proceedings) ──────────────────────────────────────── */
+  --color-critical: #dc2626;
+  --color-high: #d97706;
+  --color-medium: #2563eb;
+  --color-low: #16a34a;
+
+  /* ── Outcome (proceedings) ─────────────────────────────────────────── */
+  --color-favourable: #16a34a;
+  --color-doubtful: #d97706;
+  --color-unfavourable: #dc2626;
+
+  /* ── Typography ────────────────────────────────────────────────────── */
+  --font-sans: "Inter", system-ui, sans-serif;
 }
 
 body {
-  background-color: var(--color-bg);
-  color: var(--color-text-primary);
-  font-family: "Inter", system-ui, sans-serif;
+  background-color: var(--color-page);
+  color: var(--color-heading);
+  font-family: var(--font-sans);
 }
 
 @layer base {
@@ -50,6 +77,59 @@ body {
   }
 }
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--color-border-strong); border-radius: 3px; }
+/*
+ * ─────────────────────────────────────────────────────────────────────────
+ *  Canonical component patterns — use these classes (or copy their exact
+ *  utility recipe) when building new UI so every control stays uniform.
+ * ─────────────────────────────────────────────────────────────────────────
+ */
+@layer components {
+  /* Primary action button */
+  .btn-primary {
+    @apply px-5 py-2.5 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition disabled:opacity-60;
+  }
+
+  /* Secondary / outline button */
+  .btn-secondary {
+    @apply px-5 py-2.5 text-sm border border-border text-heading hover:bg-page rounded-lg font-medium transition disabled:opacity-60;
+  }
+
+  /* Standard text input / select */
+  .input-std {
+    @apply w-full px-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary;
+  }
+
+  /* Card / section wrapper */
+  .card-std {
+    @apply bg-surface border border-border rounded-xl p-6 shadow-sm;
+  }
+
+  /* Tables — see .claude/skills/table-consistency for the full spec */
+  .table-std {
+    @apply w-full text-sm; /* no divide-x: vertical lines banned */
+  }
+  .thead-row {
+    @apply bg-table-header border-b-2 border-table-header-border;
+  }
+  .th-std {
+    @apply text-left px-4 py-3 font-semibold text-heading;
+  }
+  .td-std {
+    @apply px-4 py-3 text-secondary;
+  }
+  .td-rownum {
+    @apply px-4 py-3 text-center text-muted text-xs; /* "#" index column */
+  }
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 3px;
+}

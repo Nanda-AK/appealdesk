@@ -120,31 +120,31 @@ function MultiSelect({
   return (
     <div ref={containerRef} className="relative">
       <div
-        className="flex items-center gap-1.5 px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg bg-white cursor-pointer min-w-[144px] max-w-[200px] h-[38px] select-none"
+        className="flex items-center gap-1.5 px-3 py-2 text-sm border-2 border-accent rounded-lg bg-white cursor-pointer min-w-[144px] max-w-[200px] h-[38px] select-none"
         onClick={() => (open ? applyAndClose() : openDropdown())}
       >
-        <span className={`flex-1 truncate ${!hasValue ? "text-[#9CA3AF]" : isMulti ? "font-medium text-[#1E3A5F]" : "text-[#1A1A2E]"}`}>
+        <span className={`flex-1 truncate ${!hasValue ? "text-muted" : isMulti ? "font-medium text-primary" : "text-heading"}`}>
           {triggerText}
         </span>
         {hasValue ? (
           <button
             onMouseDown={(e) => { e.stopPropagation(); onChange([]); }}
-            className="text-[#9CA3AF] hover:text-[#1A1A2E] shrink-0 text-base leading-none"
+            className="text-muted hover:text-heading shrink-0 text-base leading-none"
           >×</button>
         ) : (
-          <svg className="w-3.5 h-3.5 shrink-0 text-[#9CA3AF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="w-3.5 h-3.5 shrink-0 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
           </svg>
         )}
       </div>
 
       {open && (
-        <div className="absolute top-full left-0 mt-1 bg-white border border-[#E5E7EB] rounded-lg shadow-lg z-50 w-60 max-h-64 flex flex-col">
+        <div className="absolute top-full left-0 mt-1 bg-white border border-border rounded-lg shadow-lg z-50 w-60 max-h-64 flex flex-col">
           {searchable && (
-            <div className="p-2 border-b border-[#F3F4F6] shrink-0">
+            <div className="p-2 border-b border-surface-hover shrink-0">
               <input
                 ref={inputRef}
-                className="w-full px-2 py-1.5 text-sm border border-[#E5E7EB] rounded focus:outline-none focus:ring-1 focus:ring-[#4A6FA5]"
+                className="w-full px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-accent"
                 placeholder="Search…"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -152,17 +152,17 @@ function MultiSelect({
             </div>
           )}
           {pending.length > 0 && (
-            <div className="px-3 py-1.5 border-b border-[#F3F4F6] flex items-center justify-between shrink-0">
-              <span className="text-xs text-[#6B7280]">{pending.length} selected</span>
+            <div className="px-3 py-1.5 border-b border-surface-hover flex items-center justify-between shrink-0">
+              <span className="text-xs text-secondary">{pending.length} selected</span>
               <button
                 onMouseDown={(e) => { e.preventDefault(); setPending([]); pendingRef.current = []; }}
-                className="text-xs text-[#4A6FA5] hover:underline"
+                className="text-xs text-accent hover:underline"
               >Clear</button>
             </div>
           )}
           <div className="overflow-y-auto flex-1 py-1">
             {filtered.length === 0 ? (
-              <div className="px-3 py-2 text-sm text-[#9CA3AF]">No matches</div>
+              <div className="px-3 py-2 text-sm text-muted">No matches</div>
             ) : (
               filtered.map((o) => {
                 const isChecked = pending.includes(o.id);
@@ -170,16 +170,16 @@ function MultiSelect({
                   <button
                     key={o.id}
                     onMouseDown={(e) => { e.preventDefault(); toggle(o.id); }}
-                    className={`w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-[#F8F9FA] ${isChecked ? "bg-blue-50/50" : ""}`}
+                    className={`w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-page ${isChecked ? "bg-blue-50/50" : ""}`}
                   >
-                    <div className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors ${isChecked ? "bg-[#1E3A5F] border-[#1E3A5F]" : "border-[#D1D5DB]"}`}>
+                    <div className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors ${isChecked ? "bg-primary border-primary" : "border-border-strong"}`}>
                       {isChecked && (
                         <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
                       )}
                     </div>
-                    <span className={`text-sm flex-1 truncate ${isChecked ? "font-medium text-[#1A1A2E]" : "text-[#4B5563]"}`}>
+                    <span className={`text-sm flex-1 truncate ${isChecked ? "font-medium text-heading" : "text-secondary"}`}>
                       {o.name}
                     </span>
                   </button>
@@ -286,8 +286,8 @@ export default function UsersClient({
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-[#1A1A2E]">Users</h1>
-          <p className="text-[#6B7280] text-sm mt-0.5">
+          <h1 className="text-2xl font-semibold text-heading">Users</h1>
+          <p className="text-secondary text-sm mt-0.5">
             {hasFilters ? `${filtered.length} of ${tabUsers.length}` : tabUsers.length} users
             {currentTab === "team" ? " in your team" : " from client organisations"}
           </p>
@@ -295,7 +295,7 @@ export default function UsersClient({
         {isAdmin && (
           <Link
             href={currentTab === "team" ? "/users/new-sp" : "/users/new-client"}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#1E3A5F] hover:bg-[#162d4a] text-white text-sm font-medium rounded-lg transition"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary-dark text-white text-sm font-medium rounded-lg transition"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -306,13 +306,13 @@ export default function UsersClient({
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-white border border-[#E5E7EB] rounded-xl p-1 shadow-sm mb-4 w-fit">
+      <div className="flex gap-1 bg-white border border-border rounded-xl p-1 shadow-sm mb-4 w-fit">
         {(["team", "clients"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => switchTab(tab)}
             className={`px-4 py-2 text-sm font-medium rounded-lg transition ${
-              currentTab === tab ? "bg-[#1E3A5F] text-white" : "text-[#6B7280] hover:text-[#1A1A2E] hover:bg-[#F8F9FA]"
+              currentTab === tab ? "bg-primary text-white" : "text-secondary hover:text-heading hover:bg-page"
             }`}
           >
             {tab === "team" ? `Users (${teamUsers.length})` : `Client Users (${clientUsers.length})`}
@@ -321,7 +321,7 @@ export default function UsersClient({
       </div>
 
       {/* Filters — Role, Organisation, Designation, Status */}
-      <div className="bg-white border border-[#E5E7EB] rounded-xl p-4 mb-4 flex flex-wrap gap-3 items-center">
+      <div className="bg-white border border-border rounded-xl p-4 mb-4 flex flex-wrap gap-3 items-center">
         <MultiSelect
           options={roleOptions}
           values={currentRoles}
@@ -352,7 +352,7 @@ export default function UsersClient({
         {/* Sort toggle */}
         <button
           onClick={() => push({ sort_dir: currentSortDir === "asc" ? "desc" : "asc" })}
-          className="flex items-center gap-1.5 px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg hover:bg-[#F8F9FA] transition text-[#1A1A2E]"
+          className="flex items-center gap-1.5 px-3 py-2 text-sm border-2 border-accent rounded-lg hover:bg-page transition text-heading"
         >
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             {currentSortDir === "asc"
@@ -365,7 +365,7 @@ export default function UsersClient({
         {hasFilters && (
           <button
             onClick={() => push({ role: "", org: "", designation: "", status: "" })}
-            className="px-3 py-2 text-sm text-[#6B7280] hover:text-[#1A1A2E] border border-[#E5E7EB] rounded-lg transition"
+            className="px-3 py-2 text-sm text-secondary hover:text-heading border border-border rounded-lg transition"
           >
             Clear all
           </button>
@@ -373,44 +373,44 @@ export default function UsersClient({
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-[#D1D9E6] border-b-2 border-[#B0BDD0]">
-                <th className="text-center px-4 py-3 font-medium text-[#1A1A2E] w-10">#</th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Name</th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Email</th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Role</th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Organisation</th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Designation</th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Status</th>
-                {isAdmin && <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Actions</th>}
+              <tr className="bg-table-header border-b-2 border-table-header-border">
+                <th className="text-center px-4 py-3 font-semibold text-heading w-10">#</th>
+                <th className="text-left px-4 py-3 font-semibold text-heading">Name</th>
+                <th className="text-left px-4 py-3 font-semibold text-heading">Email</th>
+                <th className="text-left px-4 py-3 font-semibold text-heading">Role</th>
+                <th className="text-left px-4 py-3 font-semibold text-heading">Organisation</th>
+                <th className="text-left px-4 py-3 font-semibold text-heading">Designation</th>
+                <th className="text-left px-4 py-3 font-semibold text-heading w-24">Status</th>
+                {isAdmin && <th className="text-left px-4 py-3 font-semibold text-heading w-28">Actions</th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#E5E7EB]">
+            <tbody className="divide-y divide-border">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={colSpan} className="px-4 py-12 text-center text-[#6B7280]">
+                  <td colSpan={colSpan} className="px-4 py-12 text-center text-secondary">
                     {hasFilters ? "No users match your filters." : "No users found."}
                   </td>
                 </tr>
               ) : (
                 filtered.map((u, i) => (
-                  <tr key={u.id} className={`hover:bg-[#F8F9FA] transition-colors ${i % 2 === 1 ? "bg-[#FAFAFA]" : ""}`}>
-                    <td className="px-4 py-3 text-center text-[#9CA3AF] text-xs">{i + 1}</td>
-                    <td className="px-4 py-3 font-medium text-[#1A1A2E]">
+                  <tr key={u.id} className={`hover:bg-page transition-colors ${i % 2 === 1 ? "bg-stripe" : ""}`}>
+                    <td className="px-4 py-3 text-center text-muted text-xs">{i + 1}</td>
+                    <td className="px-4 py-3 text-secondary">
                       {fullName(u)}
-                      {u.id === currentUserId && <span className="ml-1.5 text-xs text-[#9CA3AF]">(you)</span>}
+                      {u.id === currentUserId && <span className="ml-1.5 text-xs text-muted">(you)</span>}
                     </td>
-                    <td className="px-4 py-3 text-[#6B7280]">{u.email}</td>
+                    <td className="px-4 py-3 text-secondary">{u.email}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${ROLE_COLORS[u.role] ?? "bg-gray-100 text-gray-600"}`}>
                         {ROLE_LABELS[u.role] ?? u.role}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-[#6B7280]">{u.organization?.name ?? "—"}</td>
-                    <td className="px-4 py-3 text-[#6B7280]">{u.designation ?? "—"}</td>
+                    <td className="px-4 py-3 text-secondary">{u.organization?.name ?? "—"}</td>
+                    <td className="px-4 py-3 text-secondary">{u.designation ?? "—"}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${u.is_active ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
                         {u.is_active ? "Active" : "Inactive"}
@@ -420,7 +420,7 @@ export default function UsersClient({
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-0.5">
                           <Link href={`/users/${u.id}/edit`} title="Edit user"
-                            className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] inline-flex">
+                            className="p-1.5 rounded hover:bg-surface-hover transition-colors text-accent hover:text-primary inline-flex">
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                           </Link>
                           {u.id !== currentUserId && (
@@ -429,7 +429,7 @@ export default function UsersClient({
                                 onClick={() => handleToggle(u.id, u.is_active)}
                                 disabled={togglingId === u.id}
                                 title={u.is_active ? "Deactivate user" : "Activate user"}
-                                className={`p-1.5 rounded hover:bg-[#F3F4F6] transition-colors disabled:opacity-50 inline-flex ${u.is_active ? "text-amber-500 hover:text-amber-700" : "text-green-600 hover:text-green-800"}`}
+                                className={`p-1.5 rounded hover:bg-surface-hover transition-colors disabled:opacity-50 inline-flex ${u.is_active ? "text-amber-500 hover:text-amber-700" : "text-green-600 hover:text-green-800"}`}
                               >
                                 {u.is_active ? (
                                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
@@ -440,7 +440,7 @@ export default function UsersClient({
                               <button
                                 onClick={() => setConfirmDelete({ id: u.id, name: fullName(u) })}
                                 title="Delete user"
-                                className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-red-500 hover:text-red-700 inline-flex"
+                                className="p-1.5 rounded hover:bg-surface-hover transition-colors text-red-500 hover:text-red-700 inline-flex"
                               >
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                               </button>
@@ -460,14 +460,14 @@ export default function UsersClient({
       {/* Delete confirm modal */}
       {confirmDelete && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl border border-[#E5E7EB] p-6 w-full max-w-sm mx-4">
-            <h3 className="text-base font-semibold text-[#1A1A2E] mb-2">Delete User?</h3>
-            <p className="text-sm text-[#6B7280] mb-5">
+          <div className="bg-white rounded-xl shadow-xl border border-border p-6 w-full max-w-sm mx-4">
+            <h3 className="text-base font-semibold text-heading mb-2">Delete User?</h3>
+            <p className="text-sm text-secondary mb-5">
               <strong>{confirmDelete.name}</strong> will be permanently deleted and lose all access. This cannot be undone.
             </p>
             <div className="flex gap-3">
               <button onClick={() => setConfirmDelete(null)}
-                className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">
+                className="flex-1 px-4 py-2 text-sm border border-border rounded-lg text-heading hover:bg-page transition">
                 Cancel
               </button>
               <button onClick={handleDelete} disabled={!!deletingId}

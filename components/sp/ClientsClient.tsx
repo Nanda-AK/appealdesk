@@ -105,31 +105,31 @@ function MultiSelect({
   return (
     <div ref={containerRef} className="relative">
       <div
-        className="flex items-center gap-1.5 px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg bg-white cursor-pointer min-w-[144px] max-w-[200px] h-[38px] select-none"
+        className="flex items-center gap-1.5 px-3 py-2 text-sm border-2 border-accent rounded-lg bg-white cursor-pointer min-w-[144px] max-w-[200px] h-[38px] select-none"
         onClick={() => (open ? applyAndClose() : openDropdown())}
       >
-        <span className={`flex-1 truncate ${!hasValue ? "text-[#9CA3AF]" : isMulti ? "font-medium text-[#1E3A5F]" : "text-[#1A1A2E]"}`}>
+        <span className={`flex-1 truncate ${!hasValue ? "text-muted" : isMulti ? "font-medium text-primary" : "text-heading"}`}>
           {triggerText}
         </span>
         {hasValue ? (
           <button
             onMouseDown={(e) => { e.stopPropagation(); onChange([]); }}
-            className="text-[#9CA3AF] hover:text-[#1A1A2E] shrink-0 text-base leading-none"
+            className="text-muted hover:text-heading shrink-0 text-base leading-none"
           >×</button>
         ) : (
-          <svg className="w-3.5 h-3.5 shrink-0 text-[#9CA3AF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="w-3.5 h-3.5 shrink-0 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
           </svg>
         )}
       </div>
 
       {open && (
-        <div className="absolute top-full left-0 mt-1 bg-white border border-[#E5E7EB] rounded-lg shadow-lg z-50 w-60 max-h-64 flex flex-col">
+        <div className="absolute top-full left-0 mt-1 bg-white border border-border rounded-lg shadow-lg z-50 w-60 max-h-64 flex flex-col">
           {searchable && (
-            <div className="p-2 border-b border-[#F3F4F6] shrink-0">
+            <div className="p-2 border-b border-surface-hover shrink-0">
               <input
                 ref={inputRef}
-                className="w-full px-2 py-1.5 text-sm border border-[#E5E7EB] rounded focus:outline-none focus:ring-1 focus:ring-[#4A6FA5]"
+                className="w-full px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-accent"
                 placeholder="Search…"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -137,17 +137,17 @@ function MultiSelect({
             </div>
           )}
           {pending.length > 0 && (
-            <div className="px-3 py-1.5 border-b border-[#F3F4F6] flex items-center justify-between shrink-0">
-              <span className="text-xs text-[#6B7280]">{pending.length} selected</span>
+            <div className="px-3 py-1.5 border-b border-surface-hover flex items-center justify-between shrink-0">
+              <span className="text-xs text-secondary">{pending.length} selected</span>
               <button
                 onMouseDown={(e) => { e.preventDefault(); setPending([]); pendingRef.current = []; }}
-                className="text-xs text-[#4A6FA5] hover:underline"
+                className="text-xs text-accent hover:underline"
               >Clear</button>
             </div>
           )}
           <div className="overflow-y-auto flex-1 py-1">
             {filtered.length === 0 ? (
-              <div className="px-3 py-2 text-sm text-[#9CA3AF]">No matches</div>
+              <div className="px-3 py-2 text-sm text-muted">No matches</div>
             ) : (
               filtered.map((o) => {
                 const isChecked = pending.includes(o.id);
@@ -155,16 +155,16 @@ function MultiSelect({
                   <button
                     key={o.id}
                     onMouseDown={(e) => { e.preventDefault(); toggle(o.id); }}
-                    className={`w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-[#F8F9FA] ${isChecked ? "bg-blue-50/50" : ""}`}
+                    className={`w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-page ${isChecked ? "bg-blue-50/50" : ""}`}
                   >
-                    <div className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors ${isChecked ? "bg-[#1E3A5F] border-[#1E3A5F]" : "border-[#D1D5DB]"}`}>
+                    <div className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors ${isChecked ? "bg-primary border-primary" : "border-border-strong"}`}>
                       {isChecked && (
                         <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
                       )}
                     </div>
-                    <span className={`text-sm flex-1 truncate ${isChecked ? "font-medium text-[#1A1A2E]" : "text-[#4B5563]"}`}>
+                    <span className={`text-sm flex-1 truncate ${isChecked ? "font-medium text-heading" : "text-secondary"}`}>
                       {o.name}
                     </span>
                   </button>
@@ -256,15 +256,15 @@ export default function ClientsClient({
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-[#1A1A2E]">Clients</h1>
-          <p className="text-[#6B7280] text-sm mt-0.5">
+          <h1 className="text-2xl font-semibold text-heading">Clients</h1>
+          <p className="text-secondary text-sm mt-0.5">
             {hasFilters ? `${filtered.length} of ${clients.length}` : clients.length} client organizations
           </p>
         </div>
         {isAdmin && (
           <Link
             href="/clients/new"
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#1E3A5F] hover:bg-[#162d4a] text-white text-sm font-medium rounded-lg transition"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary-dark text-white text-sm font-medium rounded-lg transition"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -275,7 +275,7 @@ export default function ClientsClient({
       </div>
 
       {/* Filters — Client Name, Business Type, City, Status */}
-      <div className="bg-white border border-[#E5E7EB] rounded-xl p-4 mb-4 flex flex-wrap gap-3 items-center">
+      <div className="bg-white border border-border rounded-xl p-4 mb-4 flex flex-wrap gap-3 items-center">
         <MultiSelect
           options={clientOptions}
           values={currentClientIds}
@@ -305,7 +305,7 @@ export default function ClientsClient({
         {/* Sort toggle */}
         <button
           onClick={() => push({ sort_dir: currentSortDir === "asc" ? "desc" : "asc" })}
-          className="flex items-center gap-1.5 px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg hover:bg-[#F8F9FA] transition text-[#1A1A2E]"
+          className="flex items-center gap-1.5 px-3 py-2 text-sm border-2 border-accent rounded-lg hover:bg-page transition text-heading"
         >
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             {currentSortDir === "asc"
@@ -318,7 +318,7 @@ export default function ClientsClient({
         {hasFilters && (
           <button
             onClick={() => router.push("/clients")}
-            className="px-3 py-2 text-sm text-[#6B7280] hover:text-[#1A1A2E] border border-[#E5E7EB] rounded-lg transition"
+            className="px-3 py-2 text-sm text-secondary hover:text-heading border border-border rounded-lg transition"
           >
             Clear all
           </button>
@@ -326,24 +326,24 @@ export default function ClientsClient({
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-[#D1D9E6] border-b-2 border-[#B0BDD0]">
-                <th className="text-center px-4 py-3 font-medium text-[#1A1A2E] w-10">#</th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Name</th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Business Type</th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">City</th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Status</th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Added</th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Actions</th>
+              <tr className="bg-table-header border-b-2 border-table-header-border">
+                <th className="text-center px-4 py-3 font-semibold text-heading w-10">#</th>
+                <th className="text-left px-4 py-3 font-semibold text-heading">Name</th>
+                <th className="text-left px-4 py-3 font-semibold text-heading">Business Type</th>
+                <th className="text-left px-4 py-3 font-semibold text-heading">City</th>
+                <th className="text-left px-4 py-3 font-semibold text-heading w-24">Status</th>
+                <th className="text-left text-nowrap px-4 py-3 font-semibold text-heading w-28">Uploaded on</th>
+                <th className="text-left px-4 py-3 font-semibold text-heading w-24">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#E5E7EB]">
+            <tbody className="divide-y divide-border">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-[#6B7280]">
+                  <td colSpan={7} className="px-4 py-12 text-center text-secondary">
                     {hasFilters ? "No clients match your filters." : "No clients yet. Add the first one."}
                   </td>
                 </tr>
@@ -351,18 +351,18 @@ export default function ClientsClient({
                 filtered.map((client, i) => (
                   <tr
                     key={client.id}
-                    className={`hover:bg-[#F8F9FA] transition-colors ${i % 2 === 1 ? "bg-[#FAFAFA]" : ""}`}
+                    className={`hover:bg-page transition-colors ${i % 2 === 1 ? "bg-stripe" : ""}`}
                   >
-                    <td className="px-4 py-3 text-center text-[#9CA3AF] text-xs">{i + 1}</td>
-                    <td className="px-4 py-3 font-medium text-[#1A1A2E]">{client.name}</td>
-                    <td className="px-4 py-3 text-[#6B7280]">{client.business_type ?? "—"}</td>
-                    <td className="px-4 py-3 text-[#6B7280]">{client.city ?? "—"}</td>
+                    <td className="px-4 py-3 text-center text-muted text-xs">{i + 1}</td>
+                    <td className="px-4 py-3 text-secondary" title={client.name}>{client.name}</td>
+                    <td className="px-4 py-3 text-secondary">{client.business_type ?? "—"}</td>
+                    <td className="px-4 py-3 text-secondary">{client.city ?? "—"}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${client.is_active ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
                         {client.is_active ? "Active" : "Inactive"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-[#6B7280]">
+                    <td className="px-4 py-3 text-secondary">
                       {new Date(client.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
                     </td>
                     <td className="px-4 py-3">
@@ -370,7 +370,7 @@ export default function ClientsClient({
                         <Link
                           href={`/clients/${client.id}`}
                           title={isAdmin ? "Edit client" : "View client"}
-                          className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] inline-flex"
+                          className="p-1.5 rounded hover:bg-surface-hover transition-colors text-accent hover:text-primary inline-flex"
                         >
                           {isAdmin ? (
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
@@ -384,7 +384,7 @@ export default function ClientsClient({
                               onClick={() => setConfirm({ id: client.id, name: client.name, activate: !client.is_active })}
                               disabled={loading === client.id}
                               title={client.is_active ? "Deactivate client" : "Activate client"}
-                              className={`p-1.5 rounded hover:bg-[#F3F4F6] transition-colors disabled:opacity-50 inline-flex ${client.is_active ? "text-amber-500 hover:text-amber-700" : "text-green-600 hover:text-green-800"}`}
+                              className={`p-1.5 rounded hover:bg-surface-hover transition-colors disabled:opacity-50 inline-flex ${client.is_active ? "text-amber-500 hover:text-amber-700" : "text-green-600 hover:text-green-800"}`}
                             >
                               {client.is_active ? (
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
@@ -395,7 +395,7 @@ export default function ClientsClient({
                             <button
                               onClick={() => { setDeleteError(null); setDeleteConfirm({ id: client.id, name: client.name }); }}
                               title="Delete client"
-                              className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-red-500 hover:text-red-700 inline-flex"
+                              className="p-1.5 rounded hover:bg-surface-hover transition-colors text-red-500 hover:text-red-700 inline-flex"
                             >
                               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                             </button>
@@ -414,9 +414,9 @@ export default function ClientsClient({
       {/* Delete Confirm Modal */}
       {deleteConfirm && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl border border-[#E5E7EB] p-6 w-full max-w-sm mx-4">
-            <h3 className="text-base font-semibold text-[#1A1A2E] mb-2">Delete Client?</h3>
-            <p className="text-sm text-[#6B7280] mb-2">
+          <div className="bg-white rounded-xl shadow-xl border border-border p-6 w-full max-w-sm mx-4">
+            <h3 className="text-base font-semibold text-heading mb-2">Delete Client?</h3>
+            <p className="text-sm text-secondary mb-2">
               This will permanently delete <strong>{deleteConfirm.name}</strong> and all associated litigations, proceedings, events, and documents.
             </p>
             <p className="text-xs text-red-600 font-medium mb-5">This action cannot be undone.</p>
@@ -424,7 +424,7 @@ export default function ClientsClient({
               <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">{deleteError}</p>
             )}
             <div className="flex gap-3">
-              <button onClick={() => setDeleteConfirm(null)} disabled={deleting} className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition disabled:opacity-50">Cancel</button>
+              <button onClick={() => setDeleteConfirm(null)} disabled={deleting} className="flex-1 px-4 py-2 text-sm border border-border rounded-lg text-heading hover:bg-page transition disabled:opacity-50">Cancel</button>
               <button onClick={handleDelete} disabled={deleting} className="flex-1 px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition disabled:opacity-60">
                 {deleting ? "Deleting…" : "Delete"}
               </button>
@@ -436,17 +436,17 @@ export default function ClientsClient({
       {/* Activate/Deactivate Confirm Modal */}
       {confirm && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl border border-[#E5E7EB] p-6 w-full max-w-sm mx-4">
-            <h3 className="text-base font-semibold text-[#1A1A2E] mb-2">
+          <div className="bg-white rounded-xl shadow-xl border border-border p-6 w-full max-w-sm mx-4">
+            <h3 className="text-base font-semibold text-heading mb-2">
               {confirm.activate ? "Activate" : "Deactivate"} Client?
             </h3>
-            <p className="text-sm text-[#6B7280] mb-5">
+            <p className="text-sm text-secondary mb-5">
               {confirm.activate
                 ? `"${confirm.name}" will be activated and accessible to its users.`
                 : `"${confirm.name}" will be deactivated.`}
             </p>
             <div className="flex gap-3">
-              <button onClick={() => setConfirm(null)} className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">Cancel</button>
+              <button onClick={() => setConfirm(null)} className="flex-1 px-4 py-2 text-sm border border-border rounded-lg text-heading hover:bg-page transition">Cancel</button>
               <button
                 onClick={handleToggle}
                 disabled={!!loading}

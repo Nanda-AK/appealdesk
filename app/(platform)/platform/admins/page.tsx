@@ -15,8 +15,8 @@ export default async function AdminsPage() {
   return (
     <div className="p-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-[#1A1A2E]">Platform Admins</h1>
-        <p className="text-[#6B7280] text-sm mt-0.5">
+        <h1 className="text-2xl font-semibold text-heading">Platform Admins</h1>
+        <p className="text-secondary text-sm mt-0.5">
           {admins?.length ?? 0} platform administrators
         </p>
       </div>

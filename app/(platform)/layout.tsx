@@ -17,7 +17,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
     .single();
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#F8F9FA]">
+    <div className="flex h-screen overflow-hidden bg-page">
       <Sidebar
         userName={`${user.first_name} ${user.last_name}`}
         userRole={user.role}

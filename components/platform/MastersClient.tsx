@@ -34,7 +34,7 @@ interface Props {
 
 // ─── Shared inline input style ────────────────────────────────────────────────
 const inp =
-  "px-2 py-1 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]";
+  "px-2 py-1 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary";
 
 // ─── Shared icon SVG paths ────────────────────────────────────────────────────
 const TrashIcon = ({ className }: { className: string }) => (
@@ -230,7 +230,7 @@ export default function MastersClient({ records, userRole }: Props) {
   return (
     <div>
       {/* Tabs */}
-      <div className="flex gap-1 mb-4 bg-white border border-[#E5E7EB] rounded-xl p-1 w-fit shadow-sm flex-wrap">
+      <div className="flex gap-1 mb-4 bg-white border border-border rounded-xl p-1 w-fit shadow-sm flex-wrap">
         {allTabs.map((t) => (
           <button
             key={t.key}
@@ -243,7 +243,7 @@ export default function MastersClient({ records, userRole }: Props) {
               setEditingId(null);
               setActError(null);
             }}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition ${activeTab === t.key ? "bg-[#1E3A5F] text-white" : "text-[#6B7280] hover:text-[#1A1A2E] hover:bg-[#F8F9FA]"}`}
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition ${activeTab === t.key ? "bg-primary text-white" : "text-secondary hover:text-heading hover:bg-page"}`}
           >
             {t.label}
           </button>
@@ -252,20 +252,20 @@ export default function MastersClient({ records, userRole }: Props) {
 
       {/* ── Flat list tabs ───────────────────────────────────────────────────── */}
       {activeTab !== ACTS_TAB && (
-        <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
           {/* Add row */}
-          <div className="p-4 border-b border-[#E5E7EB]">
+          <div className="p-4 border-b border-border">
             <form onSubmit={handleFlatAdd} className="flex gap-2">
               <input
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder={`Add new ${currentLabel.slice(0, -1).toLowerCase()}…`}
-                className="flex-1 px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]"
+                className="flex-1 px-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               />
               <button
                 type="submit"
                 disabled={flatSaving || !newName.trim()}
-                className="px-4 py-2 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-50"
+                className="px-4 py-2 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition disabled:opacity-50"
               >
                 {flatSaving ? "Adding…" : "Add"}
               </button>
@@ -276,10 +276,10 @@ export default function MastersClient({ records, userRole }: Props) {
           </div>
 
           {/* Search */}
-          <div className="px-4 py-3 border-b border-[#E5E7EB]">
+          <div className="px-4 py-3 border-b border-border">
             <div className="relative max-w-sm">
               <svg
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]"
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -296,21 +296,21 @@ export default function MastersClient({ records, userRole }: Props) {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search…"
-                className="w-full pl-9 pr-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] bg-white"
+                className="w-full pl-9 pr-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white"
               />
             </div>
           </div>
 
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-[#D1D9E6] border-b-2 border-[#B0BDD0]">
-                <th className="text-center px-4 py-3 font-medium text-[#1A1A2E] w-10">
+              <tr className="bg-table-header border-b-2 border-table-header-border">
+                <th className="text-center px-4 py-3 font-semibold text-heading w-10">
                   #
                 </th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">
+                <th className="text-left px-4 py-3 font-semibold text-heading">
                   <button
                     onClick={() => setSortAsc(!sortAsc)}
-                    className="inline-flex items-center gap-1 hover:text-[#1E3A5F]"
+                    className="inline-flex items-center gap-1 hover:text-primary"
                   >
                     Name
                     <svg
@@ -336,20 +336,20 @@ export default function MastersClient({ records, userRole }: Props) {
                     </svg>
                   </button>
                 </th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">
+                <th className="text-left px-4 py-3 font-semibold text-heading w-28">
                   Status
                 </th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">
+                <th className="text-left px-4 py-3 font-semibold text-heading w-28">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#E5E7EB]">
+            <tbody className="divide-y divide-border">
               {filtered.length === 0 ? (
                 <tr>
                   <td
                     colSpan={4}
-                    className="px-4 py-10 text-center text-[#6B7280]"
+                    className="px-4 py-10 text-center text-secondary"
                   >
                     {search ? `No results for "${search}"` : "No records yet."}
                   </td>
@@ -358,12 +358,12 @@ export default function MastersClient({ records, userRole }: Props) {
                 filtered.map((rec, i) => (
                   <tr
                     key={rec.id}
-                    className={`hover:bg-[#F8F9FA] transition-colors ${i % 2 === 1 ? "bg-[#FAFAFA]" : ""}`}
+                    className={`hover:bg-page transition-colors ${i % 2 === 1 ? "bg-stripe" : ""}`}
                   >
-                    <td className="px-4 py-3 text-center text-[#9CA3AF] text-xs">
+                    <td className="px-4 py-3 text-center text-muted text-xs">
                       {i + 1}
                     </td>
-                    <td className="px-4 py-3 text-[#1A1A2E]">
+                    <td className="px-4 py-3 text-secondary">
                       {editingId === rec.id ? (
                         <div className="flex items-center gap-2">
                           <input
@@ -379,13 +379,13 @@ export default function MastersClient({ records, userRole }: Props) {
                           <button
                             onClick={() => saveEdit(rec.id)}
                             disabled={editSaving}
-                            className="text-xs font-medium text-[#1E3A5F] hover:underline disabled:opacity-50"
+                            className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
                           >
                             Save
                           </button>
                           <button
                             onClick={() => setEditingId(null)}
-                            className="text-xs font-medium text-[#9CA3AF] hover:underline"
+                            className="text-xs font-medium text-muted hover:underline"
                           >
                             Cancel
                           </button>
@@ -407,7 +407,7 @@ export default function MastersClient({ records, userRole }: Props) {
                           <button
                             onClick={() => startEdit(rec.id, rec.name)}
                             title="Edit"
-                            className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] inline-flex"
+                            className="p-1.5 rounded hover:bg-surface-hover transition-colors text-accent hover:text-primary inline-flex"
                           >
                             <svg
                               className="w-4 h-4"
@@ -434,7 +434,7 @@ export default function MastersClient({ records, userRole }: Props) {
                           }
                           disabled={toggling === rec.id}
                           title={rec.is_active ? "Deactivate" : "Activate"}
-                          className={`p-1.5 rounded hover:bg-[#F3F4F6] transition-colors disabled:opacity-50 inline-flex ${rec.is_active ? "text-amber-500 hover:text-amber-700" : "text-green-600 hover:text-green-800"}`}
+                          className={`p-1.5 rounded hover:bg-surface-hover transition-colors disabled:opacity-50 inline-flex ${rec.is_active ? "text-amber-500 hover:text-amber-700" : "text-green-600 hover:text-green-800"}`}
                         >
                           {rec.is_active ? (
                             <svg
@@ -503,10 +503,10 @@ export default function MastersClient({ records, userRole }: Props) {
             return (
               <div
                 key={act.id}
-                className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden"
+                className="bg-white border border-border rounded-xl shadow-sm overflow-hidden"
               >
                 {/* Act header */}
-                <div className="flex items-center gap-3 px-5 py-4 bg-[#F8F9FA] border-b border-[#E5E7EB]">
+                <div className="flex items-center gap-3 px-5 py-4 bg-page border-b border-border">
                   <button
                     onClick={() =>
                       setExpandedActs((prev) => {
@@ -519,7 +519,7 @@ export default function MastersClient({ records, userRole }: Props) {
                         return s;
                       })
                     }
-                    className="text-[#6B7280] hover:text-[#1A1A2E] transition flex-shrink-0"
+                    className="text-secondary hover:text-heading transition flex-shrink-0"
                   >
                     <svg
                       className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-90" : ""}`}
@@ -552,20 +552,20 @@ export default function MastersClient({ records, userRole }: Props) {
                         <button
                           onClick={() => saveEdit(act.id)}
                           disabled={editSaving}
-                          className="text-xs font-medium text-[#1E3A5F] hover:underline disabled:opacity-50"
+                          className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
                         >
                           Save
                         </button>
                         <button
                           onClick={() => setEditingId(null)}
-                          className="text-xs text-[#9CA3AF] hover:underline"
+                          className="text-xs text-muted hover:underline"
                         >
                           Cancel
                         </button>
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-[#1A1A2E]">
+                        <span className="text-sm font-semibold text-heading">
                           {act.name}
                         </span>
                         <span
@@ -573,7 +573,7 @@ export default function MastersClient({ records, userRole }: Props) {
                         >
                           {act.is_active ? "Active" : "Inactive"}
                         </span>
-                        <span className="text-xs text-[#9CA3AF]">
+                        <span className="text-xs text-muted">
                           {procs.length} proceeding
                           {procs.length !== 1 ? "s" : ""}
                         </span>
@@ -589,14 +589,14 @@ export default function MastersClient({ records, userRole }: Props) {
                           setNewProcName("");
                           setExpandedActs((prev) => new Set(prev).add(act.id));
                         }}
-                        className="text-xs font-medium text-[#4A6FA5] hover:text-[#1E3A5F] px-2 py-1"
+                        className="text-xs font-medium text-accent hover:text-primary px-2 py-1"
                       >
                         + Add Proceeding
                       </button>
                       <button
                         onClick={() => startEdit(act.id, act.name)}
                         title="Edit"
-                        className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] inline-flex"
+                        className="p-1.5 rounded hover:bg-surface-hover transition-colors text-accent hover:text-primary inline-flex"
                       >
                         <svg
                           className="w-4 h-4"
@@ -622,7 +622,7 @@ export default function MastersClient({ records, userRole }: Props) {
                         }
                         disabled={toggling === act.id}
                         title={act.is_active ? "Deactivate" : "Activate"}
-                        className={`p-1.5 rounded hover:bg-[#F3F4F6] transition-colors disabled:opacity-50 inline-flex ${act.is_active ? "text-amber-500 hover:text-amber-700" : "text-green-600 hover:text-green-800"}`}
+                        className={`p-1.5 rounded hover:bg-surface-hover transition-colors disabled:opacity-50 inline-flex ${act.is_active ? "text-amber-500 hover:text-amber-700" : "text-green-600 hover:text-green-800"}`}
                       >
                         {act.is_active ? (
                           <svg
@@ -675,7 +675,7 @@ export default function MastersClient({ records, userRole }: Props) {
                 {isExpanded && (
                   <div>
                     {procs.length === 0 && addingUnderActId !== act.id && (
-                      <p className="px-6 py-4 text-sm text-[#9CA3AF] italic">
+                      <p className="px-6 py-4 text-sm text-muted italic">
                         No proceedings yet. Add one above.
                       </p>
                     )}
@@ -683,9 +683,9 @@ export default function MastersClient({ records, userRole }: Props) {
                     {procs.map((proc, i) => (
                       <div
                         key={proc.id}
-                        className={`flex items-center gap-3 px-6 py-3 border-b border-[#F3F4F6] ${i % 2 === 1 ? "bg-[#FAFAFA]" : ""} hover:bg-[#F8F9FA] transition-colors`}
+                        className={`flex items-center gap-3 px-6 py-3 border-b border-surface-hover ${i % 2 === 1 ? "bg-stripe" : ""} hover:bg-page transition-colors`}
                       >
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#B0BDD0] shrink-0" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-table-header-border shrink-0" />
                         <div className="flex-1 min-w-0">
                           {editingId === proc.id ? (
                             <div className="flex items-center gap-2">
@@ -702,19 +702,19 @@ export default function MastersClient({ records, userRole }: Props) {
                               <button
                                 onClick={() => saveEdit(proc.id)}
                                 disabled={editSaving}
-                                className="text-xs font-medium text-[#1E3A5F] hover:underline disabled:opacity-50"
+                                className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
                               >
                                 Save
                               </button>
                               <button
                                 onClick={() => setEditingId(null)}
-                                className="text-xs text-[#9CA3AF] hover:underline"
+                                className="text-xs text-muted hover:underline"
                               >
                                 Cancel
                               </button>
                             </div>
                           ) : (
-                            <span className="text-sm text-[#1A1A2E]">
+                            <span className="text-sm text-heading">
                               {proc.name}
                             </span>
                           )}
@@ -729,7 +729,7 @@ export default function MastersClient({ records, userRole }: Props) {
                             <button
                               onClick={() => startEdit(proc.id, proc.name)}
                               title="Edit"
-                              className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] inline-flex"
+                              className="p-1.5 rounded hover:bg-surface-hover transition-colors text-accent hover:text-primary inline-flex"
                             >
                               <svg
                                 className="w-3.5 h-3.5"
@@ -755,7 +755,7 @@ export default function MastersClient({ records, userRole }: Props) {
                               }
                               disabled={toggling === proc.id}
                               title={proc.is_active ? "Deactivate" : "Activate"}
-                              className={`p-1.5 rounded hover:bg-[#F3F4F6] transition-colors disabled:opacity-50 inline-flex ${proc.is_active ? "text-amber-500 hover:text-amber-700" : "text-green-600 hover:text-green-800"}`}
+                              className={`p-1.5 rounded hover:bg-surface-hover transition-colors disabled:opacity-50 inline-flex ${proc.is_active ? "text-amber-500 hover:text-amber-700" : "text-green-600 hover:text-green-800"}`}
                             >
                               {proc.is_active ? (
                                 <svg
@@ -811,9 +811,9 @@ export default function MastersClient({ records, userRole }: Props) {
                     {addingUnderActId === act.id && (
                       <form
                         onSubmit={(e) => handleAddProceeding(e, act.id)}
-                        className="flex items-center gap-2 px-6 py-3 bg-[#EEF2FF] border-b border-[#E5E7EB]"
+                        className="flex items-center gap-2 px-6 py-3 bg-accent-light border-b border-border"
                       >
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#4A6FA5] shrink-0" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
                         <input
                           value={newProcName}
                           onChange={(e) => setNewProcName(e.target.value)}
@@ -824,14 +824,14 @@ export default function MastersClient({ records, userRole }: Props) {
                         <button
                           type="submit"
                           disabled={actSaving || !newProcName.trim()}
-                          className="px-3 py-1.5 text-xs bg-[#1E3A5F] text-white rounded-lg font-medium disabled:opacity-50"
+                          className="px-3 py-1.5 text-xs bg-primary text-white rounded-lg font-medium disabled:opacity-50"
                         >
                           {actSaving ? "Adding…" : "Add"}
                         </button>
                         <button
                           type="button"
                           onClick={() => setAddingUnderActId(null)}
-                          className="text-xs text-[#9CA3AF] hover:text-[#6B7280]"
+                          className="text-xs text-muted hover:text-secondary"
                         >
                           Cancel
                         </button>
@@ -844,7 +844,7 @@ export default function MastersClient({ records, userRole }: Props) {
           })}
 
           {/* Add new Act */}
-          <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm p-4">
+          <div className="bg-white border border-border rounded-xl shadow-sm p-4">
             {addingActForm ? (
               <form onSubmit={handleAddAct} className="flex items-center gap-2">
                 <input
@@ -857,14 +857,14 @@ export default function MastersClient({ records, userRole }: Props) {
                 <button
                   type="submit"
                   disabled={actSaving || !newActName.trim()}
-                  className="px-4 py-2 text-sm bg-[#1E3A5F] text-white rounded-lg font-medium disabled:opacity-50"
+                  className="px-4 py-2 text-sm bg-primary text-white rounded-lg font-medium disabled:opacity-50"
                 >
                   {actSaving ? "Adding…" : "Add Act"}
                 </button>
                 <button
                   type="button"
                   onClick={() => setAddingActForm(false)}
-                  className="text-sm text-[#9CA3AF] hover:text-[#6B7280]"
+                  className="text-sm text-muted hover:text-secondary"
                 >
                   Cancel
                 </button>
@@ -872,7 +872,7 @@ export default function MastersClient({ records, userRole }: Props) {
             ) : (
               <button
                 onClick={() => setAddingActForm(true)}
-                className="inline-flex items-center gap-2 text-sm font-medium text-[#4A6FA5] hover:text-[#1E3A5F] transition"
+                className="inline-flex items-center gap-2 text-sm font-medium text-accent hover:text-primary transition"
               >
                 <svg
                   className="w-4 h-4"
@@ -897,11 +897,11 @@ export default function MastersClient({ records, userRole }: Props) {
       {/* ── Toggle Confirm Modal ─────────────────────────────────────────────── */}
       {toggleConfirm && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl border border-[#E5E7EB] p-6 w-full max-w-sm mx-4">
-            <h3 className="text-base font-semibold text-[#1A1A2E] mb-2">
+          <div className="bg-white rounded-xl shadow-xl border border-border p-6 w-full max-w-sm mx-4">
+            <h3 className="text-base font-semibold text-heading mb-2">
               {toggleConfirm.activate ? "Activate" : "Deactivate"} Record?
             </h3>
-            <p className="text-sm text-[#6B7280] mb-5">
+            <p className="text-sm text-secondary mb-5">
               {toggleConfirm.activate
                 ? `"${toggleConfirm.name}" will become active and available for selection in new records.`
                 : `"${toggleConfirm.name}" will be deactivated and hidden from selection in new records.`}
@@ -909,7 +909,7 @@ export default function MastersClient({ records, userRole }: Props) {
             <div className="flex gap-3">
               <button
                 onClick={() => setToggleConfirm(null)}
-                className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition"
+                className="flex-1 px-4 py-2 text-sm border border-border rounded-lg text-heading hover:bg-page transition"
               >
                 Cancel
               </button>
@@ -932,17 +932,17 @@ export default function MastersClient({ records, userRole }: Props) {
       {/* ── Delete Confirm Modal ─────────────────────────────────────────────── */}
       {confirmDelete && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl border border-[#E5E7EB] p-6 w-full max-w-sm mx-4">
+          <div className="bg-white rounded-xl shadow-xl border border-border p-6 w-full max-w-sm mx-4">
             <div className="flex items-start gap-3 mb-4">
               <div className="flex-shrink-0 w-9 h-9 rounded-full bg-red-50 flex items-center justify-center">
                 <TrashIcon className="w-5 h-5 text-red-600" />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-[#1A1A2E]">
+                <h3 className="text-base font-semibold text-heading">
                   Delete Record?
                 </h3>
-                <p className="text-sm text-[#6B7280] mt-1">
-                  <span className="font-medium text-[#1A1A2E]">
+                <p className="text-sm text-secondary mt-1">
+                  <span className="font-medium text-heading">
                     &quot;{confirmDelete.name}&quot;
                   </span>{" "}
                   will be removed. This can be recovered from the Recycle Bin.
@@ -961,7 +961,7 @@ export default function MastersClient({ records, userRole }: Props) {
                   setDeleteError(null);
                 }}
                 disabled={!!deleting}
-                className="flex-1 px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition disabled:opacity-60"
+                className="flex-1 px-4 py-2 text-sm border border-border rounded-lg text-heading hover:bg-page transition disabled:opacity-60"
               >
                 Cancel
               </button>

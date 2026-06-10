@@ -77,10 +77,10 @@ export default async function PlatformDashboardPage() {
 
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-[#1A1A2E]">
+        <h1 className="text-2xl font-semibold text-heading">
           Welcome back, {user?.first_name}
         </h1>
-        <p className="text-[#6B7280] text-sm mt-1">Here&apos;s a quick overview of the platform.</p>
+        <p className="text-secondary text-sm mt-1">Here&apos;s a quick overview of the platform.</p>
       </div>
 
       {/* Stat cards — clickable */}
@@ -89,34 +89,34 @@ export default async function PlatformDashboardPage() {
           <Link
             key={card.label}
             href={card.href}
-            className="group bg-white rounded-xl border border-[#E5E7EB] p-6 shadow-sm hover:border-[#4A6FA5] hover:shadow-md transition-all duration-150"
+            className="group bg-white rounded-xl border border-border p-6 shadow-sm hover:border-accent hover:shadow-md transition-all duration-150"
           >
             <div className="flex items-start justify-between mb-3">
-              <span className="text-[#4A6FA5] group-hover:text-[#1E3A5F] transition-colors">
+              <span className="text-accent group-hover:text-primary transition-colors">
                 {card.icon}
               </span>
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-[#D1D5DB] group-hover:text-[#4A6FA5] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-border-strong group-hover:text-accent transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
               </svg>
             </div>
-            <p className="text-3xl font-bold text-[#1E3A5F]">{card.value}</p>
-            <p className="text-sm font-medium text-[#374151] mt-1">{card.label}</p>
-            <p className="text-xs text-[#9CA3AF] mt-0.5">{card.description}</p>
+            <p className="text-3xl font-bold text-primary">{card.value}</p>
+            <p className="text-sm font-medium text-secondary mt-1">{card.label}</p>
+            <p className="text-xs text-muted mt-0.5">{card.description}</p>
           </Link>
         ))}
       </div>
 
       {/* Quick Actions */}
       <div>
-        <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider mb-3">Quick Actions</p>
+        <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-3">Quick Actions</p>
         <div className="flex flex-wrap gap-2">
           {quickActions.map((action) => (
             <Link
               key={action.label}
               href={action.href}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[#E5E7EB] bg-white text-sm text-[#374151] hover:bg-[#F0F4FA] hover:border-[#4A6FA5] hover:text-[#1E3A5F] transition-all duration-150 shadow-sm"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-white text-sm text-secondary hover:bg-accent-light hover:border-accent hover:text-primary transition-all duration-150 shadow-sm"
             >
-              <span className="text-[#4A6FA5]">{action.icon}</span>
+              <span className="text-accent">{action.icon}</span>
               {action.label}
             </Link>
           ))}

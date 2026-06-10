@@ -130,8 +130,8 @@ export default async function PlatformRecycleBinPage() {
   return (
     <div className="p-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-[#1A1A2E]">Recycle Bin</h1>
-        <p className="text-[#6B7280] text-sm mt-0.5">
+        <h1 className="text-2xl font-semibold text-heading">Recycle Bin</h1>
+        <p className="text-secondary text-sm mt-0.5">
           Deleted platform items are kept for 30 days, then permanently removed.
         </p>
       </div>

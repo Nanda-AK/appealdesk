@@ -3,10 +3,13 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import type { LitigationReportData } from "@/app/(sp)/litigations/actions";
 import { buildHierarchy, catLabel, cap, fmtDate } from "./hierarchy";
+import { BRAND, hexToRgb } from "@/lib/theme";
 
-const NAVY:      [number, number, number] = [30,  58,  95];
-const MID_BLUE:  [number, number, number] = [74, 111, 165];
-const LIGHT_HDR: [number, number, number] = [209, 217, 230];
+const NAVY      = hexToRgb(BRAND.primary);
+const MID_BLUE  = hexToRgb(BRAND.accent);
+const LIGHT_HDR = hexToRgb(BRAND.tableHeader);
+const GRAY_TXT  = hexToRgb(BRAND.secondary);
+const DARK_TXT  = hexToRgb(BRAND.heading);
 
 function footer(doc: jsPDF, pageW: number, pageH: number, generatedAt: string, spName: string) {
   doc.setFontSize(7);
@@ -38,11 +41,11 @@ export function generatePDF(data: LitigationReportData): Blob {
   // ── Cover stats ───────────────────────────────────────────────────
   doc.setFontSize(16);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(30, 58, 95);
+  doc.setTextColor(...NAVY);
   doc.text(`${data.spName} — Litigation Report`, 14, 16);
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(107, 114, 128);
+  doc.setTextColor(...GRAY_TXT);
   doc.text(`Generated: ${fmtDate(data.generatedAt)}`, 14, 22);
   doc.setTextColor(0, 0, 0);
 
@@ -181,7 +184,7 @@ export function generatePDF(data: LitigationReportData): Blob {
           head: [["Type", "Category / File", "Date", "Notice #", "Status", "Description"]],
           body: eventRows,
           theme: "striped",
-          headStyles: { fillColor: LIGHT_HDR, textColor: [26, 26, 46], fontSize: 7, fontStyle: "bold" },
+          headStyles: { fillColor: LIGHT_HDR, textColor: DARK_TXT, fontSize: 7, fontStyle: "bold" },
           bodyStyles: { fontSize: 7 },
           alternateRowStyles: { fillColor: [247, 249, 252] },
           columnStyles: {

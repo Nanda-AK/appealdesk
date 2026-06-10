@@ -29,8 +29,8 @@ export default function PlatformSettingsClient({ settings, isSuperAdmin }: Props
   const [brandingSuccess, setBrandingSuccess] = useState(false);
 
   const fieldClass = (disabled: boolean) =>
-    `w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] ${
-      disabled ? "bg-[#F8F9FA] text-[#6B7280] cursor-not-allowed" : ""
+    `w-full px-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
+      disabled ? "bg-page text-secondary cursor-not-allowed" : ""
     }`;
 
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -74,25 +74,25 @@ export default function PlatformSettingsClient({ settings, isSuperAdmin }: Props
     <div className="space-y-6">
 
       {/* ── Platform Branding ── */}
-      <section className="bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-sm">
-        <h2 className="text-sm font-semibold text-[#1A1A2E] mb-1 pb-3 border-b border-[#E5E7EB] flex items-center justify-between">
+      <section className="bg-white border border-border rounded-xl p-6 shadow-sm">
+        <h2 className="text-sm font-semibold text-heading mb-1 pb-3 border-b border-border flex items-center justify-between">
           Platform Branding
           {!isSuperAdmin && (
-            <span className="text-xs font-normal text-[#9CA3AF]">Read-only</span>
+            <span className="text-xs font-normal text-muted">Read-only</span>
           )}
         </h2>
 
         <form onSubmit={handleSaveBranding} className="mt-4 space-y-5">
           {/* Logo */}
           <div>
-            <label className="block text-xs font-medium text-[#6B7280] mb-2">
-              Platform Logo <span className="text-[#9CA3AF]">(JPG/PNG, max 2MB)</span>
+            <label className="block text-xs font-medium text-secondary mb-2">
+              Platform Logo <span className="text-muted">(JPG/PNG, max 2MB)</span>
             </label>
             <div className="flex items-center gap-4">
               {logoUrl ? (
-                <Image src={logoUrl} alt="Platform logo" width={56} height={56} className="w-14 h-14 rounded-xl object-cover border border-[#E5E7EB]" />
+                <Image src={logoUrl} alt="Platform logo" width={56} height={56} className="w-14 h-14 rounded-xl object-cover border border-border" />
               ) : (
-                <div className="w-14 h-14 rounded-xl bg-[#1E3A5F] flex items-center justify-center flex-shrink-0">
+                <div className="w-14 h-14 rounded-xl bg-primary flex items-center justify-center flex-shrink-0">
                   <span className="text-white font-bold text-xl">
                     {platformName.charAt(0).toUpperCase()}
                   </span>
@@ -100,7 +100,7 @@ export default function PlatformSettingsClient({ settings, isSuperAdmin }: Props
               )}
               {isSuperAdmin && (
                 <div className="space-y-1">
-                  <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F8F9FA] transition">
+                  <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 text-sm border border-border rounded-lg text-secondary hover:bg-page transition">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
@@ -129,7 +129,7 @@ export default function PlatformSettingsClient({ settings, isSuperAdmin }: Props
 
           {/* Platform Name */}
           <div>
-            <label className="block text-xs font-medium text-[#6B7280] mb-1.5">
+            <label className="block text-xs font-medium text-secondary mb-1.5">
               Platform Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -143,7 +143,7 @@ export default function PlatformSettingsClient({ settings, isSuperAdmin }: Props
 
           {/* Description */}
           <div>
-            <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Tagline / Description</label>
+            <label className="block text-xs font-medium text-secondary mb-1.5">Tagline / Description</label>
             <input
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -151,14 +151,14 @@ export default function PlatformSettingsClient({ settings, isSuperAdmin }: Props
               className={fieldClass(!isSuperAdmin)}
               placeholder="e.g. Your AI Tax Attorney"
             />
-            <p className="text-xs text-[#9CA3AF] mt-1">
+            <p className="text-xs text-muted mt-1">
               Shown below the platform name on the login page.
             </p>
           </div>
 
           {/* Support Email */}
           <div>
-            <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Support Email</label>
+            <label className="block text-xs font-medium text-secondary mb-1.5">Support Email</label>
             <input
               type="email"
               value={supportEmail}
@@ -167,7 +167,7 @@ export default function PlatformSettingsClient({ settings, isSuperAdmin }: Props
               className={fieldClass(!isSuperAdmin)}
               placeholder="support@appealdesk.com"
             />
-            <p className="text-xs text-[#9CA3AF] mt-1">
+            <p className="text-xs text-muted mt-1">
               Shown to users when they need help (e.g. on the login page).
             </p>
           </div>
@@ -188,7 +188,7 @@ export default function PlatformSettingsClient({ settings, isSuperAdmin }: Props
                 <button
                   type="submit"
                   disabled={brandingSaving}
-                  className="px-5 py-2.5 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60"
+                  className="px-5 py-2.5 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition disabled:opacity-60"
                 >
                   {brandingSaving ? "Saving…" : "Save Branding"}
                 </button>

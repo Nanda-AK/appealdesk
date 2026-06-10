@@ -12,12 +12,12 @@ interface Props {
   providers: SP[];
 }
 
-const inp = "w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]";
+const inp = "w-full px-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary";
 
 function Field({ label, required, children, full }: { label: string; required?: boolean; children: React.ReactNode; full?: boolean }) {
   return (
     <div className={full ? "col-span-2" : ""}>
-      <label className="block text-xs font-medium text-[#6B7280] mb-1.5">
+      <label className="block text-xs font-medium text-secondary mb-1.5">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
       {children}
@@ -42,14 +42,14 @@ function FileUploadField({ label, value, onChange }: { label: string; value: str
 
   return (
     <div>
-      <label className="block text-xs font-medium text-[#6B7280] mb-1.5">{label} (Attachment)</label>
+      <label className="block text-xs font-medium text-secondary mb-1.5">{label} (Attachment)</label>
       {value ? (
         <div className="flex items-center gap-2">
-          <a href={value} target="_blank" rel="noopener noreferrer" className="text-xs text-[#4A6FA5] hover:underline truncate max-w-[200px]">View uploaded file</a>
+          <a href={value} target="_blank" rel="noopener noreferrer" className="text-xs text-accent hover:underline truncate max-w-[200px]">View uploaded file</a>
           <button type="button" onClick={() => onChange("")} className="text-xs text-red-500 hover:text-red-700">Remove</button>
         </div>
       ) : (
-        <label className={`cursor-pointer inline-flex items-center gap-2 px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F8F9FA] transition ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
+        <label className={`cursor-pointer inline-flex items-center gap-2 px-3 py-2 text-sm border border-border rounded-lg text-secondary hover:bg-page transition ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
           </svg>
@@ -77,21 +77,21 @@ function AvatarUpload({ value, onChange }: { value: string; onChange: (url: stri
   }
 
   return (
-    <div className="col-span-2 flex items-center gap-4 pb-4 border-b border-[#F3F4F6] mb-2">
+    <div className="col-span-2 flex items-center gap-4 pb-4 border-b border-surface-hover mb-2">
       <div className="relative flex-shrink-0">
         {value ? (
-          <Image src={value} alt="Avatar" width={64} height={64} className="w-16 h-16 rounded-full object-cover border-2 border-[#E5E7EB]" />
+          <Image src={value} alt="Avatar" width={64} height={64} className="w-16 h-16 rounded-full object-cover border-2 border-border" />
         ) : (
-          <div className="w-16 h-16 rounded-full bg-[#F3F4F6] border-2 border-dashed border-[#D1D5DB] flex items-center justify-center">
-            <svg className="w-6 h-6 text-[#9CA3AF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <div className="w-16 h-16 rounded-full bg-surface-hover border-2 border-dashed border-border-strong flex items-center justify-center">
+            <svg className="w-6 h-6 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
             </svg>
           </div>
         )}
       </div>
       <div>
-        <p className="text-xs font-medium text-[#6B7280] mb-1.5">Profile Photo</p>
-        <label className={`cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F8F9FA] transition ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
+        <p className="text-xs font-medium text-secondary mb-1.5">Profile Photo</p>
+        <label className={`cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 text-xs border border-border rounded-lg text-secondary hover:bg-page transition ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
           </svg>
@@ -99,7 +99,7 @@ function AvatarUpload({ value, onChange }: { value: string; onChange: (url: stri
           <input type="file" accept="image/*" className="hidden" disabled={uploading} onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
         </label>
         {value && <button type="button" onClick={() => onChange("")} className="ml-2 text-xs text-red-500 hover:text-red-700">Remove</button>}
-        <p className="text-xs text-[#9CA3AF] mt-1">JPG, PNG · shown in sidebar</p>
+        <p className="text-xs text-muted mt-1">JPG, PNG · shown in sidebar</p>
       </div>
     </div>
   );
@@ -107,7 +107,7 @@ function AvatarUpload({ value, onChange }: { value: string; onChange: (url: stri
 
 function EyeBtn({ visible, toggle }: { visible: boolean; toggle: () => void }) {
   return (
-    <button type="button" onClick={toggle} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#6B7280]">
+    <button type="button" onClick={toggle} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-secondary">
       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         {visible
           ? <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
@@ -173,10 +173,10 @@ export default function PlatformSpUserForm({ providers }: Props) {
       )}
 
       {/* Service Provider selector */}
-      <section className="bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-sm">
-        <h2 className="text-sm font-semibold text-[#1A1A2E] mb-4 pb-3 border-b border-[#E5E7EB]">Service Provider</h2>
+      <section className="bg-white border border-border rounded-xl p-6 shadow-sm">
+        <h2 className="text-sm font-semibold text-heading mb-4 pb-3 border-b border-border">Service Provider</h2>
         <div>
-          <label className="block text-xs font-medium text-[#6B7280] mb-1.5">
+          <label className="block text-xs font-medium text-secondary mb-1.5">
             Select Service Provider <span className="text-red-500">*</span>
           </label>
           <select
@@ -189,13 +189,13 @@ export default function PlatformSpUserForm({ providers }: Props) {
               <option key={sp.id} value={sp.id}>{sp.name}</option>
             ))}
           </select>
-          <p className="text-xs text-[#9CA3AF] mt-1">This user will be created as an SP Admin under the selected service provider.</p>
+          <p className="text-xs text-muted mt-1">This user will be created as an SP Admin under the selected service provider.</p>
         </div>
       </section>
 
       {/* Basic Information */}
-      <section className="bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-sm">
-        <h2 className="text-sm font-semibold text-[#1A1A2E] mb-4 pb-3 border-b border-[#E5E7EB]">Basic Information</h2>
+      <section className="bg-white border border-border rounded-xl p-6 shadow-sm">
+        <h2 className="text-sm font-semibold text-heading mb-4 pb-3 border-b border-border">Basic Information</h2>
         <div className="grid grid-cols-2 gap-4">
 
           <AvatarUpload value={form.avatar_url ?? ""} onChange={set("avatar_url")} />
@@ -214,8 +214,8 @@ export default function PlatformSpUserForm({ providers }: Props) {
 
           <Field label="Mobile">
             <div className="flex gap-2">
-              <div className="flex items-center border-2 border-[#4A6FA5] rounded-lg overflow-hidden flex-shrink-0 w-24 focus-within:ring-2 focus-within:ring-[#1E3A5F]">
-                <span className="px-2 py-2 text-sm text-[#6B7280] bg-[#F3F4F6] border-r border-[#4A6FA5] select-none">+</span>
+              <div className="flex items-center border-2 border-accent rounded-lg overflow-hidden flex-shrink-0 w-24 focus-within:ring-2 focus-within:ring-primary">
+                <span className="px-2 py-2 text-sm text-secondary bg-surface-hover border-r border-accent select-none">+</span>
                 <input type="text" inputMode="numeric"
                   value={(form.mobile_country_code ?? "+91").replace(/^\+/, "")}
                   onChange={(e) => set("mobile_country_code")("+" + e.target.value.replace(/\D/g, ""))}
@@ -253,14 +253,14 @@ export default function PlatformSpUserForm({ providers }: Props) {
           </Field>
 
           <Field label="Role">
-            <input value="SP Admin" disabled className={`${inp} bg-[#F8F9FA] text-[#6B7280] cursor-not-allowed`} />
+            <input value="SP Admin" disabled className={`${inp} bg-page text-secondary cursor-not-allowed`} />
           </Field>
         </div>
       </section>
 
       {/* Employment Details */}
-      <section className="bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-sm">
-        <h2 className="text-sm font-semibold text-[#1A1A2E] mb-4 pb-3 border-b border-[#E5E7EB]">Employment Details</h2>
+      <section className="bg-white border border-border rounded-xl p-6 shadow-sm">
+        <h2 className="text-sm font-semibold text-heading mb-4 pb-3 border-b border-border">Employment Details</h2>
         <div className="grid grid-cols-2 gap-4">
           <Field label="Department">
             <input value={form.department ?? ""} onChange={(e) => set("department")(e.target.value)} placeholder="e.g. Tax, Audit" className={inp} />
@@ -278,8 +278,8 @@ export default function PlatformSpUserForm({ providers }: Props) {
       </section>
 
       {/* Address */}
-      <section className="bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-sm">
-        <h2 className="text-sm font-semibold text-[#1A1A2E] mb-4 pb-3 border-b border-[#E5E7EB]">Address</h2>
+      <section className="bg-white border border-border rounded-xl p-6 shadow-sm">
+        <h2 className="text-sm font-semibold text-heading mb-4 pb-3 border-b border-border">Address</h2>
         <div className="grid grid-cols-2 gap-4">
           <Field label="Address Line 1" full>
             <input value={form.address_line1 ?? ""} onChange={(e) => set("address_line1")(e.target.value)} placeholder="Street / Building" className={inp} />
@@ -317,8 +317,8 @@ export default function PlatformSpUserForm({ providers }: Props) {
       </section>
 
       {/* Identity Documents */}
-      <section className="bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-sm">
-        <h2 className="text-sm font-semibold text-[#1A1A2E] mb-4 pb-3 border-b border-[#E5E7EB]">Identity Documents</h2>
+      <section className="bg-white border border-border rounded-xl p-6 shadow-sm">
+        <h2 className="text-sm font-semibold text-heading mb-4 pb-3 border-b border-border">Identity Documents</h2>
         <div className="grid grid-cols-2 gap-4">
           <Field label="PAN Number">
             <input value={form.pan_number ?? ""} onChange={(e) => set("pan_number")(e.target.value.toUpperCase())}
@@ -336,11 +336,11 @@ export default function PlatformSpUserForm({ providers }: Props) {
       {/* Actions */}
       <div className="flex gap-3">
         <button type="button" onClick={() => window.location.href = "/platform/users"}
-          className="px-5 py-2.5 text-sm border border-[#E5E7EB] rounded-lg text-[#1A1A2E] hover:bg-[#F8F9FA] transition">
+          className="px-5 py-2.5 text-sm border border-border rounded-lg text-heading hover:bg-page transition">
           Cancel
         </button>
         <button type="submit" disabled={saving}
-          className="px-5 py-2.5 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60">
+          className="px-5 py-2.5 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition disabled:opacity-60">
           {saving ? "Creating user…" : "Create User"}
         </button>
       </div>

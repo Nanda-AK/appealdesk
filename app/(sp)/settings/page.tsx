@@ -16,8 +16,8 @@ export default async function SpSettingsPage() {
   return (
     <div className="p-8 max-w-5xl">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-[#1A1A2E]">Settings</h1>
-        <p className="text-[#6B7280] text-sm mt-0.5">
+        <h1 className="text-2xl font-semibold text-heading">Settings</h1>
+        <p className="text-secondary text-sm mt-0.5">
           {user?.role === "sp_admin"
             ? "Manage your organisation profile and account."
             : "View your organisation profile and manage your account."}

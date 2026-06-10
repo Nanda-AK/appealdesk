@@ -160,31 +160,31 @@ function MultiSelect({
   return (
     <div ref={containerRef} className="relative">
       <div
-        className="flex items-center gap-1.5 px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg bg-white cursor-pointer min-w-36 max-w-50 h-9.5 select-none"
+        className="flex items-center gap-1.5 px-3 py-2 text-sm border-2 border-accent rounded-lg bg-white cursor-pointer min-w-36 max-w-50 h-9.5 select-none"
         onClick={() => (open ? applyAndClose() : openDropdown())}
       >
-        <span className={`flex-1 truncate ${!hasValue ? "text-[#9CA3AF]" : isMulti ? "font-medium text-[#1E3A5F]" : "text-[#1A1A2E]"}`}>
+        <span className={`flex-1 truncate ${!hasValue ? "text-muted" : isMulti ? "font-medium text-primary" : "text-heading"}`}>
           {triggerText}
         </span>
         {hasValue ? (
           <button
             onMouseDown={(e) => { e.stopPropagation(); onChange([]); }}
-            className="text-[#9CA3AF] hover:text-[#1A1A2E] shrink-0 text-base leading-none"
+            className="text-muted hover:text-heading shrink-0 text-base leading-none"
           >×</button>
         ) : (
-          <svg className="w-3.5 h-3.5 shrink-0 text-[#9CA3AF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="w-3.5 h-3.5 shrink-0 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
           </svg>
         )}
       </div>
 
       {open && (
-        <div className="absolute top-full left-0 mt-1 bg-white border border-[#E5E7EB] rounded-lg shadow-lg z-50 w-56 max-h-64 flex flex-col">
+        <div className="absolute top-full left-0 mt-1 bg-white border border-border rounded-lg shadow-lg z-50 w-56 max-h-64 flex flex-col">
           {searchable && (
-            <div className="p-2 border-b border-[#F3F4F6] shrink-0">
+            <div className="p-2 border-b border-surface-hover shrink-0">
               <input
                 ref={inputRef}
-                className="w-full px-2 py-1.5 text-sm border border-[#E5E7EB] rounded focus:outline-none focus:ring-1 focus:ring-[#4A6FA5]"
+                className="w-full px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-accent"
                 placeholder="Search…"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -192,17 +192,17 @@ function MultiSelect({
             </div>
           )}
           {pending.length > 0 && (
-            <div className="px-3 py-1.5 border-b border-[#F3F4F6] flex items-center justify-between shrink-0">
-              <span className="text-xs text-[#6B7280]">{pending.length} selected</span>
+            <div className="px-3 py-1.5 border-b border-surface-hover flex items-center justify-between shrink-0">
+              <span className="text-xs text-secondary">{pending.length} selected</span>
               <button
                 onMouseDown={(e) => { e.preventDefault(); setPending([]); pendingRef.current = []; }}
-                className="text-xs text-[#4A6FA5] hover:underline"
+                className="text-xs text-accent hover:underline"
               >Clear</button>
             </div>
           )}
           <div className="overflow-y-auto flex-1 py-1">
             {filtered.length === 0 ? (
-              <div className="px-3 py-2 text-sm text-[#9CA3AF]">No matches</div>
+              <div className="px-3 py-2 text-sm text-muted">No matches</div>
             ) : (
               filtered.map((o) => {
                 const isChecked = pending.includes(o.id);
@@ -210,16 +210,16 @@ function MultiSelect({
                   <button
                     key={o.id}
                     onMouseDown={(e) => { e.preventDefault(); toggle(o.id); }}
-                    className={`w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-[#F8F9FA] ${isChecked ? "bg-blue-50/50" : ""}`}
+                    className={`w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-page ${isChecked ? "bg-blue-50/50" : ""}`}
                   >
-                    <div className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors ${isChecked ? "bg-[#1E3A5F] border-[#1E3A5F]" : "border-[#D1D5DB]"}`}>
+                    <div className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors ${isChecked ? "bg-primary border-primary" : "border-border-strong"}`}>
                       {isChecked && (
                         <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
                       )}
                     </div>
-                    <span className={`text-sm flex-1 truncate ${isChecked ? "font-medium text-[#1A1A2E]" : "text-[#4B5563]"}`}>
+                    <span className={`text-sm flex-1 truncate ${isChecked ? "font-medium text-heading" : "text-secondary"}`}>
                       {o.name}
                     </span>
                   </button>
@@ -305,7 +305,7 @@ export default function LogsClient({
 
   const btnPage = (active: boolean) =>
     `px-3 py-1.5 text-sm rounded-lg border transition ${
-      active ? "bg-[#1E3A5F] text-white border-[#1E3A5F]" : "border-[#E5E7EB] text-[#6B7280] hover:bg-[#F8F9FA]"
+      active ? "bg-primary text-white border-primary" : "border-border text-secondary hover:bg-page"
     }`;
 
   return (
@@ -313,8 +313,8 @@ export default function LogsClient({
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-[#1A1A2E]">Audit Log</h1>
-          <p className="text-[#6B7280] text-sm mt-0.5">
+          <h1 className="text-2xl font-semibold text-heading">Audit Log</h1>
+          <p className="text-secondary text-sm mt-0.5">
             {totalCount > 0 ? `Showing ${showingFrom}–${showingTo} of ${totalCount} entries` : "No entries"}
           </p>
         </div>
@@ -322,7 +322,7 @@ export default function LogsClient({
           onClick={handleExport}
           disabled={exporting || totalCount === 0}
           title={exporting ? "Exporting…" : "Export CSV"}
-          className="inline-flex items-center justify-center w-9.5 h-9.5 bg-[#1E3A5F] hover:bg-[#162d4a] disabled:opacity-50 text-white rounded-lg transition"
+          className="inline-flex items-center justify-center w-9.5 h-9.5 bg-primary hover:bg-primary-dark disabled:opacity-50 text-white rounded-lg transition"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -331,7 +331,7 @@ export default function LogsClient({
       </div>
 
       {/* Filters — Client, Date From→To, Actions, Type */}
-      <div className="bg-white border border-[#E5E7EB] rounded-xl p-4 mb-4 flex flex-wrap gap-3 items-center">
+      <div className="bg-white border border-border rounded-xl p-4 mb-4 flex flex-wrap gap-3 items-center">
 
         {/* Client */}
         <MultiSelect
@@ -343,25 +343,25 @@ export default function LogsClient({
         />
 
         {/* Date range */}
-        <div className="flex items-center gap-1.5 px-3 py-2 border-2 border-[#4A6FA5] rounded-lg bg-white h-9.5">
-          <span className="text-xs text-[#9CA3AF] whitespace-nowrap">From</span>
+        <div className="flex items-center gap-1.5 px-3 py-2 border-2 border-accent rounded-lg bg-white h-9.5">
+          <span className="text-xs text-muted whitespace-nowrap">From</span>
           <input
             type="date"
             value={currentFrom}
             onChange={(e) => setDateFilter("from", e.target.value)}
-            className="text-sm text-[#1A1A2E] bg-transparent focus:outline-none w-32"
+            className="text-sm text-heading bg-transparent focus:outline-none w-32"
           />
-          <span className="text-xs text-[#D1D5DB]">—</span>
+          <span className="text-xs text-border-strong">—</span>
           <input
             type="date"
             value={currentTo}
             onChange={(e) => setDateFilter("to", e.target.value)}
-            className="text-sm text-[#1A1A2E] bg-transparent focus:outline-none w-32"
+            className="text-sm text-heading bg-transparent focus:outline-none w-32"
           />
           {(currentFrom || currentTo) && (
             <button
               onMouseDown={() => push({ from: "", to: "", page: "1" })}
-              className="text-[#9CA3AF] hover:text-[#1A1A2E] text-base leading-none ml-1"
+              className="text-muted hover:text-heading text-base leading-none ml-1"
             >×</button>
           )}
         </div>
@@ -385,7 +385,7 @@ export default function LogsClient({
         {hasFilters && (
           <button
             onClick={clearAll}
-            className="px-3 py-2 text-sm text-[#6B7280] hover:text-[#1A1A2E] border border-[#E5E7EB] rounded-lg transition"
+            className="px-3 py-2 text-sm text-secondary hover:text-heading border border-border rounded-lg transition"
           >
             Clear all
           </button>
@@ -393,22 +393,22 @@ export default function LogsClient({
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-[#E5E7EB] rounded-xl overflow-hidden shadow-sm">
+      <div className="bg-white border border-border rounded-xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-[#D1D9E6] border-b-2 border-[#B0BDD0]">
-                <th className="text-left px-4 py-3 font-semibold text-[#1A1A2E]">When</th>
-                <th className="text-left px-4 py-3 font-semibold text-[#1A1A2E]">User</th>
-                <th className="text-left px-4 py-3 font-semibold text-[#1A1A2E]">Action</th>
-                <th className="text-left px-4 py-3 font-semibold text-[#1A1A2E]">Type</th>
-                <th className="text-left px-4 py-3 font-semibold text-[#1A1A2E]">Record</th>
+              <tr className="bg-table-header border-b-2 border-table-header-border">
+                <th className="text-left px-4 py-3 font-semibold text-heading">When</th>
+                <th className="text-left px-4 py-3 font-semibold text-heading">User</th>
+                <th className="text-left px-4 py-3 font-semibold text-heading">Action</th>
+                <th className="text-left px-4 py-3 font-semibold text-heading">Type</th>
+                <th className="text-left px-4 py-3 font-semibold text-heading">Record</th>
               </tr>
             </thead>
             <tbody>
               {logs.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center text-[#6B7280] text-sm">
+                  <td colSpan={5} className="px-4 py-12 text-center text-secondary text-sm">
                     No log entries found.
                   </td>
                 </tr>
@@ -417,25 +417,25 @@ export default function LogsClient({
                   const actionCfg = ACTION_CFG[log.action] ?? { label: log.action, cls: "bg-gray-100 text-gray-600" };
                   const actor = log.actor;
                   return (
-                    <tr key={log.id} className="border-b border-[#E5E7EB] last:border-0 hover:bg-[#F8F9FA] transition-colors">
-                      <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap text-xs">{fmtDateTime(log.created_at)}</td>
+                    <tr key={log.id} className="border-b border-border last:border-0 hover:bg-page transition-colors">
+                      <td className="px-4 py-3 text-secondary whitespace-nowrap text-xs">{fmtDateTime(log.created_at)}</td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         {actor ? (
                           <div>
-                            <p className="font-medium text-[#1A1A2E]">{actor.first_name} {actor.last_name}</p>
-                            <p className="text-xs text-[#9CA3AF] capitalize">{actor.role.replace(/_/g, " ")}</p>
+                            <p className="text-secondary">{actor.first_name} {actor.last_name}</p>
+                            <p className="text-xs text-muted capitalize">{actor.role.replace(/_/g, " ")}</p>
                           </div>
-                        ) : <span className="text-[#9CA3AF]">—</span>}
+                        ) : <span className="text-muted">—</span>}
                       </td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${actionCfg.cls}`}>
                           {actionCfg.label}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-[#6B7280]">
+                      <td className="px-4 py-3 text-secondary">
                         {ENTITY_LABELS[log.entity_type] ?? log.entity_type}
                       </td>
-                      <td className="px-4 py-3 text-[#6B7280] max-w-70 truncate">
+                      <td className="px-4 py-3 text-secondary max-w-70 truncate" title={log.entity_label ?? ""}>
                         {log.entity_label ?? "—"}
                       </td>
                     </tr>
@@ -450,18 +450,18 @@ export default function LogsClient({
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="mt-4 flex items-center justify-between gap-4 flex-wrap">
-          <span className="text-sm text-[#6B7280]">
+          <span className="text-sm text-secondary">
             Showing {showingFrom}–{showingTo} of {totalCount} entries
           </span>
           <div className="flex items-center gap-1">
             <button
               onClick={() => push({ page: String(page - 1) })}
               disabled={page <= 1}
-              className="px-3 py-1.5 text-sm rounded-lg border border-[#E5E7EB] text-[#6B7280] hover:bg-[#F8F9FA] disabled:opacity-40 transition"
+              className="px-3 py-1.5 text-sm rounded-lg border border-border text-secondary hover:bg-page disabled:opacity-40 transition"
             >← Prev</button>
             {pageNumbers(page, totalPages).map((n, i) =>
               n === "..." ? (
-                <span key={`ellipsis-${i}`} className="px-2 text-[#9CA3AF]">…</span>
+                <span key={`ellipsis-${i}`} className="px-2 text-muted">…</span>
               ) : (
                 <button key={n} onClick={() => push({ page: String(n) })} className={btnPage(n === page)}>
                   {n}
@@ -471,7 +471,7 @@ export default function LogsClient({
             <button
               onClick={() => push({ page: String(page + 1) })}
               disabled={page >= totalPages}
-              className="px-3 py-1.5 text-sm rounded-lg border border-[#E5E7EB] text-[#6B7280] hover:bg-[#F8F9FA] disabled:opacity-40 transition"
+              className="px-3 py-1.5 text-sm rounded-lg border border-border text-secondary hover:bg-page disabled:opacity-40 transition"
             >Next →</button>
           </div>
         </div>

@@ -46,45 +46,45 @@ export default function SetupPasswordPage() {
 
   if (!sessionReady) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F8F9FA]">
-        <div className="animate-pulse text-[#6B7280] text-sm">Loading…</div>
+      <div className="min-h-screen flex items-center justify-center bg-page">
+        <div className="animate-pulse text-secondary text-sm">Loading…</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F8F9FA]">
+    <div className="min-h-screen flex items-center justify-center bg-page">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-[#1E3A5F] mb-4">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-primary mb-4">
             <span className="text-white font-bold text-xl">A</span>
           </div>
-          <h1 className="text-2xl font-semibold text-[#1A1A2E]">Set Your Password</h1>
-          <p className="text-[#6B7280] text-sm mt-1">Create a password to access your account</p>
+          <h1 className="text-2xl font-semibold text-heading">Set Your Password</h1>
+          <p className="text-secondary text-sm mt-1">Create a password to access your account</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-[#E5E7EB] p-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-border p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-[#1A1A2E] mb-1.5">New Password</label>
+              <label className="block text-sm font-medium text-heading mb-1.5">New Password</label>
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Min. 8 characters"
-                className="w-full px-3.5 py-2.5 rounded-lg border-2 border-[#4A6FA5] text-sm focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]"
+                className="w-full px-3.5 py-2.5 rounded-lg border-2 border-accent text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#1A1A2E] mb-1.5">Confirm Password</label>
+              <label className="block text-sm font-medium text-heading mb-1.5">Confirm Password</label>
               <input
                 type="password"
                 required
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
                 placeholder="Repeat password"
-                className="w-full px-3.5 py-2.5 rounded-lg border-2 border-[#4A6FA5] text-sm focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]"
+                className="w-full px-3.5 py-2.5 rounded-lg border-2 border-accent text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
             {error && (
@@ -93,7 +93,7 @@ export default function SetupPasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 bg-[#1E3A5F] hover:bg-[#162d4a] disabled:opacity-60 text-white text-sm font-medium rounded-lg transition"
+              className="w-full py-2.5 bg-primary hover:bg-primary-dark disabled:opacity-60 text-white text-sm font-medium rounded-lg transition"
             >
               {loading ? "Setting password…" : "Set Password & Continue"}
             </button>
