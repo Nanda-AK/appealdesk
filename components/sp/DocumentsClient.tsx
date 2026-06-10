@@ -698,7 +698,7 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
           </div>
           <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-sm text-nowrap">
                 <thead>
                   <tr className="bg-table-header border-b-2 border-table-header-border">
                     <th className="text-center px-4 py-3 font-semibold text-heading w-10">#</th>
@@ -815,7 +815,7 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
           </div>
           <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-sm text-nowrap">
                 <thead>
                   <tr className="bg-table-header border-b-2 border-table-header-border">
                     <th className="text-center px-4 py-3 font-semibold text-heading w-10">#</th>

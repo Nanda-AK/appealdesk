@@ -361,7 +361,7 @@ export default function ProvidersClient({ providers, userRole }: Props) {
                 <th className="text-left px-4 py-3 font-semibold text-heading">Business Type</th>
                 <th className="text-left px-4 py-3 font-semibold text-heading">City</th>
                 <th className="text-left px-4 py-3 font-semibold text-heading w-24">Status</th>
-                <th className="text-left px-4 py-3 font-semibold text-heading w-28">Added</th>
+                <th className="text-left text-nowrap px-4 py-3 font-semibold text-heading w-28">Uploaded on</th>
                 <th className="text-left px-4 py-3 font-semibold text-heading w-24">Actions</th>
               </tr>
             </thead>
