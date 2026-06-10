@@ -356,12 +356,18 @@ export async function importBulkClientUsers(
       continue;
     }
 
-    await supabase.from("user_org_memberships").insert({
+    const { error: membershipErr } = await supabase.from("user_org_memberships").insert({
       user_id: created.user.id,
       org_id: clientOrgId,
       service_provider_id: spId!,
       is_active: true,
     });
+
+    if (membershipErr) {
+      await supabase.from("users").delete().eq("id", created.user.id);
+      await supabase.auth.admin.deleteUser(created.user.id);
+      continue;
+    }
 
     successCount++;
   }
