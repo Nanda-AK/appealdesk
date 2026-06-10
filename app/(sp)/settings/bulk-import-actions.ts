@@ -42,7 +42,8 @@ export async function validateBulkClients(
   const validRows = rows.filter((r) => r.status === "valid");
   if (validRows.length === 0) return rows;
 
-  const supabase = await createServiceClient();
+  // Read-only: use anon client (RLS scopes orgs to this SP automatically)
+  const supabase = await createClient();
   const spId = user.service_provider_id ?? user.org_id;
 
   const { data: existingOrgs } = await supabase
@@ -70,10 +71,22 @@ export async function validateBulkClients(
     if (vr.status === "error") return vr;
     if (existingNames.has(vr.row.name.toLowerCase()))
       return { ...vr, status: "error" as const, error: "Client name already exists" };
-    if (existingPANs.has(vr.row.pan_number.toUpperCase()))
+    const pan = vr.row.pan_number?.toUpperCase();
+    if (pan && existingPANs.has(pan))
       return { ...vr, status: "error" as const, error: "PAN already registered" };
     return vr;
   });
+}
+
+// Email uniqueness must be global (not SP-scoped), so service client bypasses RLS here
+async function checkEmailsExist(emails: string[]): Promise<Set<string>> {
+  const supabase = await createServiceClient();
+  const { data } = await supabase
+    .from("users")
+    .select("email")
+    .in("email", emails)
+    .is("deleted_at", null);
+  return new Set((data ?? []).map((u) => u.email.toLowerCase()));
 }
 
 export async function validateBulkTeamUsers(
@@ -85,16 +98,9 @@ export async function validateBulkTeamUsers(
   const validRows = rows.filter((r) => r.status === "valid");
   if (validRows.length === 0) return rows;
 
-  const supabase = await createServiceClient();
-  const emails = validRows.map((r) => r.row.email.toLowerCase());
-
-  const { data: existing } = await supabase
-    .from("users")
-    .select("email")
-    .in("email", emails)
-    .is("deleted_at", null);
-
-  const existingEmails = new Set((existing ?? []).map((u) => u.email.toLowerCase()));
+  const existingEmails = await checkEmailsExist(
+    validRows.map((r) => r.row.email.toLowerCase())
+  );
 
   return rows.map((vr) => {
     if (vr.status === "error") return vr;
@@ -113,16 +119,9 @@ export async function validateBulkClientUsers(
   const validRows = rows.filter((r) => r.status === "valid");
   if (validRows.length === 0) return rows;
 
-  const supabase = await createServiceClient();
-  const emails = validRows.map((r) => r.row.email.toLowerCase());
-
-  const { data: existing } = await supabase
-    .from("users")
-    .select("email")
-    .in("email", emails)
-    .is("deleted_at", null);
-
-  const existingEmails = new Set((existing ?? []).map((u) => u.email.toLowerCase()));
+  const existingEmails = await checkEmailsExist(
+    validRows.map((r) => r.row.email.toLowerCase())
+  );
 
   return rows.map((vr) => {
     if (vr.status === "error") return vr;
@@ -142,9 +141,37 @@ export async function importBulkClients(
 
   const supabase = await createServiceClient();
   const spId = user.service_provider_id ?? user.org_id;
+
+  // Re-validate server-side: client-submitted rows may bypass client-side validation
+  const { data: existingOrgs } = await supabase
+    .from("organizations")
+    .select("id, name")
+    .eq("parent_sp_id", spId!)
+    .eq("type", "client")
+    .is("deleted_at", null);
+
+  const existingNames = new Set((existingOrgs ?? []).map((o) => o.name.toLowerCase()));
+  const existingOrgIds = (existingOrgs ?? []).map((o) => o.id);
+
+  let existingPANs = new Set<string>();
+  if (existingOrgIds.length > 0) {
+    const { data: panRows } = await supabase
+      .from("compliance_details")
+      .select("number")
+      .eq("type", "pan")
+      .in("org_id", existingOrgIds)
+      .not("number", "is", null);
+    existingPANs = new Set((panRows ?? []).map((p) => p.number!.toUpperCase()));
+  }
+
   let successCount = 0;
 
   for (const row of rows) {
+    // Skip rows that fail server-side checks (guards against replayed/manipulated requests)
+    if (existingNames.has(row.name.toLowerCase())) continue;
+    const pan = row.pan_number?.toUpperCase();
+    if (pan && existingPANs.has(pan)) continue;
+
     const { data: org, error: orgErr } = await supabase
       .from("organizations")
       .insert({
@@ -166,6 +193,10 @@ export async function importBulkClients(
 
     if (orgErr || !org) continue;
 
+    // Register inserted name/PAN to prevent intra-batch duplicates
+    existingNames.add(row.name.toLowerCase());
+    if (pan) existingPANs.add(pan);
+
     const complianceRows: {
       org_id: string;
       type: string;
@@ -176,7 +207,7 @@ export async function importBulkClients(
       {
         org_id: org.id,
         type: "pan",
-        number: row.pan_number.toUpperCase(),
+        number: pan ?? null,
         login_id: row.pan_login_id || null,
         credential: row.pan_password || null,
       },
@@ -210,7 +241,19 @@ export async function importBulkClients(
       });
     }
 
-    await supabase.from("compliance_details").insert(complianceRows);
+    const { error: complianceErr } = await supabase
+      .from("compliance_details")
+      .insert(complianceRows);
+
+    // Rollback org if compliance insert fails (PAN is mandatory)
+    if (complianceErr) {
+      await supabase
+        .from("organizations")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", org.id);
+      continue;
+    }
+
     successCount++;
   }
 
@@ -269,10 +312,10 @@ export async function importBulkTeamUsers(
       address_line2: row.address_line2 || null,
       city: row.city || null,
       pin_code: row.pin_code || null,
-      location: row.state || null,         // DB column is `location`, not `state`
+      location: row.state || null,        // DB column is `location`, not `state`
       country: row.country || "India",
       pan_number: row.pan_number || null,
-      aadhar_number: row.aadhaar_number || null,  // DB column is `aadhar_number`
+      aadhar_number: row.aadhaar_number || null, // DB column is `aadhar_number`
       is_active: true,
     });
 
@@ -364,7 +407,11 @@ export async function importBulkClientUsers(
     });
 
     if (membershipErr) {
-      await supabase.from("users").delete().eq("id", created.user.id);
+      // Soft-delete profile (codebase rule: never hard-delete rows)
+      await supabase
+        .from("users")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", created.user.id);
       await supabase.auth.admin.deleteUser(created.user.id);
       continue;
     }
