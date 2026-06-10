@@ -17,6 +17,8 @@ export interface ParsedClientRow {
   state?: string;
   pin_code?: string;
   country?: string;
+  /** NOTE: These compliance credential fields contain sensitive data.
+   *  They must only be passed to server actions via HTTPS and never logged. */
   pan_login_id?: string;
   pan_password?: string;
   gst_number?: string;
@@ -35,7 +37,7 @@ export interface ParsedTeamUserRow {
   first_name: string;
   last_name: string;
   email: string;
-  role: "sp_admin" | "sp_staff";
+  role: string;
   middle_name?: string;
   mobile_number?: string;
   date_of_birth?: string;
@@ -64,8 +66,6 @@ export interface ParsedClientUserRow {
   date_of_birth?: string;
 }
 
-export interface ValidatedRow<T> {
-  row: T;
-  status: "valid" | "error";
-  error?: string;
-}
+export type ValidatedRow<T> =
+  | { row: T; status: "valid" }
+  | { row: T; status: "error"; error: string };

@@ -11,7 +11,7 @@ import type {
 const PAN_REGEX = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const VALID_BUSINESS_TYPES = new Set([
+export const VALID_BUSINESS_TYPES = new Set([
   "Company",
   "Trust",
   "Partnership",
@@ -22,7 +22,12 @@ const VALID_BUSINESS_TYPES = new Set([
   "Individual",
 ]);
 
-const VALID_ROLES = new Set(["sp_admin", "sp_staff"]);
+export const BUSINESS_TYPES = [
+  "Company", "Trust", "Partnership", "LLP", "Sole Proprietorship", "OPC", "HUF", "Individual",
+];
+
+export const ROLES = ["sp_admin", "sp_staff"];
+const VALID_ROLES = new Set(ROLES);
 
 export function validateClientRows(
   rows: ParsedClientRow[]
@@ -43,13 +48,6 @@ export function validateClientRows(
         row,
         status: "error",
         error: "Invalid PAN format (e.g. ABCDE1234F)",
-      };
-
-    if (row.business_type && !VALID_BUSINESS_TYPES.has(row.business_type))
-      return {
-        row,
-        status: "error",
-        error: `Invalid business type: ${row.business_type}`,
       };
 
     const nameKey = row.name.trim().toLowerCase();

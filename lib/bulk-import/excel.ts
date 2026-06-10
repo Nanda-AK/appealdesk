@@ -3,11 +3,7 @@
 
 import { INDIAN_STATES } from "@/lib/constants";
 import type { ClientOrgOption, ParsedClientRow, ParsedTeamUserRow, ParsedClientUserRow } from "./types";
-
-const BUSINESS_TYPES = [
-  "Company", "Trust", "Partnership", "LLP", "Sole Proprietorship", "OPC", "HUF", "Individual",
-];
-const ROLES = ["sp_admin", "sp_staff"];
+import { BUSINESS_TYPES, ROLES } from "./validators";
 const DATA_START_ROW = 3; // row 1 = header, row 2 = example, data starts row 3
 const MAX_DATA_ROW = 502; // 500 data rows max
 
@@ -70,9 +66,12 @@ function triggerDownload(blob: Blob, filename: string) {
   a.href = url;
   a.download = filename;
   document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  try {
+    a.click();
+  } finally {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
 }
 
 function getCellText(row: any, col: number): string {
@@ -191,6 +190,9 @@ export async function downloadTeamUserTemplate(): Promise<void> {
 }
 
 export async function downloadClientUserTemplate(clientOrgs: ClientOrgOption[]): Promise<void> {
+  if (clientOrgs.length === 0) {
+    throw new Error("No client organisations found. Create at least one client before downloading this template.");
+  }
   const ExcelJS = await getExcelJS();
   const wb = new ExcelJS.Workbook();
   const data = wb.addWorksheet("Data");
@@ -226,6 +228,7 @@ export async function downloadClientUserTemplate(clientOrgs: ClientOrgOption[]):
 // ─── File parsers ─────────────────────────────────────────────────────────────
 
 async function loadWorkbook(file: File) {
+  if (file.size > 5 * 1024 * 1024) throw new Error("File too large. Maximum size is 5 MB.");
   const ExcelJS = await getExcelJS();
   const wb = new ExcelJS.Workbook();
   await wb.xlsx.load(await file.arrayBuffer());
@@ -233,8 +236,8 @@ async function loadWorkbook(file: File) {
 }
 
 function getDataSheet(wb: any) {
-  const sheet = wb.getWorksheet("Data") ?? wb.worksheets[0];
-  if (!sheet) throw new Error("Cannot find Data sheet. Use the official template.");
+  const sheet = wb.getWorksheet("Data");
+  if (!sheet) throw new Error("No worksheet named 'Data' found. Upload only the official AppealDesk template.");
   return sheet;
 }
 
@@ -294,7 +297,7 @@ export async function parseTeamUserFile(file: File): Promise<ParsedTeamUserRow[]
       first_name: first,
       last_name: getCellText(row, 2),
       email,
-      role: getCellText(row, 4) as "sp_admin" | "sp_staff",
+      role: getCellText(row, 4),
       middle_name: getCellText(row, 5) || undefined,
       mobile_number: getCellText(row, 6) || undefined,
       date_of_birth: getCellText(row, 7) || undefined,
