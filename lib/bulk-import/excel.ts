@@ -200,6 +200,7 @@ export async function downloadClientUserTemplate(clientOrgs: ClientOrgOption[]):
     { header: "Client Organisation *", key: "org", width: 36 },
     { header: "Middle Name", key: "mn", width: 18 },
     { header: "Mobile Number", key: "mob", width: 18 },
+    { header: "Mobile Country Code (default +91)", key: "mcc", width: 28 },
     { header: "Date of Birth (DD/MM/YYYY)", key: "dob", width: 26 },
   ];
 
@@ -327,7 +328,8 @@ export async function parseClientUserFile(file: File): Promise<ParsedClientUserR
       client_org_name: getCellText(row, 4),
       middle_name: getCellText(row, 5) || undefined,
       mobile_number: getCellText(row, 6) || undefined,
-      date_of_birth: getCellText(row, 7) || undefined,
+      mobile_country_code: getCellText(row, 7) || undefined,
+      date_of_birth: getCellText(row, 8) || undefined,
     });
   });
 

@@ -399,7 +399,7 @@ export async function importBulkClientUsers(
       email: row.email.toLowerCase().trim(),
       role: "client",
       org_id: clientOrgId,
-      mobile_country_code: "+91",
+      mobile_country_code: row.mobile_country_code?.trim() || "+91",
       mobile_number: row.mobile_number || null,
       date_of_birth: toPgDate(row.date_of_birth),
       is_active: true,

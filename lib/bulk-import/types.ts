@@ -67,6 +67,7 @@ export interface ParsedClientUserRow {
   client_org_name: string;
   middle_name?: string;
   mobile_number?: string;
+  mobile_country_code?: string;
   date_of_birth?: string;
 }
 
