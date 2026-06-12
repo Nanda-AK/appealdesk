@@ -1,10 +1,7 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import {
-  downloadClientTemplate,
-  downloadTeamUserTemplate,
-  downloadClientUserTemplate,
   parseClientFile,
   parseTeamUserFile,
   parseClientUserFile,
@@ -24,48 +21,31 @@ import {
 } from "@/app/(sp)/settings/bulk-import-actions";
 import type {
   ClientOrgOption,
+  ImportType,
   ParsedClientRow,
   ParsedTeamUserRow,
   ParsedClientUserRow,
   ValidatedRow,
 } from "@/lib/bulk-import/types";
 
-type ImportType = "clients" | "team-users" | "client-users";
 type Step = "idle" | "preview" | "importing" | "done";
 type AnyRow = ParsedClientRow | ParsedTeamUserRow | ParsedClientUserRow;
 
 interface Props {
-  clientOrgs: ClientOrgOption[];
+  type: ImportType;
+  clientOrgs?: ClientOrgOption[];
+  onDone?: () => void;
 }
 
-export default function BulkImportClient({ clientOrgs }: Props) {
-  const [activeType, setActiveType] = useState<ImportType | null>(null);
+export default function BulkImportClient({ type: importType, clientOrgs = [], onDone }: Props) {
   const [step, setStep] = useState<Step>("idle");
   const [loading, setLoading] = useState(false);
   const [validatedRows, setValidatedRows] = useState<ValidatedRow<AnyRow>[]>([]);
   const [defaultPassword, setDefaultPassword] = useState("");
   const [parseError, setParseError] = useState<string | null>(null);
   const [importedCount, setImportedCount] = useState(0);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  async function handleDownloadTemplate(type: ImportType) {
-    setParseError(null);
-    setLoading(true);
-    try {
-      if (type === "clients") await downloadClientTemplate();
-      else if (type === "team-users") await downloadTeamUserTemplate();
-      else await downloadClientUserTemplate(clientOrgs);
-    } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Failed to download template");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleFileChange(
-    e: React.ChangeEvent<HTMLInputElement>,
-    type: ImportType
-  ) {
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     // Reset input so same file can be re-uploaded
@@ -73,10 +53,9 @@ export default function BulkImportClient({ clientOrgs }: Props) {
 
     setParseError(null);
     setLoading(true);
-    setActiveType(type);
 
     try {
-      if (type === "clients") {
+      if (importType === "clients") {
         const rows = await parseClientFile(file);
         if (rows.length > 500)
           throw new Error(
@@ -85,7 +64,7 @@ export default function BulkImportClient({ clientOrgs }: Props) {
         const pass1 = validateClientRows(rows);
         const pass2 = await validateBulkClients(pass1);
         setValidatedRows(pass2 as ValidatedRow<AnyRow>[]);
-      } else if (type === "team-users") {
+      } else if (importType === "team-users") {
         const rows = await parseTeamUserFile(file);
         if (rows.length > 500)
           throw new Error(
@@ -113,12 +92,12 @@ export default function BulkImportClient({ clientOrgs }: Props) {
   }
 
   async function handleImport() {
-    const validRows = validatedRows
+    const validRowData = validatedRows
       .filter((r) => r.status === "valid")
       .map((r) => r.row);
-    if (validRows.length === 0) return;
+    if (validRowData.length === 0) return;
 
-    if (activeType !== "clients" && defaultPassword.length < 8) {
+    if (importType !== "clients" && defaultPassword.length < 8) {
       alert("Default password must be at least 8 characters");
       return;
     }
@@ -127,18 +106,18 @@ export default function BulkImportClient({ clientOrgs }: Props) {
     setStep("importing");
     try {
       let count = 0;
-      if (activeType === "clients") {
-        const result = await importBulkClients(validRows as ParsedClientRow[]);
+      if (importType === "clients") {
+        const result = await importBulkClients(validRowData as ParsedClientRow[]);
         count = result.successCount;
-      } else if (activeType === "team-users") {
+      } else if (importType === "team-users") {
         const result = await importBulkTeamUsers(
-          validRows as ParsedTeamUserRow[],
+          validRowData as ParsedTeamUserRow[],
           defaultPassword
         );
         count = result.successCount;
       } else {
         const result = await importBulkClientUsers(
-          validRows as ParsedClientUserRow[],
+          validRowData as ParsedClientUserRow[],
           defaultPassword
         );
         count = result.successCount;
@@ -154,84 +133,39 @@ export default function BulkImportClient({ clientOrgs }: Props) {
   }
 
   function handleReset() {
-    setActiveType(null);
     setStep("idle");
     setValidatedRows([]);
     setDefaultPassword("");
     setParseError(null);
     setImportedCount(0);
+    onDone?.();
   }
 
   const validRows = validatedRows.filter((r) => r.status === "valid");
   const errorRows = validatedRows.filter((r) => r.status === "error");
 
   return (
-    <div className="bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-[#1A1A2E] mb-1">Bulk Import</h2>
-      <p className="text-sm text-[#6B7280] mb-6">
-        Import clients and users in bulk from an Excel file. Use this during
-        initial setup.
-      </p>
-
-      {/* ── idle: three cards ── */}
+    <>
+      {/* ── idle: single upload area ── */}
       {step === "idle" && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {(
-            [
-              {
-                type: "clients" as ImportType,
-                label: "Clients",
-                description:
-                  "Import client organisations with compliance details",
-              },
-              {
-                type: "team-users" as ImportType,
-                label: "Team Users",
-                description: "Import SP admin and staff users",
-              },
-              {
-                type: "client-users" as ImportType,
-                label: "Client Users",
-                description: "Import client portal users",
-              },
-            ] as { type: ImportType; label: string; description: string }[]
-          ).map(({ type, label, description }) => (
-            <div
-              key={type}
-              className="border border-[#E5E7EB] rounded-lg p-4 flex flex-col gap-3"
-            >
-              <div>
-                <h3 className="font-medium text-[#1A1A2E] text-sm">{label}</h3>
-                <p className="text-xs text-[#6B7280] mt-0.5">{description}</p>
-              </div>
-              <button
-                onClick={() => handleDownloadTemplate(type)}
-                disabled={loading}
-                className="text-sm text-[#1E3A5F] border border-[#4A6FA5] rounded-lg px-3 py-1.5 hover:bg-[#EEF2FF] transition disabled:opacity-50"
-              >
-                Download Template
-              </button>
-              <label
-                className={`flex flex-col items-center justify-center border-2 border-dashed border-[#4A6FA5] rounded-lg p-4 cursor-pointer hover:bg-[#EEF2FF] transition ${
-                  loading ? "opacity-50 pointer-events-none" : ""
-                }`}
-              >
-                <span className="text-xs text-[#6B7280]">
-                  Drop .xlsx file here or click to upload
-                </span>
-                <input
-                  type="file"
-                  accept=".xlsx"
-                  className="hidden"
-                  onChange={(e) => handleFileChange(e, type)}
-                  disabled={loading}
-                />
-              </label>
-              {parseError && activeType === type && (
-                <p className="text-xs text-[#DC2626]">{parseError}</p>
-              )}
-            </div>
-          ))}
+        <div className="flex flex-col gap-3">
+          <label className="flex flex-col items-center justify-center border-2 border-dashed border-[#4A6FA5] rounded-lg p-8 cursor-pointer hover:bg-[#EEF2FF] transition">
+            <svg className="w-8 h-8 text-[#4A6FA5] mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            <span className="text-sm font-medium text-[#1A1A2E]">Drop .xlsx file here or click to upload</span>
+            <span className="text-xs text-[#9CA3AF] mt-1">Max 500 rows · Max 5 MB</span>
+            <input
+              type="file"
+              accept=".xlsx"
+              className="hidden"
+              onChange={handleFileChange}
+              disabled={loading}
+            />
+          </label>
+          {parseError && (
+            <p className="text-xs text-[#DC2626]">{parseError}</p>
+          )}
         </div>
       )}
 
@@ -253,7 +187,7 @@ export default function BulkImportClient({ clientOrgs }: Props) {
                   <th className="px-3 py-2 text-xs font-semibold text-[#6B7280] border-b border-[#E5E7EB]">
                     Row
                   </th>
-                  {activeType === "clients" && (
+                  {importType === "clients" && (
                     <>
                       <th className="px-3 py-2 text-xs font-semibold text-[#6B7280] border-b border-[#E5E7EB]">
                         Name
@@ -266,8 +200,8 @@ export default function BulkImportClient({ clientOrgs }: Props) {
                       </th>
                     </>
                   )}
-                  {(activeType === "team-users" ||
-                    activeType === "client-users") && (
+                  {(importType === "team-users" ||
+                    importType === "client-users") && (
                     <>
                       <th className="px-3 py-2 text-xs font-semibold text-[#6B7280] border-b border-[#E5E7EB]">
                         First Name
@@ -278,12 +212,12 @@ export default function BulkImportClient({ clientOrgs }: Props) {
                       <th className="px-3 py-2 text-xs font-semibold text-[#6B7280] border-b border-[#E5E7EB]">
                         Email
                       </th>
-                      {activeType === "team-users" && (
+                      {importType === "team-users" && (
                         <th className="px-3 py-2 text-xs font-semibold text-[#6B7280] border-b border-[#E5E7EB]">
                           Role
                         </th>
                       )}
-                      {activeType === "client-users" && (
+                      {importType === "client-users" && (
                         <th className="px-3 py-2 text-xs font-semibold text-[#6B7280] border-b border-[#E5E7EB]">
                           Client Org
                         </th>
@@ -296,7 +230,7 @@ export default function BulkImportClient({ clientOrgs }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {validatedRows.map((vr, idx) => {
+                {validatedRows.map((vr) => {
                   const isError = vr.status === "error";
                   const row = vr.row;
                   return (
@@ -307,7 +241,7 @@ export default function BulkImportClient({ clientOrgs }: Props) {
                       <td className="px-3 py-2 text-xs text-[#6B7280] border-b border-[#E5E7EB]">
                         {row.rowNumber}
                       </td>
-                      {activeType === "clients" && (
+                      {importType === "clients" && (
                         <>
                           <td className="px-3 py-2 text-xs text-[#1A1A2E] border-b border-[#E5E7EB]">
                             {(row as ParsedClientRow).name}
@@ -320,8 +254,8 @@ export default function BulkImportClient({ clientOrgs }: Props) {
                           </td>
                         </>
                       )}
-                      {(activeType === "team-users" ||
-                        activeType === "client-users") && (
+                      {(importType === "team-users" ||
+                        importType === "client-users") && (
                         <>
                           <td className="px-3 py-2 text-xs text-[#1A1A2E] border-b border-[#E5E7EB]">
                             {(row as ParsedTeamUserRow | ParsedClientUserRow)
@@ -335,12 +269,12 @@ export default function BulkImportClient({ clientOrgs }: Props) {
                             {(row as ParsedTeamUserRow | ParsedClientUserRow)
                               .email}
                           </td>
-                          {activeType === "team-users" && (
+                          {importType === "team-users" && (
                             <td className="px-3 py-2 text-xs text-[#1A1A2E] border-b border-[#E5E7EB]">
                               {(row as ParsedTeamUserRow).role}
                             </td>
                           )}
-                          {activeType === "client-users" && (
+                          {importType === "client-users" && (
                             <td className="px-3 py-2 text-xs text-[#1A1A2E] border-b border-[#E5E7EB]">
                               {(row as ParsedClientUserRow).client_org_name}
                             </td>
@@ -362,7 +296,7 @@ export default function BulkImportClient({ clientOrgs }: Props) {
           </div>
 
           {/* Password field for user imports */}
-          {(activeType === "team-users" || activeType === "client-users") && (
+          {(importType === "team-users" || importType === "client-users") && (
             <div className="mt-4">
               <label className="block text-sm font-medium text-[#1A1A2E] mb-1">
                 Default Password{" "}
@@ -432,19 +366,27 @@ export default function BulkImportClient({ clientOrgs }: Props) {
           </div>
           <p className="text-base font-semibold text-[#1A1A2E]">
             {importedCount}{" "}
-            {activeType === "clients" ? "clients" : "users"} imported
+            {importType === "clients" ? "clients" : "users"} imported
             successfully.
             {errorRows.length > 0 &&
               ` ${errorRows.length} rows skipped.`}
           </p>
-          <button
-            onClick={handleReset}
-            className="px-5 py-2.5 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition"
-          >
-            Import Another
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={onDone}
+              className="px-5 py-2.5 text-sm border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-gray-50 transition"
+            >
+              Close
+            </button>
+            <button
+              onClick={handleReset}
+              className="px-5 py-2.5 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition"
+            >
+              Import Another
+            </button>
+          </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
