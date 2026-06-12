@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toggleUserStatus, deleteUser } from "@/app/(sp)/users/actions";
+import type { ClientOrgOption } from "@/lib/bulk-import/types";
+import SplitImportButton from "@/components/sp/SplitImportButton";
 
 interface UserRecord {
   id: string;
@@ -26,6 +28,7 @@ interface Props {
   users: UserRecord[];
   currentUserId: string;
   isAdmin: boolean;
+  clientOrgs: ClientOrgOption[];
   currentTab: "team" | "clients";
   currentRoles: string[];
   currentOrgs: string[];
@@ -194,7 +197,7 @@ function MultiSelect({
 }
 
 export default function UsersClient({
-  users, currentUserId, isAdmin,
+  users, currentUserId, isAdmin, clientOrgs,
   currentTab, currentRoles, currentOrgs, currentDesignations, currentStatuses, currentSortDir,
 }: Props) {
   const router = useRouter();
@@ -293,15 +296,12 @@ export default function UsersClient({
           </p>
         </div>
         {isAdmin && (
-          <Link
-            href={currentTab === "team" ? "/users/new-sp" : "/users/new-client"}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#1E3A5F] hover:bg-[#162d4a] text-white text-sm font-medium rounded-lg transition"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            {currentTab === "team" ? "Add User" : "Add Client User"}
-          </Link>
+          <SplitImportButton
+            addHref={currentTab === "team" ? "/users/new-sp" : "/users/new-client"}
+            addLabel={currentTab === "team" ? "Add User" : "Add Client User"}
+            importType={currentTab === "team" ? "team-users" : "client-users"}
+            clientOrgs={clientOrgs}
+          />
         )}
       </div>
 

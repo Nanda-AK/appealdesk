@@ -25,15 +25,28 @@ export default async function UsersPage({
   const currentStatuses    = parseMulti(params.status);
   const currentSortDir     = (params.sort_dir as string) === "desc" ? "desc" : "asc";
 
+  const isAdmin = user?.role === "sp_admin";
+
   // Fetch client org IDs under this SP
-  const { data: clientOrgs } = await supabase
+  const { data: clientOrgIds } = await supabase
     .from("organizations")
     .select("id")
     .eq("parent_sp_id", spId!)
     .eq("type", "client")
     .eq("is_active", true);
 
-  const orgIdsToFetch = [spId!, ...(clientOrgs ?? []).map((o) => o.id)];
+  const orgIdsToFetch = [spId!, ...(clientOrgIds ?? []).map((o) => o.id)];
+
+  const { data: clientOrgsForImport } = isAdmin
+    ? await supabase
+        .from("organizations")
+        .select("id, name")
+        .eq("parent_sp_id", spId!)
+        .eq("type", "client")
+        .is("deleted_at", null)
+        .eq("is_active", true)
+        .order("name")
+    : { data: [] };
 
   const { data: users } = await supabase
     .from("users")
@@ -57,7 +70,8 @@ export default async function UsersPage({
       <UsersClient
         users={normalizedUsers}
         currentUserId={user!.id}
-        isAdmin={user!.role === "sp_admin"}
+        isAdmin={isAdmin}
+        clientOrgs={clientOrgsForImport ?? []}
         currentTab={currentTab as "team" | "clients"}
         currentRoles={currentRoles}
         currentOrgs={currentOrgs}

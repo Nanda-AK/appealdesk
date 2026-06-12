@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toggleClientStatus, deleteClient } from "@/app/(sp)/clients/actions";
+import SplitImportButton from "@/components/sp/SplitImportButton";
 
 interface Client {
   id: string;
@@ -262,15 +263,11 @@ export default function ClientsClient({
           </p>
         </div>
         {isAdmin && (
-          <Link
-            href="/clients/new"
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#1E3A5F] hover:bg-[#162d4a] text-white text-sm font-medium rounded-lg transition"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            Add Client
-          </Link>
+          <SplitImportButton
+            addHref="/clients/new"
+            addLabel="Add Client"
+            importType="clients"
+          />
         )}
       </div>
 

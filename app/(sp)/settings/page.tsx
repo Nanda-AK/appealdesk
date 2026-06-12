@@ -4,10 +4,8 @@ import { getCurrentUser } from "@/lib/user";
 import SpSettingsClient from "@/components/sp/SpSettingsClient";
 import SpApiSettingsClient from "@/components/sp/SpApiSettingsClient";
 import { getSpApiSettings } from "@/app/(sp)/settings/actions";
-import { getClientOrgsForTemplate } from "./bulk-import-actions";
-import BulkImportClient from "@/components/sp/BulkImportClient";
 
-type Tab = "profile" | "api" | "bulk";
+type Tab = "profile" | "api";
 
 export default async function SpSettingsPage({
   searchParams,
@@ -22,20 +20,17 @@ export default async function SpSettingsPage({
   const isAdmin = user?.role === "sp_admin";
 
   const rawTab = params.tab as string | undefined;
-  const currentTab: Tab =
-    rawTab === "api" ? "api" : rawTab === "bulk" && isAdmin ? "bulk" : "profile";
+  const currentTab: Tab = rawTab === "api" ? "api" : "profile";
 
-  const [{ data: org }, { data: compliance }, apiSettings, clientOrgs] = await Promise.all([
+  const [{ data: org }, { data: compliance }, apiSettings] = await Promise.all([
     supabase.from("organizations").select("*").eq("id", spId!).single(),
     supabase.from("compliance_details").select("*").eq("org_id", spId!),
     getSpApiSettings(),
-    isAdmin ? getClientOrgsForTemplate() : Promise.resolve([]),
   ]);
 
   const tabs: { tab: Tab; label: string }[] = [
     { tab: "profile", label: "Organisation Profile" },
     { tab: "api", label: "API Integrations" },
-    ...(isAdmin ? ([{ tab: "bulk", label: "Bulk Import" }] as { tab: Tab; label: string }[]) : []),
   ];
 
   return (
@@ -80,10 +75,6 @@ export default async function SpSettingsPage({
           initial={apiSettings}
           isAdmin={isAdmin}
         />
-      )}
-
-      {currentTab === "bulk" && isAdmin && (
-        <BulkImportClient clientOrgs={clientOrgs} />
       )}
     </div>
   );
