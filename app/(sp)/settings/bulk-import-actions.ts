@@ -188,6 +188,7 @@ export async function importBulkClients(
         name: row.name.trim(),
         type: "client",
         parent_sp_id: spId!,
+        file_number: row.file_number || null,
         business_type: row.business_type || null,
         date_of_incorporation: toPgDate(row.date_of_incorporation),
         address_line1: row.address_line1 || null,

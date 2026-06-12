@@ -99,6 +99,7 @@ export async function downloadClientTemplate(): Promise<void> {
 
   data.columns = [
     { header: "Client Name *", key: "name", width: 30 },
+    { header: "Client File Number", key: "filenum", width: 22 },
     { header: "PAN Number *", key: "pan", width: 16 },
     { header: "Business Type", key: "btype", width: 22 },
     { header: "Date of Incorporation (DD/MM/YYYY)", key: "doi", width: 34 },
@@ -124,8 +125,8 @@ export async function downloadClientTemplate(): Promise<void> {
   styleHeaderRow(data.getRow(1));
 
   const [btRef, stRef] = buildListsSheet(lists, [BUSINESS_TYPES, INDIAN_STATES]);
-  addDropdownValidation(data, 3, btRef);  // col 3 = Business Type
-  addDropdownValidation(data, 8, stRef);  // col 8 = State
+  addDropdownValidation(data, 4, btRef);  // col 4 = Business Type
+  addDropdownValidation(data, 9, stRef);  // col 9 = State
 
   triggerDownload(await blobFromWorkbook(wb), "appealdesk-clients-template.xlsx");
 }
@@ -219,32 +220,33 @@ export async function parseClientFile(file: File): Promise<ParsedClientRow[]> {
   sheet.eachRow((row: any, rowNum: number) => {
     if (rowNum < DATA_START_ROW) return; // skip header row 1
     const name = getCellText(row, 1);
-    const pan = getCellText(row, 2);
+    const pan = getCellText(row, 3);
     if (!name && !pan) return; // skip blank rows
 
     rows.push({
       rowNumber: rowNum,
       name,
+      file_number: getCellText(row, 2) || undefined,
       pan_number: pan,
-      business_type: getCellText(row, 3) || undefined,
-      date_of_incorporation: getCellText(row, 4) || undefined,
-      address_line1: getCellText(row, 5) || undefined,
-      address_line2: getCellText(row, 6) || undefined,
-      city: getCellText(row, 7) || undefined,
-      state: getCellText(row, 8) || undefined,
-      pin_code: getCellText(row, 9) || undefined,
-      country: getCellText(row, 10) || undefined,
-      pan_login_id: getCellText(row, 11) || undefined,
-      pan_password: getCellText(row, 12) || undefined,
-      gst_number: getCellText(row, 13) || undefined,
-      gst_login_id: getCellText(row, 14) || undefined,
-      gst_password: getCellText(row, 15) || undefined,
-      tan_number: getCellText(row, 16) || undefined,
-      tan_login_id: getCellText(row, 17) || undefined,
-      tan_password: getCellText(row, 18) || undefined,
-      aadhaar_number: getCellText(row, 19) || undefined,
-      aadhaar_login_id: getCellText(row, 20) || undefined,
-      aadhaar_password: getCellText(row, 21) || undefined,
+      business_type: getCellText(row, 4) || undefined,
+      date_of_incorporation: getCellText(row, 5) || undefined,
+      address_line1: getCellText(row, 6) || undefined,
+      address_line2: getCellText(row, 7) || undefined,
+      city: getCellText(row, 8) || undefined,
+      state: getCellText(row, 9) || undefined,
+      pin_code: getCellText(row, 10) || undefined,
+      country: getCellText(row, 11) || undefined,
+      pan_login_id: getCellText(row, 12) || undefined,
+      pan_password: getCellText(row, 13) || undefined,
+      gst_number: getCellText(row, 14) || undefined,
+      gst_login_id: getCellText(row, 15) || undefined,
+      gst_password: getCellText(row, 16) || undefined,
+      tan_number: getCellText(row, 17) || undefined,
+      tan_login_id: getCellText(row, 18) || undefined,
+      tan_password: getCellText(row, 19) || undefined,
+      aadhaar_number: getCellText(row, 20) || undefined,
+      aadhaar_login_id: getCellText(row, 21) || undefined,
+      aadhaar_password: getCellText(row, 22) || undefined,
     });
   });
 

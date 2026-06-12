@@ -10,6 +10,7 @@ export interface ClientOrgOption {
 export interface ParsedClientRow {
   rowNumber: number;
   name: string;
+  file_number?: string;
   pan_number: string;
   business_type?: string;
   date_of_incorporation?: string;
