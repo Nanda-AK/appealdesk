@@ -1,5 +1,7 @@
 // lib/bulk-import/types.ts
 
+export type ImportType = "clients" | "team-users" | "client-users";
+
 export interface ClientOrgOption {
   id: string;
   name: string;
