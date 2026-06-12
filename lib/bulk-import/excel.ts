@@ -92,7 +92,13 @@ function getCellText(row: any, col: number): string {
     const obj = v as Record<string, unknown>;
     if ("richText" in obj)
       return ((obj.richText as any[]) ?? []).map((r) => String(r.text ?? "")).join("").trim();
-    if ("text" in obj) return String(obj.text ?? "").trim();
+    if ("text" in obj) {
+      const t = obj.text;
+      // text itself may be a richText object: { richText: [{ text: "..." }] }
+      if (t && typeof t === "object" && "richText" in (t as any))
+        return ((t as any).richText as any[]).map((r: any) => String(r.text ?? "")).join("").trim();
+      return String(t ?? "").trim();
+    }
     return "";
   }
   return String(v).trim();
