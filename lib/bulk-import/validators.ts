@@ -43,7 +43,7 @@ export function validateClientRows(
     if (!row.pan_number?.trim())
       return { row, status: "error", error: "PAN is required" };
 
-    const pan = row.pan_number.trim().toUpperCase();
+    const pan = row.pan_number.replace(/\s+/g, "").toUpperCase();
     if (!PAN_REGEX.test(pan))
       return {
         row,
