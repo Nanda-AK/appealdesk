@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
@@ -27,7 +26,7 @@ function DaysChip({ deletedAt }: { deletedAt: string }) {
     ? "bg-red-50 text-red-700"
     : days <= 7
     ? "bg-orange-50 text-orange-700"
-    : "bg-[#F3F4F6] text-[#6B7280]";
+    : "bg-surface-hover text-secondary";
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${cls}`}>
       {days}d left
@@ -45,14 +44,16 @@ function RowActions({
   const router = useRouter();
   const [busy, setBusy] = useState<"restore" | "purge" | null>(null);
   const [confirmPurge, setConfirmPurge] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleRestore() {
+    setError(null);
     setBusy("restore");
     try {
       await onRestore();
       router.refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to restore.");
+      setError(err instanceof Error ? err.message : "Failed to restore.");
     } finally {
       setBusy(null);
     }
@@ -60,12 +61,13 @@ function RowActions({
 
   async function handlePurge() {
     if (!confirmPurge) { setConfirmPurge(true); return; }
+    setError(null);
     setBusy("purge");
     try {
       await onPurge();
       router.refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to delete.");
+      setError(err instanceof Error ? err.message : "Failed to delete.");
     } finally {
       setBusy(null);
       setConfirmPurge(false);
@@ -73,25 +75,30 @@ function RowActions({
   }
 
   return (
-    <div className="flex items-center gap-0.5 flex-shrink-0">
-      <button onClick={handleRestore} disabled={!!busy} title="Restore item"
-        className="p-1.5 rounded hover:bg-[#EEF2FF] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] disabled:opacity-50 inline-flex">
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-      </button>
-      {confirmPurge ? (
-        <div className="flex items-center gap-1">
-          <span className="text-xs text-red-600 font-medium">Sure?</span>
-          <button onClick={handlePurge} disabled={!!busy}
-            className="px-2 py-1 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition disabled:opacity-50">
-            {busy === "purge" ? "…" : "Yes"}
-          </button>
-          <button onClick={() => setConfirmPurge(false)} className="px-1.5 py-1 text-xs text-[#6B7280] hover:text-[#1A1A2E]">No</button>
-        </div>
-      ) : (
-        <button onClick={handlePurge} disabled={!!busy} title="Delete permanently"
-          className="p-1.5 rounded hover:bg-red-50 transition-colors text-red-500 hover:text-red-700 disabled:opacity-50 inline-flex">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+    <div className="flex flex-col items-end gap-1">
+      <div className="flex items-center gap-0.5 shrink-0">
+        <button onClick={handleRestore} disabled={!!busy} title="Restore item"
+          className="p-1.5 rounded hover:bg-accent-light transition-colors text-accent hover:text-primary disabled:opacity-50 inline-flex">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
         </button>
+        {confirmPurge ? (
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-red-600 font-medium">Sure?</span>
+            <button onClick={handlePurge} disabled={!!busy}
+              className="px-2 py-1 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition disabled:opacity-50">
+              {busy === "purge" ? "…" : "Yes"}
+            </button>
+            <button onClick={() => setConfirmPurge(false)} className="px-1.5 py-1 text-xs text-secondary hover:text-heading">No</button>
+          </div>
+        ) : (
+          <button onClick={handlePurge} disabled={!!busy} title="Delete permanently"
+            className="p-1.5 rounded hover:bg-red-50 transition-colors text-red-500 hover:text-red-700 disabled:opacity-50 inline-flex">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+          </button>
+        )}
+      </div>
+      {error && (
+        <span role="alert" title={error} className="text-xs text-danger font-medium max-w-[200px] truncate">{error}</span>
       )}
     </div>
   );
@@ -108,19 +115,19 @@ function Section({
 }) {
   const [open, setOpen] = useState(true);
   return (
-    <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
+    <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between hover:bg-[#F8F9FA] transition text-left"
+        className="w-full px-5 py-4 border-b border-border flex items-center justify-between hover:bg-page transition text-left"
       >
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-[#1A1A2E]">{title}</span>
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#F3F4F6] text-[#6B7280]">
+          <span className="text-sm font-semibold text-heading">{title}</span>
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-surface-hover text-secondary">
             {count}
           </span>
         </div>
         <svg
-          className={`w-4 h-4 text-[#9CA3AF] transition-transform ${open ? "" : "-rotate-90"}`}
+          className={`w-4 h-4 text-muted transition-transform ${open ? "" : "-rotate-90"}`}
           fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
         >
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -128,7 +135,7 @@ function Section({
       </button>
       {open && (
         count === 0 ? (
-          <div className="px-5 py-8 text-center text-sm text-[#9CA3AF]">Nothing here.</div>
+          <div className="px-5 py-8 text-center text-sm text-muted">Nothing here.</div>
         ) : (
           children
         )
@@ -189,12 +196,12 @@ export default function TrashClient({ appeals, clients, users, documents, procee
 
   if (total === 0) {
     return (
-      <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm px-8 py-16 text-center">
-        <svg className="w-10 h-10 text-[#D1D5DB] mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <div className="bg-white border border-border rounded-xl shadow-sm px-8 py-16 text-center">
+        <svg className="w-10 h-10 text-border-strong mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
         </svg>
-        <p className="text-sm font-medium text-[#6B7280]">Recycle Bin is empty</p>
-        <p className="text-xs text-[#9CA3AF] mt-1">Deleted items appear here for 30 days.</p>
+        <p className="text-sm font-medium text-secondary">Recycle Bin is empty</p>
+        <p className="text-xs text-muted mt-1">Deleted items appear here for 30 days.</p>
       </div>
     );
   }
@@ -202,18 +209,18 @@ export default function TrashClient({ appeals, clients, users, documents, procee
   return (
     <div className="space-y-4">
       <Section title="Litigations" count={appeals.length}>
-        <div className="divide-y divide-[#F3F4F6]">
+        <div className="divide-y divide-surface-hover">
           {appeals.map((a) => (
             <div key={a.id} className="px-5 py-3 flex items-center justify-between gap-4">
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-[#1A1A2E] truncate">
+                <p className="text-sm font-medium text-heading truncate">
                   {a.client_org?.name ?? "—"}
                 </p>
-                <p className="text-xs text-[#6B7280] truncate">
+                <p className="text-xs text-secondary truncate">
                   {[a.financial_year?.name, a.assessment_year?.name].filter(Boolean).join(" / ")}
                   {a.act_regulation?.name ? ` · ${a.act_regulation.name}` : ""}
                 </p>
-                <p className="text-xs text-[#9CA3AF]">Deleted {fmtDate(a.deleted_at)}</p>
+                <p className="text-xs text-muted">Deleted {fmtDate(a.deleted_at)}</p>
               </div>
               <div className="flex items-center gap-3">
                 <DaysChip deletedAt={a.deleted_at} />
@@ -228,18 +235,19 @@ export default function TrashClient({ appeals, clients, users, documents, procee
       </Section>
 
       <Section title="Proceedings" count={proceedings.length}>
-        <div className="divide-y divide-[#F3F4F6]">
+        <div className="divide-y divide-surface-hover">
           {proceedings.map((p) => (
             <div key={p.id} className="px-5 py-3 flex items-center justify-between gap-4">
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-[#1A1A2E] truncate">
+                <p className="text-sm font-medium text-heading truncate">
                   {p.authority_name ?? p.proceeding_type?.name ?? "—"}
                 </p>
-                <p className="text-xs text-[#6B7280] truncate">
+                <p className="text-xs text-secondary truncate">
                   {p.proceeding_type?.name ?? ""}
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   {(p as any).appeal?.client_org?.name ? ` · ${(p as any).appeal.client_org.name}` : ""}
                 </p>
-                <p className="text-xs text-[#9CA3AF]">Deleted {fmtDate(p.deleted_at)}</p>
+                <p className="text-xs text-muted">Deleted {fmtDate(p.deleted_at)}</p>
               </div>
               <div className="flex items-center gap-3">
                 <DaysChip deletedAt={p.deleted_at} />
@@ -254,21 +262,22 @@ export default function TrashClient({ appeals, clients, users, documents, procee
       </Section>
 
       <Section title="Events" count={events.length}>
-        <div className="divide-y divide-[#F3F4F6]">
+        <div className="divide-y divide-surface-hover">
           {events.map((e) => (
             <div key={e.id} className="px-5 py-3 flex items-center justify-between gap-4">
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-[#1A1A2E] truncate">
+                <p className="text-sm font-medium text-heading truncate">
                   {e.category ?? "Event"}
                   {e.event_date ? ` — ${fmtDate(e.event_date)}` : ""}
                 </p>
-                <p className="text-xs text-[#6B7280] truncate">
+                <p className="text-xs text-secondary truncate">
                   {e.description ?? ""}
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   {(e as any).proceeding?.appeal?.client_org?.name
                     ? ` · ${(e as any).proceeding.appeal.client_org.name}`
                     : ""}
                 </p>
-                <p className="text-xs text-[#9CA3AF]">Deleted {fmtDate(e.deleted_at)}</p>
+                <p className="text-xs text-muted">Deleted {fmtDate(e.deleted_at)}</p>
               </div>
               <div className="flex items-center gap-3">
                 <DaysChip deletedAt={e.deleted_at} />
@@ -283,12 +292,12 @@ export default function TrashClient({ appeals, clients, users, documents, procee
       </Section>
 
       <Section title="Clients" count={clients.length}>
-        <div className="divide-y divide-[#F3F4F6]">
+        <div className="divide-y divide-surface-hover">
           {clients.map((c) => (
             <div key={c.id} className="px-5 py-3 flex items-center justify-between gap-4">
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-[#1A1A2E] truncate">{c.name}</p>
-                <p className="text-xs text-[#9CA3AF]">Deleted {fmtDate(c.deleted_at)}</p>
+                <p className="text-sm font-medium text-heading truncate">{c.name}</p>
+                <p className="text-xs text-muted">Deleted {fmtDate(c.deleted_at)}</p>
               </div>
               <div className="flex items-center gap-3">
                 <DaysChip deletedAt={c.deleted_at} />
@@ -303,15 +312,15 @@ export default function TrashClient({ appeals, clients, users, documents, procee
       </Section>
 
       <Section title="Users" count={users.length}>
-        <div className="divide-y divide-[#F3F4F6]">
+        <div className="divide-y divide-surface-hover">
           {users.map((u) => (
             <div key={u.id} className="px-5 py-3 flex items-center justify-between gap-4">
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-[#1A1A2E] truncate">
+                <p className="text-sm font-medium text-heading truncate">
                   {u.first_name} {u.last_name}
                 </p>
-                <p className="text-xs text-[#6B7280] truncate">{u.email}</p>
-                <p className="text-xs text-[#9CA3AF]">
+                <p className="text-xs text-secondary truncate">{u.email}</p>
+                <p className="text-xs text-muted">
                   {u.organization?.name ?? ""} · Deleted {fmtDate(u.deleted_at)}
                 </p>
               </div>
@@ -328,15 +337,15 @@ export default function TrashClient({ appeals, clients, users, documents, procee
       </Section>
 
       <Section title="Documents" count={documents.length}>
-        <div className="divide-y divide-[#F3F4F6]">
+        <div className="divide-y divide-surface-hover">
           {documents.map((d) => (
             <div key={d.id} className="px-5 py-3 flex items-center justify-between gap-4">
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-[#1A1A2E] truncate">{d.file_name}</p>
-                <p className="text-xs text-[#6B7280] truncate">
+                <p className="text-sm font-medium text-heading truncate">{d.file_name}</p>
+                <p className="text-xs text-secondary truncate">
                   {d.appeal?.client_org?.name ?? "—"}
                 </p>
-                <p className="text-xs text-[#9CA3AF]">Deleted {fmtDate(d.deleted_at)}</p>
+                <p className="text-xs text-muted">Deleted {fmtDate(d.deleted_at)}</p>
               </div>
               <div className="flex items-center gap-3">
                 <DaysChip deletedAt={d.deleted_at} />

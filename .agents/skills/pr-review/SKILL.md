@@ -1,6 +1,6 @@
 <!---
 name: pr-review
-description: >
+description: 
   Review an AppealDesk pull request end-to-end and post the findings as a
   GitHub comment. Use when asked to "review PR <n>", "review this PR", or
   before merging anything to main. Checks security (Supabase RLS + tenant

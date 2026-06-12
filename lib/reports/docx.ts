@@ -13,10 +13,13 @@ import {
 } from "docx";
 import type { LitigationReportData } from "@/app/(sp)/litigations/actions";
 import { buildHierarchy, catLabel, cap, fmtDate } from "./hierarchy";
+import { BRAND, hexPlain } from "@/lib/theme";
 
-const NAVY_FILL  = "1E3A5F";
-const PROC_FILL  = "4A6FA5";
-const HDR_FILL   = "D1D9E6";
+const NAVY_FILL  = hexPlain(BRAND.primary);
+const PROC_FILL  = hexPlain(BRAND.accent);
+const HDR_FILL   = hexPlain(BRAND.tableHeader);
+const HEAD_TXT   = hexPlain(BRAND.heading);
+const GRAY_TXT   = hexPlain(BRAND.secondary);
 const STRIPE_FILL = "F7F9FC";
 
 const NO_BORDER = {
@@ -26,7 +29,7 @@ const NO_BORDER = {
   right:  { style: BorderStyle.NONE, size: 0, color: "auto" },
 };
 
-function hCell(text: string, fill = HDR_FILL, color = "1A1A2E"): TableCell {
+function hCell(text: string, fill = HDR_FILL, color = HEAD_TXT): TableCell {
   return new TableCell({
     shading: { type: ShadingType.CLEAR, color: "auto", fill },
     borders: NO_BORDER,
@@ -58,7 +61,7 @@ export async function generateDocx(data: LitigationReportData): Promise<Blob> {
   const children: (Paragraph | Table)[] = [
     new Paragraph({ text: `${data.spName} — Litigation Report`, heading: HeadingLevel.HEADING_1 }),
     new Paragraph({
-      children: [new TextRun({ text: `Generated: ${fmtDate(data.generatedAt)}`, size: 18, color: "6B7280" })],
+      children: [new TextRun({ text: `Generated: ${fmtDate(data.generatedAt)}`, size: 18, color: GRAY_TXT })],
       spacing: { after: 200 },
     }),
 
@@ -105,7 +108,7 @@ export async function generateDocx(data: LitigationReportData): Promise<Blob> {
               `Status: ${cap(appeal.status)}`,
             ].filter(Boolean).join("   |   "),
             size: 18,
-            color: "6B7280",
+            color: GRAY_TXT,
           }),
         ],
         spacing: { after: 120 },
@@ -137,7 +140,7 @@ export async function generateDocx(data: LitigationReportData): Promise<Blob> {
           spacing: { before: 200, after: 40 },
         }),
         new Paragraph({
-          children: [new TextRun({ text: procDetails, size: 17, color: "6B7280" })],
+          children: [new TextRun({ text: procDetails, size: 17, color: GRAY_TXT })],
           spacing: { after: 80 },
         }),
       );
@@ -154,7 +157,7 @@ export async function generateDocx(data: LitigationReportData): Promise<Blob> {
                 children: [
                   new TextRun({ text: `📎  ${doc.file_name}`, size: 17 }),
                   doc.description
-                    ? new TextRun({ text: `  —  ${doc.description}`, size: 16, color: "6B7280" })
+                    ? new TextRun({ text: `  —  ${doc.description}`, size: 16, color: GRAY_TXT })
                     : new TextRun({ text: "" }),
                 ],
                 indent: { left: 360 },

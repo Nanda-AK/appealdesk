@@ -108,7 +108,7 @@ AppealDesk Platform (operator)
 ## User Roles & Access
 
 | Role | Portal | Key Permissions |
-|------|--------|-----------------|
+| ---- | ------ | --------------- |
 
 | `super_admin` | Platform | Everything — including managing other super admins and platform settings |
 | `platform_admin` | Platform | Manage SPs, users, masters, documents (cannot manage super admins) |
@@ -117,6 +117,7 @@ AppealDesk Platform (operator)
 | `client` | SP | View-only: own org's litigations, proceedings, events. No creates. |
 
 **`getCurrentUser()`** (`lib/user.ts`) — always call this first in Server Actions and pages. Returns `SessionUser` with:
+
 - `role` — one of the 5 roles above
 - `org_id` — direct org (SP org for SP users, client org for client users)
 - `service_provider_id` — always the SP org ID (null for platform roles)
@@ -231,6 +232,7 @@ get_my_sp_id()   → uuid       -- SP org ID (null for platform roles)
 ```
 
 These power all RLS policies. Standard SP-table RLS pattern:
+
 ```sql
 USING (
   get_my_role() IN ('super_admin', 'platform_admin')
@@ -243,11 +245,11 @@ USING (
 
 ## Supabase Client Rules
 
-| Situation | Client to use |
-|-----------|--------------|
-| Server Component / page (read data) | `createClient()` — anon key, respects RLS |
-| Server Action (write data) | `createServiceClient()` — service role, bypasses RLS |
-| Client Component (browser) | `createClient()` from `lib/supabase/client.ts` |
+| Situation                           | Client to use                                        |
+| ----------------------------------- | ---------------------------------------------------- |
+| Server Component / page (read data) | `createClient()` — anon key, respects RLS            |
+| Server Action (write data)          | `createServiceClient()` — service role, bypasses RLS |
+| Client Component (browser)          | `createClient()` from `lib/supabase/client.ts`       |
 
 **Never** use `createServiceClient()` in Server Components/pages — it bypasses RLS and exposes all tenants' data.
 
@@ -290,8 +292,11 @@ export async function doSomething(input: InputType) {
 
   // 6. Audit log — fire-and-forget, never blocks main action
   await logAction(supabase, {
-    actorId: user.id, spId, action: "create",
-    entityType: "appeal", entityLabel: `Appeal for client`
+    actorId: user.id,
+    spId,
+    action: "create",
+    entityType: "appeal",
+    entityLabel: `Appeal for client`,
   });
 
   // 7. Clear Next.js cache
@@ -308,37 +313,42 @@ export async function doSomething(input: InputType) {
 const parseMulti = (v: string | string[] | undefined) =>
   typeof v === "string" ? v.split(",").filter(Boolean) : [];
 
-const filterClients  = parseMulti(params.client);
+const filterClients = parseMulti(params.client);
 const filterStatuses = parseMulti(params.status);
-const page    = parseInt(String(params.page ?? "1"));
+const page = parseInt(String(params.page ?? "1"));
 const perPage = parseInt(String(params.per_page ?? "25"));
 const from = (page - 1) * perPage;
-const to   = from + perPage - 1;
+const to = from + perPage - 1;
 
-let query = supabase.from("appeals")
+let query = supabase
+  .from("appeals")
   .select("...", { count: "exact" })
   .eq("service_provider_id", spId)
   .is("deleted_at", null);
 
-if (filterClients.length)  query = query.in("client_org_id", filterClients);
+if (filterClients.length) query = query.in("client_org_id", filterClients);
 if (filterStatuses.length) query = query.in("status", filterStatuses);
 query = query.order("created_at", { ascending: false }).range(from, to);
 
 // Fetch data + filter options in parallel
-const [{ data, count }, { data: clients }] = await Promise.all([query, filterOptionsQuery]);
+const [{ data, count }, { data: clients }] = await Promise.all([
+  query,
+  filterOptionsQuery,
+]);
 ```
 
 ---
 
 ## Storage Buckets
 
-| Bucket | Public | Max Size | Purpose |
-|--------|--------|----------|---------|
-| `org-files` | Yes | 5 MB | Logos, compliance docs, user attachments |
-| `appeal-documents` | No | 10 MB | Legacy case documents |
-| `templates` | No | 10 MB | SP document templates |
+| Bucket             | Public | Max Size | Purpose                                  |
+| ------------------ | ------ | -------- | ---------------------------------------- |
+| `org-files`        | Yes    | 5 MB     | Logos, compliance docs, user attachments |
+| `appeal-documents` | No     | 10 MB    | Legacy case documents                    |
+| `templates`        | No     | 10 MB    | SP document templates                    |
 
 Upload path conventions:
+
 - SP/client logos: `logos/{timestamp}-{filename}`
 - Platform logo: `platform/logo-{timestamp}-{filename}`
 - User docs: `user-docs/{timestamp}-{filename}`
@@ -349,39 +359,65 @@ Upload path conventions:
 
 ## Design System
 
-**Color palette — use hex directly in Tailwind classes:**
+**Single source of truth: `app/globals.css`.** All brand colors are design tokens
+declared in the `@theme` block; Tailwind v4 generates utilities from them
+(`bg-primary`, `text-heading`, `border-border`, `ring-accent`, …).
 
-| Purpose | Hex |
-|---------|-----|
-| Primary / Sidebar / Buttons | `#1E3A5F` |
-| Primary hover | `#162d4a` |
-| Accent (input borders) | `#4A6FA5` |
-| Accent light (hover bg) | `#EEF2FF` |
-| Page background | `#F8F9FA` |
-| Card surface | `#ffffff` |
-| Heading text | `#1A1A2E` |
-| Secondary text | `#6B7280` |
-| Muted / placeholder | `#9CA3AF` |
-| Border | `#E5E7EB` |
-| Success / Favourable / Low importance | `#16A34A` |
-| Warning / Doubtful / High importance | `#D97706` |
-| Danger / Unfavourable / Critical | `#DC2626` |
-| Info / Medium importance | `#2563EB` |
+**NEVER hardcode hex in components** — `bg-[#1E3A5F]` is banned. Always use the
+token utility. To rebrand, change the hex once in `globals.css` and rebuild.
+
+| Token utility suffix  | Purpose                               | Current hex |
+| --------------------- | ------------------------------------- | ----------- |
+| `primary`             | Sidebar, buttons                      | `#1E3A5F`   |
+| `primary-dark`        | Primary hover                         | `#162D4A`   |
+| `accent`              | Input borders, links, icons           | `#4A6FA5`   |
+| `accent-light`        | Hover bg on light surfaces            | `#EEF2FF`   |
+| `accent-faint`        | Event rows (appeal detail)            | `#F8FAFF`   |
+| `accent-tint`         | Proceeding section bg                 | `#EBF1F9`   |
+| `accent-tint-hover`   | Hover on tinted blue surfaces         | `#D8E3F5`   |
+| `page`                | Page background, row hover            | `#F8F9FA`   |
+| `surface`             | Cards, tables (or use `bg-white`)     | `#FFFFFF`   |
+| `surface-hover`       | Neutral hover, tab strips             | `#F3F4F6`   |
+| `stripe`              | Alternating table rows                | `#FAFAFA`   |
+| `heading`             | Headings, table header text           | `#1A1A2E`   |
+| `secondary`           | Body / data-cell text                 | `#6B7280`   |
+| `muted`               | Placeholders, row numbers             | `#9CA3AF`   |
+| `border`              | Default borders, row dividers         | `#E5E7EB`   |
+| `border-strong`       | Emphasized borders                    | `#D1D5DB`   |
+| `table-header`        | thead background                      | `#D1D9E6`   |
+| `table-header-border` | thead bottom border                   | `#B0BDD0`   |
+| `success`             | Success / Favourable / Low importance | `#16A34A`   |
+| `warning`             | Warning / Doubtful / High importance  | `#D97706`   |
+| `warning-light`       | Warning banner background             | `#FFFBEB`   |
+| `danger`              | Danger / Unfavourable / Critical      | `#DC2626`   |
+| `info`                | Info / Medium importance              | `#2563EB`   |
+
+**Canonical component classes** (defined in `@layer components` in `globals.css`)
+— use these or their exact utility recipes for new UI: `.btn-primary`,
+`.btn-secondary`, `.input-std`, `.card-std`, `.table-std`, `.thead-row`,
+`.th-std`, `.td-std`, `.td-rownum`.
 
 **Standard input:**
+
 ```
-w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]
+w-full px-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary
 ```
 
 **Primary button:**
+
 ```
-px-5 py-2.5 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60
+px-5 py-2.5 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition disabled:opacity-60
 ```
 
 **Card / section wrapper:**
+
 ```
-bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-sm
+bg-white border border-border rounded-xl p-6 shadow-sm
 ```
+
+**Non-CSS consumers** (PDF/Excel/DOCX exports, charts): import `BRAND` +
+`hexToRgb`/`hexPlain` from `lib/theme.ts` — never re-declare hex values.
+Keep `lib/theme.ts` in sync with `globals.css` when tokens change.
 
 **Font:** Inter (Google Fonts, loaded in root layout). No other font used.
 
@@ -389,14 +425,14 @@ bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-sm
 
 ## Naming Conventions
 
-| Thing | Convention | Example |
-|-------|------------|---------|
-| Route folders | kebab-case | `new-sp/`, `[id]/edit/` |
-| Component files | PascalCase | `AppealsClient.tsx`, `Sidebar.tsx` |
-| Server Actions | camelCase verbs | `createAppeal`, `updateProceedingStatus` |
-| DB columns | snake_case | `service_provider_id`, `deleted_at` |
-| TypeScript types | PascalCase | `SessionUser`, `ReportAppeal` |
-| Constants | SCREAMING_SNAKE or camelCase | `DEFAULT_PER_PAGE`, `INDIAN_STATES` |
+| Thing            | Convention                   | Example                                  |
+| ---------------- | ---------------------------- | ---------------------------------------- |
+| Route folders    | kebab-case                   | `new-sp/`, `[id]/edit/`                  |
+| Component files  | PascalCase                   | `AppealsClient.tsx`, `Sidebar.tsx`       |
+| Server Actions   | camelCase verbs              | `createAppeal`, `updateProceedingStatus` |
+| DB columns       | snake_case                   | `service_provider_id`, `deleted_at`      |
+| TypeScript types | PascalCase                   | `SessionUser`, `ReportAppeal`            |
+| Constants        | SCREAMING_SNAKE or camelCase | `DEFAULT_PER_PAGE`, `INDIAN_STATES`      |
 
 ---
 
@@ -414,6 +450,18 @@ bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-sm
 10. Filter URL params are comma-separated strings — always parse with `parseMulti()`
 11. `NEXT_PUBLIC_*` vars are baked in at **build time** — env changes require `npm run build`, not just PM2 restart
 
+## Debugging & Verification Rules
+
+- Always run a FULL production build (e.g. `npm run       build`) after code changes, not just lint + typecheck. Do not claim a fix works until the full build passes.
+
+- Diagnose the real root cause empirically before applying speculative fixes; reproduce the issue first and avoid risky changes to production behavior until the cause is confirmed.
+
+- The local setup is Windows + Next.js (TypeScript)  project. Use PowerShell for shell commands,watch for .next cache corruption (clear it when build errors like \_not-found appear), and note that ssr:false dynamic imports fail in Server Components
+
+- When verifying image-loading or visual fixes, confirm the result actually works (load the page/inspect output) rather than assuming a prior edit resolved it.
+
+- Before doing any git push or PR work, run `gh auth status` and confirm the active account has collaborator access to this repo. Report any auth problems before proceeding.
+
 ---
 
 ## Common Utilities
@@ -421,7 +469,11 @@ bg-white border border-[#E5E7EB] rounded-xl p-6 shadow-sm
 ```typescript
 import { getCurrentUser } from "@/lib/user";
 import { logAction } from "@/lib/audit";
-import { DEFAULT_PER_PAGE, PER_PAGE_OPTIONS, INDIAN_STATES } from "@/lib/constants";
+import {
+  DEFAULT_PER_PAGE,
+  PER_PAGE_OPTIONS,
+  INDIAN_STATES,
+} from "@/lib/constants";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { createClient } from "@/lib/supabase/client"; // browser only
 import type { SessionUser, Appeal, Proceeding } from "@/lib/types";
@@ -431,7 +483,7 @@ import type { SessionUser, Appeal, Proceeding } from "@/lib/types";
 
 ## Environment Variables
 
-```
+```env
 NEXT_PUBLIC_SUPABASE_URL       — Supabase project URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY  — Anon/publishable key (baked into JS bundle at build time)
 SUPABASE_SERVICE_ROLE_KEY      — Secret service key (server-side only — never expose to browser)
