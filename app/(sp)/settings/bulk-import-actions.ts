@@ -13,6 +13,16 @@ import type {
   ValidatedRow,
 } from "@/lib/bulk-import/types";
 
+// ─── Date conversion ──────────────────────────────────────────────────────────
+// Excel dates come out of getCellText as "DD/MM/YYYY"; PostgreSQL DATE needs "YYYY-MM-DD"
+function toPgDate(ddmmyyyy?: string): string | null {
+  if (!ddmmyyyy) return null;
+  const parts = ddmmyyyy.split("/");
+  if (parts.length !== 3 || parts[2].length !== 4) return null;
+  const [dd, mm, yyyy] = parts;
+  return `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
+}
+
 // ─── Template helper ───────────────────────────────────────────────────────────
 
 export async function getClientOrgsForTemplate(): Promise<ClientOrgOption[]> {
@@ -179,7 +189,7 @@ export async function importBulkClients(
         type: "client",
         parent_sp_id: spId!,
         business_type: row.business_type || null,
-        date_of_incorporation: row.date_of_incorporation || null,
+        date_of_incorporation: toPgDate(row.date_of_incorporation),
         address_line1: row.address_line1 || null,
         address_line2: row.address_line2 || null,
         city: row.city || null,
@@ -303,11 +313,11 @@ export async function importBulkTeamUsers(
       org_id: user.org_id!,
       mobile_country_code: "+91",
       mobile_number: row.mobile_number || null,
-      date_of_birth: row.date_of_birth || null,
+      date_of_birth: toPgDate(row.date_of_birth),
       department: row.department || null,
       designation: row.designation || null,
-      date_of_joining: row.date_of_joining || null,
-      date_of_leaving: row.date_of_leaving || null,
+      date_of_joining: toPgDate(row.date_of_joining),
+      date_of_leaving: toPgDate(row.date_of_leaving),
       address_line1: row.address_line1 || null,
       address_line2: row.address_line2 || null,
       city: row.city || null,
@@ -390,7 +400,7 @@ export async function importBulkClientUsers(
       org_id: clientOrgId,
       mobile_country_code: "+91",
       mobile_number: row.mobile_number || null,
-      date_of_birth: row.date_of_birth || null,
+      date_of_birth: toPgDate(row.date_of_birth),
       is_active: true,
     });
 

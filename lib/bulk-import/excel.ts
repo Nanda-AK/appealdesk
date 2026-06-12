@@ -4,8 +4,8 @@
 import { INDIAN_STATES } from "@/lib/constants";
 import type { ClientOrgOption, ParsedClientRow, ParsedTeamUserRow, ParsedClientUserRow } from "./types";
 import { BUSINESS_TYPES, ROLES } from "./validators";
-const DATA_START_ROW = 3; // row 1 = header, row 2 = example, data starts row 3
-const MAX_DATA_ROW = 502; // 500 data rows max
+const DATA_START_ROW = 2; // row 1 = header, data starts row 2
+const MAX_DATA_ROW = 501; // 500 data rows max (rows 2–501)
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -123,18 +123,6 @@ export async function downloadClientTemplate(): Promise<void> {
 
   styleHeaderRow(data.getRow(1));
 
-  data.addRow({
-    name: "Example: ABC Pvt Ltd",
-    pan: "AABCA1234P",
-    btype: "Company",
-    doi: "01/04/2010",
-    city: "Mumbai",
-    state: "Maharashtra",
-    pin: "400001",
-    country: "India",
-  });
-  styleExampleRow(data.getRow(2));
-
   const [btRef, stRef] = buildListsSheet(lists, [BUSINESS_TYPES, INDIAN_STATES]);
   addDropdownValidation(data, 3, btRef);  // col 3 = Business Type
   addDropdownValidation(data, 8, stRef);  // col 8 = State
@@ -172,16 +160,6 @@ export async function downloadTeamUserTemplate(): Promise<void> {
 
   styleHeaderRow(data.getRow(1));
 
-  data.addRow({
-    fn: "John",
-    ln: "Doe",
-    email: "john.doe@example.com",
-    role: "sp_staff",
-    dept: "Tax",
-    desig: "CA",
-  });
-  styleExampleRow(data.getRow(2));
-
   const [roleRef, stRef] = buildListsSheet(lists, [ROLES, INDIAN_STATES]);
   addDropdownValidation(data, 4, roleRef);   // col 4 = Role
   addDropdownValidation(data, 15, stRef);    // col 15 = State
@@ -209,14 +187,6 @@ export async function downloadClientUserTemplate(clientOrgs: ClientOrgOption[]):
   ];
 
   styleHeaderRow(data.getRow(1));
-
-  data.addRow({
-    fn: "Jane",
-    ln: "Smith",
-    email: "jane.smith@client.com",
-    org: clientOrgs[0]?.name ?? "Select from dropdown",
-  });
-  styleExampleRow(data.getRow(2));
 
   const orgNames = clientOrgs.map((o) => o.name);
   const [orgRef] = buildListsSheet(lists, [orgNames]);
@@ -247,7 +217,7 @@ export async function parseClientFile(file: File): Promise<ParsedClientRow[]> {
   const rows: ParsedClientRow[] = [];
 
   sheet.eachRow((row: any, rowNum: number) => {
-    if (rowNum < 3) return; // skip header (row 1) and example row (row 2)
+    if (rowNum < DATA_START_ROW) return; // skip header row 1
     const name = getCellText(row, 1);
     const pan = getCellText(row, 2);
     if (!name && !pan) return; // skip blank rows
@@ -287,7 +257,7 @@ export async function parseTeamUserFile(file: File): Promise<ParsedTeamUserRow[]
   const rows: ParsedTeamUserRow[] = [];
 
   sheet.eachRow((row: any, rowNum: number) => {
-    if (rowNum < 3) return; // skip header (row 1) and example row (row 2)
+    if (rowNum < DATA_START_ROW) return; // skip header row 1
     const first = getCellText(row, 1);
     const email = getCellText(row, 3);
     if (!first && !email) return;
@@ -325,7 +295,7 @@ export async function parseClientUserFile(file: File): Promise<ParsedClientUserR
   const rows: ParsedClientUserRow[] = [];
 
   sheet.eachRow((row: any, rowNum: number) => {
-    if (rowNum < 3) return; // skip header (row 1) and example row (row 2)
+    if (rowNum < DATA_START_ROW) return; // skip header row 1
     const first = getCellText(row, 1);
     const email = getCellText(row, 3);
     if (!first && !email) return;

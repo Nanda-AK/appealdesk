@@ -20,10 +20,11 @@ export const VALID_BUSINESS_TYPES = new Set([
   "OPC",
   "HUF",
   "Individual",
+  "Custom",
 ]);
 
 export const BUSINESS_TYPES = [
-  "Company", "Trust", "Partnership", "LLP", "Sole Proprietorship", "OPC", "HUF", "Individual",
+  "Company", "Trust", "Partnership", "LLP", "Sole Proprietorship", "OPC", "HUF", "Individual", "Custom",
 ];
 
 export const ROLES = ["sp_admin", "sp_staff"];
