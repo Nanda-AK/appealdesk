@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import BulkImportClient from "@/components/sp/BulkImportClient";
 import {
@@ -121,8 +122,8 @@ export default function SplitImportButton({
         )}
       </div>
 
-      {/* Modal */}
-      {modalOpen && (
+      {/* Modal — rendered in document.body via portal to escape overflow:hidden parents */}
+      {modalOpen && typeof document !== "undefined" && createPortal(
         <div
           className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4"
           onClick={handleClose}
@@ -156,7 +157,8 @@ export default function SplitImportButton({
               />
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

@@ -92,6 +92,7 @@ export default function BulkImportClient({ type: importType, clientOrgs = [], on
   }
 
   async function handleImport() {
+    if (loading) return;
     const validRowData = validatedRows
       .filter((r) => r.status === "valid")
       .map((r) => r.row);
@@ -373,7 +374,7 @@ export default function BulkImportClient({ type: importType, clientOrgs = [], on
           </p>
           <div className="flex gap-3">
             <button
-              onClick={onDone}
+              onClick={() => onDone?.()}
               className="px-5 py-2.5 text-sm border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-gray-50 transition"
             >
               Close
