@@ -628,7 +628,7 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
 
   // ── Shared UI helpers ──────────────────────────────────────────────
 
-  const inp = "w-full px-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary";
+  const inp = "w-full px-3 py-2 text-sm border border-accent rounded-lg focus:outline-none focus:ring-1 focus:ring-primary";
 
   const tabs = [
     { key: "resources" as const, label: "Resources", count: resources.length },
@@ -694,7 +694,7 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
             </svg>
             <input type="text" value={frmSearch} onChange={(e) => { setFrmSearch(e.target.value); setFrmPage(1); }}
               placeholder="Search form no., description, rule no., uploaded on…"
-              className="w-full pl-9 pr-3 py-2 text-sm border-2 border-accent rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white" />
+              className="w-full pl-9 pr-3 py-2 text-sm border border-accent rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary bg-white" />
           </div>
           <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
@@ -779,7 +779,7 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
               <div className="flex items-center gap-1.5">
                 <span className="text-xs">Show</span>
                 <select value={frmPerPage} onChange={(e) => { setFrmPerPage(Number(e.target.value)); setFrmPage(1); }}
-                  className="px-2 py-1 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                  className="px-2 py-1 text-sm border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary">
                   {PER_PAGE_OPTIONS.map((n) => <option key={n} value={n}>{n}</option>)}
                 </select>
                 <span className="text-xs">per page</span>
@@ -811,7 +811,7 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
             </svg>
             <input type="text" value={tplSearch} onChange={(e) => { setTplSearch(e.target.value); setTplPage(1); }}
               placeholder="Search template name or description…"
-              className="w-full pl-9 pr-3 py-2 text-sm border-2 border-accent rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white" />
+              className="w-full pl-9 pr-3 py-2 text-sm border border-accent rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary bg-white" />
           </div>
           <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
@@ -883,7 +883,7 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
               <div className="flex items-center gap-1.5">
                 <span className="text-xs">Show</span>
                 <select value={tplPerPage} onChange={(e) => { setTplPerPage(Number(e.target.value)); setTplPage(1); }}
-                  className="px-2 py-1 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                  className="px-2 py-1 text-sm border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary">
                   {PER_PAGE_OPTIONS.map((n) => <option key={n} value={n}>{n}</option>)}
                 </select>
                 <span className="text-xs">per page</span>
@@ -915,7 +915,7 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
             </svg>
             <input type="text" value={resSearch} onChange={(e) => { setResSearch(e.target.value); setResPage(1); }}
               placeholder="Search act, description, author, uploaded on…"
-              className="w-full pl-9 pr-3 py-2 text-sm border-2 border-accent rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white" />
+              className="w-full pl-9 pr-3 py-2 text-sm border border-accent rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary bg-white" />
           </div>
           <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
@@ -992,7 +992,7 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
               <div className="flex items-center gap-1.5">
                 <span className="text-xs">Show</span>
                 <select value={resPerPage} onChange={(e) => { setResPerPage(Number(e.target.value)); setResPage(1); }}
-                  className="px-2 py-1 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                  className="px-2 py-1 text-sm border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary">
                   {PER_PAGE_OPTIONS.map((n) => <option key={n} value={n}>{n}</option>)}
                 </select>
                 <span className="text-xs">per page</span>

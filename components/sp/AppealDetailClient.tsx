@@ -313,7 +313,7 @@ function fmtDateTime(d: string | null) {
 }
 
 
-const inp = "w-full px-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary";
+const inp = "w-full px-3 py-2 text-sm border border-accent rounded-lg focus:outline-none focus:ring-1 focus:ring-primary"; 
 
 function Field({ label, children, fullWidth }: { label: string; children: React.ReactNode; fullWidth?: boolean }) {
   return (
@@ -353,7 +353,7 @@ function DateTimeField({ value, onChange, className }: { value: string; onChange
         type="time"
         value={timePart}
         onChange={(e) => handleTimeChange(e.target.value)}
-        className="px-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary w-32 shrink-0"
+        className="px-3 py-2 text-sm border border-accent rounded-lg focus:outline-none focus:ring-1 focus:ring-primary w-32 shrink-0"
       />
     </div>
   );
@@ -484,8 +484,10 @@ function ProceedingAttachments({ proceedingId, docs, canEdit }: {
 
   return (
     <div className="px-5 pb-4 pt-1">
+      {/* CE-ATTACHMENTS-CARD: outer border="border-border", inner header bg="bg-page"(#FFFFFF), header border="border-border"(#C7C7C7) */}
       <div className="border border-border rounded-lg overflow-hidden">
         {/* Header */}
+        {/* CE-ATTACHMENTS-HEADER: bg="bg-page" text label="text-secondary" "Choose Files" button border="border-border" bg="bg-white" */}
         <div className="px-4 py-2 bg-page flex items-center justify-between border-b border-border">
           <span className="text-xs font-semibold text-secondary uppercase tracking-wide">Attachments ({activeDocs.length})</span>
           {canEdit && (
@@ -1361,6 +1363,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
   return (
     <div className="space-y-4">
 
+      {/* CE-APPEAL-CARD: outer card bg="bg-white", border="border-border", padding="p-5" */}
       {/* Appeal Header */}
       <div className="bg-white border border-border rounded-xl p-5 shadow-sm flex items-start justify-between gap-4">
         <div className={`grid ${detailHideAY ? "grid-cols-4" : "grid-cols-5"} gap-6 flex-1`}>
@@ -1404,9 +1407,11 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
             const procStatusCfg = STATUS_CFG[proc.status ?? "open"];
             const isExpanded = expandedProcs.has(proc.id);
 
+            // CE-PROC-CARD: proceeding outer card bg="bg-white" border="border-border"
             return (
               <div key={proc.id} className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
 
+                {/* CE-PROC-HEADER: header row bg="bg-accent-light"(#F7F7F7) hover="bg-accent-tint-hover"(#E8E8E8) */}
                 {/* ── Collapsed summary row (always visible) ── */}
                 <div
                   className="px-5 py-3.5 flex items-center gap-3 cursor-pointer bg-accent-light hover:bg-accent-tint-hover transition-colors select-none"
@@ -1460,6 +1465,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                 {/* ── Expanded content ── */}
                 {isExpanded && (
                   <div className="border-t border-border">
+                    {/* CE-PROC-DETAILS: expanded details panel bg="bg-accent-tint"(#F0F0F0) divider="border-table-header"(#D2D2D2) */}
                     {/* Proceeding details */}
                     <div className="px-5 py-4 grid grid-cols-3 gap-x-6 gap-y-4 border-b border-table-header bg-accent-tint">
                       <DetailRow label="Authority" value={[proc.authority_type, proc.authority_name].filter(Boolean).join(" · ")} />
@@ -1526,6 +1532,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                         return (
                           <div className={isSub ? "bg-white border-t border-surface-hover" : ""}>
                             {/* Single-record row — no detail panel below */}
+                            {/* CE-EVENT-ROW: event row bg="bg-accent-faint"(#F9F9F9) hover="bg-page"(#FFFFFF) | Main tag: bg="bg-accent-light" text="text-accent" | Sub tag: bg="bg-purple-50" text="text-purple-700" */}
                             <div
                               className={`flex items-center gap-3 px-3 py-2.5 transition-colors ${isSub ? "pl-6 bg-accent-faint" : "bg-accent-faint cursor-pointer hover:bg-page"}`}
                             >

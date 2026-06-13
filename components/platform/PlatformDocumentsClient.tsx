@@ -67,7 +67,7 @@ const blankForm: FormInput = {
   url: "",
 };
 const inp =
-  "w-full px-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary";
+  "w-full px-3 py-2 text-sm border border-accent rounded-lg focus:outline-none focus:ring-1 focus:ring-primary";
 
 function pageNums(current: number, total: number): (number | "...")[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
@@ -384,7 +384,7 @@ export default function PlatformDocumentsClient({
                 setFrmPage(1);
               }}
               placeholder="Search form no., description, rule no., uploaded on…"
-              className="w-full pl-9 pr-3 py-2 text-sm border-2 border-accent rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white"
+              className="w-full pl-9 pr-3 py-2 text-sm border border-accent rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary bg-white"
             />
           </div>
           <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
@@ -563,7 +563,7 @@ export default function PlatformDocumentsClient({
                     setFrmPerPage(Number(e.target.value));
                     setFrmPage(1);
                   }}
-                  className="px-2 py-1 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="px-2 py-1 text-sm border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   {PER_PAGE_OPTIONS.map((n) => (
                     <option key={n} value={n}>
@@ -642,7 +642,7 @@ export default function PlatformDocumentsClient({
                 setTplPage(1);
               }}
               placeholder="Search template name or description…"
-              className="w-full pl-9 pr-3 py-2 text-sm border-2 border-accent rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white"
+              className="w-full pl-9 pr-3 py-2 text-sm border border-accent rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary bg-white"
             />
           </div>
           {pagedTemplates.length === 0 ? (
@@ -812,7 +812,7 @@ export default function PlatformDocumentsClient({
                     setTplPerPage(Number(e.target.value));
                     setTplPage(1);
                   }}
-                  className="px-2 py-1 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="px-2 py-1 text-sm border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   {PER_PAGE_OPTIONS.map((n) => (
                     <option key={n} value={n}>

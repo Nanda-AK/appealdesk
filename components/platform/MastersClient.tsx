@@ -34,7 +34,7 @@ interface Props {
 
 // ─── Shared inline input style ────────────────────────────────────────────────
 const inp =
-  "px-2 py-1 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary";
+  "px-2 py-1 text-sm border border-accent rounded-lg focus:outline-none focus:ring-1 focus:ring-primary";
 
 // ─── Shared icon SVG paths ────────────────────────────────────────────────────
 const TrashIcon = ({ className }: { className: string }) => (
@@ -260,7 +260,7 @@ export default function MastersClient({ records, userRole }: Props) {
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder={`Add new ${currentLabel.slice(0, -1).toLowerCase()}…`}
-                className="flex-1 px-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                className="flex-1 px-3 py-2 text-sm border border-accent rounded-lg focus:outline-none focus:ring-1 focus:ring-primary"
               />
               <button
                 type="submit"
@@ -296,7 +296,7 @@ export default function MastersClient({ records, userRole }: Props) {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search…"
-                className="w-full pl-9 pr-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white"
+                className="w-full pl-9 pr-3 py-2 text-sm border border-accent rounded-lg focus:outline-none focus:ring-1 focus:ring-primary bg-white"
               />
             </div>
           </div>

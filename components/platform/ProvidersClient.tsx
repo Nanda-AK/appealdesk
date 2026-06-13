@@ -101,7 +101,7 @@ function MultiSelect({
   return (
     <div ref={containerRef} className="relative">
       <div
-        className="flex items-center gap-1.5 px-3 py-2 text-sm border-2 border-accent rounded-lg bg-white cursor-pointer min-w-[144px] max-w-[200px] h-[38px] select-none"
+        className="flex items-center gap-1.5 px-3 py-2 text-sm border border-accent rounded-lg bg-white cursor-pointer min-w-[144px] max-w-[200px] h-[38px] select-none"
         onClick={() => (open ? applyAndClose() : openDropdown())}
       >
         <span
@@ -290,7 +290,7 @@ export default function ProvidersClient({ providers, userRole }: Props) {
             value={filterName}
             onChange={(e) => setFilterName(e.target.value)}
             placeholder="Search name…"
-            className="pl-9 pr-3 py-2 text-sm border-2 border-accent rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary h-[38px] w-48"
+            className="pl-9 pr-3 py-2 text-sm border border-accent rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary h-[38px] w-48"
           />
           {filterName && (
             <button
@@ -327,7 +327,7 @@ export default function ProvidersClient({ providers, userRole }: Props) {
         {/* Sort by Added date */}
         <button
           onClick={() => setSortAsc((v) => !v)}
-          className="flex items-center gap-1.5 px-3 py-2 text-sm border-2 border-accent rounded-lg hover:bg-page transition text-heading h-[38px]"
+          className="flex items-center gap-1.5 px-3 py-2 text-sm border border-accent rounded-lg hover:bg-page transition text-heading h-[38px]"
         >
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             {sortAsc

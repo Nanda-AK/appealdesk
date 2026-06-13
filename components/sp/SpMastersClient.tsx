@@ -72,7 +72,7 @@ export default function SpMastersClient({ records }: Props) {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
               </svg>
               <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name or status…"
-                className="w-full pl-9 pr-3 py-2 text-sm border-2 border-accent rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white" />
+                className="w-full pl-9 pr-3 py-2 text-sm border border-accent rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary bg-white" />
             </div>
           </div>
 

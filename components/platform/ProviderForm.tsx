@@ -219,7 +219,7 @@ export default function ProviderForm({ mode, providerId, initialData, initialCom
     }
   }
 
-  const inp = "w-full px-2.5 py-1.5 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary";
+  const inp = "w-full px-2.5 py-1.5 text-sm border border-accent rounded-lg focus:outline-none focus:ring-1 focus:ring-primary";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
@@ -234,18 +234,18 @@ export default function ProviderForm({ mode, providerId, initialData, initialCom
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
             <label className="block text-xs font-medium text-secondary mb-1.5">Service Provider Name <span className="text-red-500">*</span></label>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Service provider name" autoComplete="off" className="w-full px-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Service provider name" autoComplete="off" className="w-full px-3 py-2 text-sm border border-accent rounded-lg focus:outline-none focus:ring-1 focus:ring-primary" />
           </div>
           <div>
             <label className="block text-xs font-medium text-secondary mb-1.5">Business Type <span className="text-red-500">*</span></label>
-            <select value={businessType} onChange={(e) => setBusinessType(e.target.value)} className="w-full px-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+            <select value={businessType} onChange={(e) => setBusinessType(e.target.value)} className="w-full px-3 py-2 text-sm border border-accent rounded-lg focus:outline-none focus:ring-1 focus:ring-primary">
               <option value="">Select type</option>
               {[...BUSINESS_TYPES].sort().map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-xs font-medium text-secondary mb-1.5">Date of Incorporation <span className="text-red-500">*</span></label>
-            <input type="date" value={dateOfIncorporation} onChange={(e) => setDateOfIncorporation(e.target.value)} className="w-full px-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
+            <input type="date" value={dateOfIncorporation} onChange={(e) => setDateOfIncorporation(e.target.value)} className="w-full px-3 py-2 text-sm border border-accent rounded-lg focus:outline-none focus:ring-1 focus:ring-primary" />
           </div>
           <div className="col-span-2">
             <label className="block text-xs font-medium text-secondary mb-1.5">Logo <span className="text-muted">(JPG/PNG, max 2MB)</span></label>
@@ -273,15 +273,15 @@ export default function ProviderForm({ mode, providerId, initialData, initialCom
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
             <label className="block text-xs font-medium text-secondary mb-1.5">Address Line 1 <span className="text-muted">(Building, Road)</span></label>
-            <input value={address1} onChange={(e) => setAddress1(e.target.value)} className="w-full px-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
+            <input value={address1} onChange={(e) => setAddress1(e.target.value)} className="w-full px-3 py-2 text-sm border border-accent rounded-lg focus:outline-none focus:ring-1 focus:ring-primary" />
           </div>
           <div className="col-span-2">
             <label className="block text-xs font-medium text-secondary mb-1.5">Address Line 2 <span className="text-muted">(Area, Locality)</span></label>
-            <input value={address2} onChange={(e) => setAddress2(e.target.value)} className="w-full px-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
+            <input value={address2} onChange={(e) => setAddress2(e.target.value)} className="w-full px-3 py-2 text-sm border border-accent rounded-lg focus:outline-none focus:ring-1 focus:ring-primary" />
           </div>
           <div>
             <label className="block text-xs font-medium text-secondary mb-1.5">City</label>
-            <input value={city} onChange={(e) => setCity(e.target.value)} className="w-full px-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
+            <input value={city} onChange={(e) => setCity(e.target.value)} className="w-full px-3 py-2 text-sm border border-accent rounded-lg focus:outline-none focus:ring-1 focus:ring-primary" />
           </div>
           <div>
             <label className="block text-xs font-medium text-secondary mb-1.5">State</label>
@@ -291,23 +291,23 @@ export default function ProviderForm({ mode, providerId, initialData, initialCom
                 if (e.target.value === "Other") { setStateOther(true); setState(""); }
                 else { setStateOther(false); setState(e.target.value); }
               }}
-              className="w-full px-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-3 py-2 text-sm border border-accent rounded-lg focus:outline-none focus:ring-1 focus:ring-primary"
             >
               <option value="">Select state / UT</option>
               {INDIAN_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
               <option value="Other">Other (specify)</option>
             </select>
             {stateOther && (
-              <input value={state} onChange={(e) => setState(e.target.value)} placeholder="Enter state / UT name" className="w-full px-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary mt-2" />
+              <input value={state} onChange={(e) => setState(e.target.value)} placeholder="Enter state / UT name" className="w-full px-3 py-2 text-sm border border-accent rounded-lg focus:outline-none focus:ring-1 focus:ring-primary mt-2" />
             )}
           </div>
           <div>
             <label className="block text-xs font-medium text-secondary mb-1.5">PIN Code</label>
-            <input value={pinCode} onChange={(e) => setPinCode(e.target.value)} maxLength={6} className="w-full px-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
+            <input value={pinCode} onChange={(e) => setPinCode(e.target.value)} maxLength={6} className="w-full px-3 py-2 text-sm border border-accent rounded-lg focus:outline-none focus:ring-1 focus:ring-primary" />
           </div>
           <div>
             <label className="block text-xs font-medium text-secondary mb-1.5">Country</label>
-            <input value={country} onChange={(e) => setCountry(e.target.value)} className="w-full px-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
+            <input value={country} onChange={(e) => setCountry(e.target.value)} className="w-full px-3 py-2 text-sm border border-accent rounded-lg focus:outline-none focus:ring-1 focus:ring-primary" />
           </div>
         </div>
         </div>

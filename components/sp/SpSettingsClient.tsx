@@ -71,7 +71,7 @@ function EyeIcon({ visible }: { visible: boolean }) {
 
 export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
   const ro = !isAdmin; // read-only for non-admins
-  const fieldClass = `w-full px-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${ro ? "bg-page text-secondary cursor-not-allowed" : ""}`;
+  const fieldClass = `w-full px-3 py-2 text-sm border border-accent rounded-lg focus:outline-none focus:ring-1 focus:ring-primary ${ro ? "bg-page text-secondary cursor-not-allowed" : ""}`;
 
   // Profile state
   const [name, setName] = useState(org?.name ?? "");
@@ -227,7 +227,7 @@ export default function SpSettingsClient({ org, compliance, isAdmin }: Props) {
     }
   }
 
-  const cellInp = `w-full px-2.5 py-1.5 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${ro ? "bg-page text-secondary cursor-not-allowed" : ""}`;
+  const cellInp = `w-full px-2.5 py-1.5 text-sm border border-accent rounded-lg focus:outline-none focus:ring-1 focus:ring-primary ${ro ? "bg-page text-secondary cursor-not-allowed" : ""}`;
 
   return (
     <div className="space-y-6">

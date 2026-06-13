@@ -12,7 +12,7 @@ interface Props {
   providers: SP[];
 }
 
-const inp = "w-full px-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary";
+const inp = "w-full px-3 py-2 text-sm border border-accent rounded-lg focus:outline-none focus:ring-1 focus:ring-primary";
 
 function Field({ label, required, children, full }: { label: string; required?: boolean; children: React.ReactNode; full?: boolean }) {
   return (
@@ -214,7 +214,7 @@ export default function PlatformSpUserForm({ providers }: Props) {
 
           <Field label="Mobile">
             <div className="flex gap-2">
-              <div className="flex items-center border-2 border-accent rounded-lg overflow-hidden flex-shrink-0 w-24 focus-within:ring-2 focus-within:ring-primary">
+              <div className="flex items-center border border-accent rounded-lg overflow-hidden flex-shrink-0 w-24 focus-within:ring-1 focus-within:ring-primary">
                 <span className="px-2 py-2 text-sm text-secondary bg-surface-hover border-r border-accent select-none">+</span>
                 <input type="text" inputMode="numeric"
                   value={(form.mobile_country_code ?? "+91").replace(/^\+/, "")}

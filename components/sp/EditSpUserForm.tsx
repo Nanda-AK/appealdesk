@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { updateUser, UserEditInput } from "@/app/(sp)/users/actions";
 import { INDIAN_STATES } from "@/lib/constants";
 
-const inp = "w-full px-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary";
+const inp = "w-full px-3 py-2 text-sm border border-accent rounded-lg focus:outline-none focus:ring-1 focus:ring-primary";
 
 function Field({ label, required, children, full }: { label: string; required?: boolean; children: React.ReactNode; full?: boolean }) {
   return (
@@ -232,7 +232,7 @@ export default function EditSpUserForm({ user }: Props) {
 
           <Field label="Mobile">
             <div className="flex gap-2">
-              <div className="flex items-center border-2 border-accent rounded-lg overflow-hidden flex-shrink-0 w-24 focus-within:ring-2 focus-within:ring-primary">
+              <div className="flex items-center border border-accent rounded-lg overflow-hidden flex-shrink-0 w-24 focus-within:ring-1 focus-within:ring-primary">
                 <span className="px-2 py-2 text-sm text-secondary bg-surface-hover border-r border-accent select-none">+</span>
                 <input type="text" inputMode="numeric"
                   value={(form.mobile_country_code ?? "+91").replace(/^\+/, "")}
@@ -262,7 +262,7 @@ export default function EditSpUserForm({ user }: Props) {
               <input type={showPassword ? "text" : "password"} value={form.new_password ?? ""}
                 onChange={(e) => set("new_password")(e.target.value)} placeholder="Leave blank to keep current"
                 autoComplete="new-password"
-                className="w-full px-3 py-2 pr-9 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
+                className="w-full px-3 py-2 pr-9 text-sm border border-accent rounded-lg focus:outline-none focus:ring-1 focus:ring-primary" />
               <button type="button" onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-secondary">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -280,7 +280,7 @@ export default function EditSpUserForm({ user }: Props) {
               <input type={showConfirm ? "text" : "password"} value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Repeat new password"
                 autoComplete="new-password"
-                className={`w-full px-3 py-2 pr-9 text-sm border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${confirmPassword && confirmPassword !== form.new_password ? "border-red-400" : "border-accent"}`} />
+                className={`w-full px-3 py-2 pr-9 text-sm border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary ${confirmPassword && confirmPassword !== form.new_password ? "border-red-400" : "border-accent"}`} />
               <button type="button" onClick={() => setShowConfirm(!showConfirm)}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-secondary">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

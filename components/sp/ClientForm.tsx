@@ -254,8 +254,8 @@ export default function ClientForm({ mode, clientId, initialData, initialComplia
     }
   }
 
-  const fieldClass = `w-full px-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${readOnly ? "bg-page text-secondary cursor-not-allowed" : ""}`;
-  const inp = `w-full px-2.5 py-1.5 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${readOnly ? "bg-page text-secondary cursor-not-allowed" : ""}`;
+  const fieldClass = `w-full px-3 py-2 text-sm border border-accent rounded-lg focus:outline-none focus:ring-1 focus:ring-primary ${readOnly ? "bg-page text-secondary cursor-not-allowed" : ""}`;
+  const inp = `w-full px-2.5 py-1.5 text-sm border border-accent rounded-lg focus:outline-none focus:ring-1 focus:ring-primary ${readOnly ? "bg-page text-secondary cursor-not-allowed" : ""}`;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">

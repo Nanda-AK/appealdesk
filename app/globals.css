@@ -15,35 +15,49 @@
  * ─────────────────────────────────────────────────────────────────────────
  */
 @theme {
-  /* ── Brand ─────────────────────────────────────────────────────────── */
-  --color-primary: #1e3a5f; /* sidebar, buttons, headings accents  */
-  --color-primary-dark: #162d4a; /* primary hover                       */
-  --color-accent: #4a6fa5; /* input borders, links, icons         */
-  --color-accent-light: #eef2ff; /* hover bg on light surfaces          */
-  --color-accent-faint: #f8faff; /* event rows inside proceedings       */
-  --color-accent-tint: #ebf1f9; /* proceeding section background       */
-  --color-accent-tint-hover: #d8e3f5; /* hover on tinted blue surfaces    */
+  /*
+   * ── TaxVeteran Brand Palette ─────────────────────────────────────────
+   *  Source: taxveteran-colour-palette.docx
+   *  Monochromatic charcoal/white scheme — to rebrand, change hex here
+   *  and run `npm run build`. Never hardcode hex in components.
+   * ─────────────────────────────────────────────────────────────────────
+   */
+
+  /* ── Brand (charcoal, replaces navy blue) ───────────────────────────── */
+  --color-primary: #363636; /* sidebar background, action buttons  */
+  --color-primary-dark: #2f2f2f; /* primary hover / pressed state       */
+  --color-accent: #4a4a4a; /* input borders, interactive icons    */
+  --color-accent-light: #f7f7f7; /* hover bg on light surfaces          */
+  --color-accent-faint: #f9f9f9; /* event rows inside proceedings       */
+  --color-accent-tint: #f0f0f0; /* proceeding section background       */
+  --color-accent-tint-hover: #e8e8e8; /* hover on tinted surfaces         */
+
+  /* ── Sidebar-specific ───────────────────────────────────────────────── */
+  --color-sidebar: #363636; /* sidebar bg (matches primary)        */
+  --color-sidebar-active: #4a4a4a; /* active / hovered nav item           */
+  --color-sidebar-muted: #d6d6d6; /* subtitle text on dark sidebar       */
+  --color-sidebar-avatar: #2f2f2f; /* avatar tile on dark sidebar         */
 
   /* ── Surfaces ──────────────────────────────────────────────────────── */
-  --color-page: #f8f9fa; /* page background                     */
+  --color-page: #ffffff; /* page background (pure white)        */
   --color-surface: #ffffff; /* cards, tables                       */
-  --color-surface-hover: #f3f4f6; /* neutral hover / tab strip bg        */
-  --color-stripe: #fafafa; /* alternating table row stripe        */
+  --color-surface-hover: #f7f7f7; /* neutral hover / tab strip bg        */
+  --color-stripe: #f7f7f7; /* alternating table row stripe        */
 
   /* ── Text ──────────────────────────────────────────────────────────── */
-  --color-heading: #1a1a2e; /* headings, table header text         */
-  --color-secondary: #6b7280; /*  body / data-cell text optional grey:#1E293B      */
+  --color-heading: #111111; /* headings, table header text         */
+  --color-secondary: #4a4a4a; /* body / data-cell text               */
   --color-muted: #9ca3af; /* placeholders, row numbers, hints    */
 
   /* ── Borders ───────────────────────────────────────────────────────── */
-  --color-border: #e5e7eb; /* default border + row dividers       */
-  --color-border-strong: #d1d5db; /* emphasized borders, scrollbar thumb */
+  --color-border: #c7c7c7; /* default border + row dividers       */
+  --color-border-strong: #b0b0b0; /* emphasized borders, scrollbar thumb */
 
   /* ── Tables ────────────────────────────────────────────────────────── */
-  --color-table-header: #d1d9e6; /* thead background (fixed)       */
-  --color-table-header-border: #b0bdd0; /* thead bottom border            */
+  --color-table-header: #d2d2d2; /* thead background (neutral gray)     */
+  --color-table-header-border: #b8b8b8; /* thead bottom border              */
 
-  /* ── Status ────────────────────────────────────────────────────────── */
+  /* ── Status (semantic — unchanged across rebrands) ─────────────────── */
   --color-success: #16a34a;
   --color-warning: #d97706;
   --color-warning-light: #fffbeb; /* warning banner background           */
@@ -96,7 +110,7 @@ body {
 
   /* Standard text input / select */
   .input-std {
-    @apply w-full px-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary;
+    @apply w-full px-3 py-2 text-sm border border-accent rounded-lg focus:outline-none focus:ring-1 focus:ring-primary;
   }
 
   /* Card / section wrapper */

@@ -48,7 +48,7 @@ const DEFAULT_BASE_URL = "https://apisandbox.whitebooks.in";
 
 export default function SpApiSettingsClient({ initial, isAdmin }: Props) {
   const ro = !isAdmin;
-  const fieldClass = `w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] ${ro ? "bg-[#F8F9FA] text-[#6B7280] cursor-not-allowed" : ""}`;
+  const fieldClass = `w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary ${ro ? "bg-page text-secondary cursor-not-allowed" : ""}`;
 
   // ── Credentials form state ──────────────────────────────────────────────────
   const [clientId, setClientId] = useState(initial?.whitebooks_client_id ?? "");
@@ -225,7 +225,7 @@ export default function SpApiSettingsClient({ initial, isAdmin }: Props) {
               <button
                 type="submit"
                 disabled={saving}
-                className="px-5 py-2.5 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60"
+                className="px-5 py-2.5 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition disabled:opacity-60"
               >
                 {saving ? "Saving…" : "Save API Settings"}
               </button>
@@ -250,14 +250,14 @@ export default function SpApiSettingsClient({ initial, isAdmin }: Props) {
               onChange={(e) => { setTestGstin(e.target.value.toUpperCase()); setTestResult(null); setTestError(null); setTestLog(null); setShowLogs(false); }}
               placeholder="e.g. 27AAACR5055K1Z7"
               maxLength={15}
-              className="w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] font-mono tracking-wide"
+              className="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary font-mono tracking-wide"
               required
             />
           </div>
           <button
             type="submit"
             disabled={testing || !testGstin.trim()}
-            className="px-5 py-2 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60 flex items-center gap-2 whitespace-nowrap"
+            className="px-5 py-2 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition disabled:opacity-60 flex items-center gap-2 whitespace-nowrap"
           >
             {testing ? (
               <>

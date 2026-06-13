@@ -124,7 +124,7 @@ function MultiSelect({
   return (
     <div ref={containerRef} className="relative">
       <div
-        className="flex items-center gap-1.5 px-3 py-2 text-sm border-2 border-accent rounded-lg bg-white cursor-pointer min-w-[144px] max-w-[200px] h-[38px] select-none"
+        className="flex items-center gap-1.5 px-3 py-2 text-sm border border-accent rounded-lg bg-white cursor-pointer min-w-[144px] max-w-[200px] h-[38px] select-none"
         onClick={() => (open ? applyAndClose() : openDropdown())}
       >
         <span className={`flex-1 truncate ${!hasValue ? "text-muted" : isMulti ? "font-medium text-primary" : "text-heading"}`}>
@@ -330,7 +330,7 @@ export default function PlatformUsersClient({ platformUsers, spAdmins, currentUs
             />
             <button
               onClick={() => setPSortAsc(!pSortAsc)}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm border-2 border-accent rounded-lg hover:bg-page transition text-heading h-[38px]"
+              className="flex items-center gap-1.5 px-3 py-2 text-sm border border-accent rounded-lg hover:bg-page transition text-heading h-[38px]"
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 {pSortAsc
@@ -432,7 +432,7 @@ export default function PlatformUsersClient({ platformUsers, spAdmins, currentUs
             />
             <button
               onClick={() => setSSortAsc(!sSortAsc)}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm border-2 border-accent rounded-lg hover:bg-page transition text-heading h-[38px]"
+              className="flex items-center gap-1.5 px-3 py-2 text-sm border border-accent rounded-lg hover:bg-page transition text-heading h-[38px]"
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 {sSortAsc

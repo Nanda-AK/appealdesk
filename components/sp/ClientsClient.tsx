@@ -106,10 +106,10 @@ function MultiSelect({
   return (
     <div ref={containerRef} className="relative">
       <div
-        className="flex items-center gap-1.5 px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg bg-white cursor-pointer min-w-[144px] max-w-[200px] h-[38px] select-none"
+        className="flex items-center gap-1.5 px-3 py-2 text-sm border border-border rounded-lg bg-white cursor-pointer min-w-[144px] max-w-[200px] h-[38px] select-none"
         onClick={() => (open ? applyAndClose() : openDropdown())}
       >
-        <span className={`flex-1 truncate ${!hasValue ? "text-[#9CA3AF]" : isMulti ? "font-medium text-[#1E3A5F]" : "text-[#1A1A2E]"}`}>
+        <span className={`flex-1 truncate ${!hasValue ? "text-[#9CA3AF]" : isMulti ? "font-medium text-primary" : "text-[#1A1A2E]"}`}>
           {triggerText}
         </span>
         {hasValue ? (
@@ -130,7 +130,7 @@ function MultiSelect({
             <div className="p-2 border-b border-[#F3F4F6] shrink-0">
               <input
                 ref={inputRef}
-                className="w-full px-2 py-1.5 text-sm border border-[#E5E7EB] rounded focus:outline-none focus:ring-1 focus:ring-[#4A6FA5]"
+                className="w-full px-2 py-1.5 text-sm border border-[#E5E7EB] rounded focus:outline-none focus:ring-1 focus:ring-primary"
                 placeholder="Search…"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -142,7 +142,7 @@ function MultiSelect({
               <span className="text-xs text-[#6B7280]">{pending.length} selected</span>
               <button
                 onMouseDown={(e) => { e.preventDefault(); setPending([]); pendingRef.current = []; }}
-                className="text-xs text-[#4A6FA5] hover:underline"
+                className="text-xs text-accent hover:underline"
               >Clear</button>
             </div>
           )}
@@ -156,9 +156,9 @@ function MultiSelect({
                   <button
                     key={o.id}
                     onMouseDown={(e) => { e.preventDefault(); toggle(o.id); }}
-                    className={`w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-[#F8F9FA] ${isChecked ? "bg-blue-50/50" : ""}`}
+                    className={`w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-[#F8F9FA] ${isChecked ? "bg-accent-light" : ""}`}
                   >
-                    <div className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors ${isChecked ? "bg-[#1E3A5F] border-[#1E3A5F]" : "border-[#D1D5DB]"}`}>
+                    <div className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors ${isChecked ? "bg-primary border-primary" : "border-[#D1D5DB]"}`}>
                       {isChecked && (
                         <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -302,7 +302,7 @@ export default function ClientsClient({
         {/* Sort toggle */}
         <button
           onClick={() => push({ sort_dir: currentSortDir === "asc" ? "desc" : "asc" })}
-          className="flex items-center gap-1.5 px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg hover:bg-[#F8F9FA] transition text-[#1A1A2E]"
+          className="flex items-center gap-1.5 px-3 py-2 text-sm border border-border rounded-lg hover:bg-[#F8F9FA] transition text-[#1A1A2E]"
         >
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             {currentSortDir === "asc"
@@ -327,7 +327,7 @@ export default function ClientsClient({
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-[#D1D9E6] border-b-2 border-[#B0BDD0]">
+              <tr className="bg-table-header border-b-2 border-table-header-border">
                 <th className="text-center px-4 py-3 font-medium text-[#1A1A2E] w-10">#</th>
                 <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Name</th>
                 <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Business Type</th>
@@ -367,7 +367,7 @@ export default function ClientsClient({
                         <Link
                           href={`/clients/${client.id}`}
                           title={isAdmin ? "Edit client" : "View client"}
-                          className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-[#4A6FA5] hover:text-[#1E3A5F] inline-flex"
+                          className="p-1.5 rounded hover:bg-[#F3F4F6] transition-colors text-accent hover:text-primary inline-flex"
                         >
                           {isAdmin ? (
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>

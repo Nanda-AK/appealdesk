@@ -150,8 +150,8 @@ export default function BulkImportClient({ type: importType, clientOrgs = [], on
       {/* ── idle: single upload area ── */}
       {step === "idle" && (
         <div className="flex flex-col gap-3">
-          <label className="flex flex-col items-center justify-center border-2 border-dashed border-[#4A6FA5] rounded-lg p-8 cursor-pointer hover:bg-[#EEF2FF] transition">
-            <svg className="w-8 h-8 text-[#4A6FA5] mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <label className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg p-8 cursor-pointer hover:bg-accent-light transition">
+            <svg className="w-8 h-8 text-accent mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
             </svg>
             <span className="text-sm font-medium text-[#1A1A2E]">Click to upload .xlsx file</span>
@@ -313,7 +313,7 @@ export default function BulkImportClient({ type: importType, clientOrgs = [], on
                 onChange={(e) => setDefaultPassword(e.target.value)}
                 placeholder="Min. 8 characters"
                 maxLength={128}
-                className="w-full px-3 py-2 text-sm border-2 border-[#4A6FA5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]"
+                className="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
           )}
@@ -329,7 +329,7 @@ export default function BulkImportClient({ type: importType, clientOrgs = [], on
             <button
               onClick={handleImport}
               disabled={validRows.length === 0 || loading}
-              className="px-5 py-2 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition disabled:opacity-60"
+              className="px-5 py-2 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition disabled:opacity-60"
             >
               Import {validRows.length} valid rows
             </button>
@@ -341,7 +341,7 @@ export default function BulkImportClient({ type: importType, clientOrgs = [], on
       {step === "importing" && (
         <div className="flex items-center justify-center py-16">
           <div className="flex flex-col items-center gap-3">
-            <div className="w-8 h-8 border-4 border-[#1E3A5F] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
             <p className="text-sm text-[#6B7280]">Importing...</p>
           </div>
         </div>
@@ -381,7 +381,7 @@ export default function BulkImportClient({ type: importType, clientOrgs = [], on
             </button>
             <button
               onClick={handleReset}
-              className="px-5 py-2.5 text-sm bg-[#1E3A5F] hover:bg-[#162d4a] text-white rounded-lg font-medium transition"
+              className="px-5 py-2.5 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition"
             >
               Import Another
             </button>

@@ -2,22 +2,30 @@
  * AppealDesk brand palette for non-CSS consumers (PDF/Excel/DOCX exports,
  * charts, emails). The CSS source of truth lives in app/globals.css (@theme);
  * keep the hex values here in sync with it.
+ *
+ * TaxVeteran palette — monochromatic charcoal/white scheme.
  */
 export const BRAND = {
-  primary: "#1E3A5F",
-  primaryDark: "#162D4A",
-  accent: "#4A6FA5",
-  accentLight: "#EEF2FF",
-  heading: "#1A1A2E",
-  secondary: "#6B7280",
+  primary: "#363636",
+  primaryDark: "#2F2F2F",
+  accent: "#4A4A4A",
+  accentLight: "#F7F7F7",
+  heading: "#111111",
+  secondary: "#4A4A4A",
   muted: "#9CA3AF",
-  border: "#E5E7EB",
-  borderStrong: "#D1D5DB",
-  tableHeader: "#D1D9E6",
-  tableHeaderBorder: "#B0BDD0",
-  page: "#F8F9FA",
-  surfaceHover: "#F3F4F6",
-  stripe: "#FAFAFA",
+  border: "#C7C7C7",
+  borderStrong: "#B0B0B0",
+  tableHeader: "#D2D2D2",
+  tableHeaderBorder: "#B8B8B8",
+  page: "#FFFFFF",
+  surfaceHover: "#F7F7F7",
+  stripe: "#F7F7F7",
+  // sidebar-specific
+  sidebar: "#363636",
+  sidebarActive: "#4A4A4A",
+  sidebarMuted: "#D6D6D6",
+  sidebarAvatar: "#2F2F2F",
+  // semantic — unchanged across rebrands
   success: "#16A34A",
   warning: "#D97706",
   warningLight: "#FFFBEB",

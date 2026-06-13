@@ -45,7 +45,7 @@ interface Props {
   clientUsersByOrg: Record<string, { id: string; first_name: string; last_name: string }[]>;
 }
 
-const inp = "w-full px-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary";
+const inp = "w-full px-3 py-2 text-sm border border-accent rounded-lg focus:outline-none focus:ring-1 focus:ring-primary";
 
 function MultiSelect({ options, selected, onChange, placeholder, disabled }: {
   options: { value: string; label: string }[];

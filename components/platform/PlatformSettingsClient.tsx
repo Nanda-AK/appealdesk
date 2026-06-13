@@ -29,7 +29,7 @@ export default function PlatformSettingsClient({ settings, isSuperAdmin }: Props
   const [brandingSuccess, setBrandingSuccess] = useState(false);
 
   const fieldClass = (disabled: boolean) =>
-    `w-full px-3 py-2 text-sm border-2 border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
+    `w-full px-3 py-2 text-sm border border-accent rounded-lg focus:outline-none focus:ring-1 focus:ring-primary ${
       disabled ? "bg-page text-secondary cursor-not-allowed" : ""
     }`;
 

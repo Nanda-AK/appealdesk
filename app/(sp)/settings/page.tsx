@@ -52,8 +52,8 @@ export default async function SpSettingsPage({
             href={tab === "profile" ? "/settings" : `/settings?tab=${tab}`}
             className={`px-4 py-2 text-sm font-medium rounded-lg transition ${
               currentTab === tab
-                ? "bg-[#1E3A5F] text-white"
-                : "text-[#6B7280] hover:text-[#1A1A2E] hover:bg-[#F8F9FA]"
+                ? "bg-primary text-white"
+                : "text-secondary hover:text-heading hover:bg-page"
             }`}
           >
             {label}

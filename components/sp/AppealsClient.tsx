@@ -144,7 +144,7 @@ function MultiSelect({
     <div ref={containerRef} className="relative">
       {/* Trigger */}
       <div
-        className="flex items-center gap-1.5 px-2.5 py-2 text-sm border-2 border-accent rounded-lg bg-white cursor-pointer min-w-25 max-w-32.5 h-9.5 select-none"
+        className="flex items-center gap-1.5 px-2.5 py-2 text-sm border border-accent rounded-lg bg-white cursor-pointer min-w-25 max-w-32.5 h-9.5 select-none"
         onClick={() => (open ? applyAndClose() : openDropdown())}
       >
         <span
@@ -229,7 +229,7 @@ function MultiSelect({
                       e.preventDefault();
                       toggle(o.id);
                     }}
-                    className={`w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-page ${isChecked ? "bg-blue-50/50" : ""}`}
+                    className={`w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-page ${isChecked ? "bg-accent-light" : ""}`}
                   >
                     <div
                       className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors ${
@@ -488,7 +488,7 @@ export default function AppealsClient({
               page: "1",
             })
           }
-          className="flex items-center gap-1.5 px-3 py-2 text-sm border-2 border-accent rounded-lg hover:bg-page transition text-heading"
+          className="flex items-center gap-1.5 px-3 py-2 text-sm border border-accent rounded-lg hover:bg-page transition text-heading"
         >
           <svg
             className="w-3.5 h-3.5"
@@ -531,7 +531,7 @@ export default function AppealsClient({
             title={
               exporting ? `Exporting ${exporting.toUpperCase()}…` : "Export"
             }
-            className="inline-flex items-center justify-center w-9.5 h-9.5 border-2 border-accent rounded-lg hover:bg-page disabled:opacity-50 disabled:cursor-not-allowed transition text-accent"
+            className="inline-flex items-center justify-center w-9.5 h-9.5 border border-accent rounded-lg hover:bg-page disabled:opacity-50 disabled:cursor-not-allowed transition text-accent"
           >
             <svg
               className="w-4 h-4"
@@ -662,7 +662,7 @@ export default function AppealsClient({
               <select
                 value={perPage}
                 onChange={(e) => push({ per_page: e.target.value, page: "1" })}
-                className="px-2 py-1 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                className="px-2 py-1 text-sm border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary"
               >
                 {PER_PAGE_OPTIONS.map((n) => (
                   <option key={n} value={n}>

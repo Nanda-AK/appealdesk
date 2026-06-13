@@ -160,7 +160,7 @@ function MultiSelect({
   return (
     <div ref={containerRef} className="relative">
       <div
-        className="flex items-center gap-1.5 px-3 py-2 text-sm border-2 border-accent rounded-lg bg-white cursor-pointer min-w-36 max-w-50 h-9.5 select-none"
+        className="flex items-center gap-1.5 px-3 py-2 text-sm border border-accent rounded-lg bg-white cursor-pointer min-w-36 max-w-50 h-9.5 select-none"
         onClick={() => (open ? applyAndClose() : openDropdown())}
       >
         <span className={`flex-1 truncate ${!hasValue ? "text-muted" : isMulti ? "font-medium text-primary" : "text-heading"}`}>
@@ -210,7 +210,7 @@ function MultiSelect({
                   <button
                     key={o.id}
                     onMouseDown={(e) => { e.preventDefault(); toggle(o.id); }}
-                    className={`w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-page ${isChecked ? "bg-blue-50/50" : ""}`}
+                    className={`w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-page ${isChecked ? "bg-accent-light" : ""}`}
                   >
                     <div className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors ${isChecked ? "bg-primary border-primary" : "border-border-strong"}`}>
                       {isChecked && (
@@ -343,7 +343,7 @@ export default function LogsClient({
         />
 
         {/* Date range */}
-        <div className="flex items-center gap-1.5 px-3 py-2 border-2 border-accent rounded-lg bg-white h-9.5">
+        <div className="flex items-center gap-1.5 px-3 py-2 border border-accent rounded-lg bg-white h-9.5">
           <span className="text-xs text-muted whitespace-nowrap">From</span>
           <input
             type="date"
