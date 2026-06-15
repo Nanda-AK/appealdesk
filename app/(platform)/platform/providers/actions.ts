@@ -171,9 +171,8 @@ export async function deleteSpAdmin(userId: string, spId: string) {
 
   const supabase = await createServiceClient();
 
-  // Soft-delete: mark deleted_at, keep auth user intact
   await supabase.from("users")
-    .update({ deleted_at: new Date().toISOString(), is_active: false })
+    .delete()
     .eq("id", userId)
     .eq("org_id", spId)
     .eq("role", "sp_admin");
@@ -186,21 +185,20 @@ export async function deleteProvider(id: string) {
   if (!user || !isPlatformRole(user.role)) return { error: "Unauthorized" };
 
   const supabase = await createServiceClient();
-  const now = new Date().toISOString();
+
+  // Cascade hard-delete to all users under this SP
+  await supabase
+    .from("users")
+    .delete()
+    .eq("org_id", id);
 
   const { error } = await supabase
     .from("organizations")
-    .update({ deleted_at: now, is_active: false, updated_at: now })
+    .delete()
     .eq("id", id)
     .eq("type", "service_provider");
 
   if (error) return { error: error.message };
-
-  // Cascade soft-delete to all users under this SP
-  await supabase
-    .from("users")
-    .update({ deleted_at: now, is_active: false })
-    .eq("org_id", id);
 
   revalidatePath("/platform/providers");
   return {};

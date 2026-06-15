@@ -133,7 +133,7 @@ export async function deletePlatformSpAdmin(id: string) {
   platformOnly(user.role);
 
   const supabase = await createServiceClient();
-  await supabase.from("users").update({ deleted_at: new Date().toISOString(), is_active: false }).eq("id", id);
+  await supabase.from("users").delete().eq("id", id);
 
   revalidatePath("/platform/users");
   revalidatePath("/platform/providers");
