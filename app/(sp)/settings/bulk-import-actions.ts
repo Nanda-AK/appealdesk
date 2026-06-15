@@ -260,7 +260,7 @@ export async function importBulkClients(
     if (complianceErr) {
       await supabase
         .from("organizations")
-        .update({ deleted_at: new Date().toISOString() })
+        .delete()
         .eq("id", org.id);
       continue;
     }
@@ -418,10 +418,9 @@ export async function importBulkClientUsers(
     });
 
     if (membershipErr) {
-      // Soft-delete profile (codebase rule: never hard-delete rows)
       await supabase
         .from("users")
-        .update({ deleted_at: new Date().toISOString() })
+        .delete()
         .eq("id", created.user.id);
       await supabase.auth.admin.deleteUser(created.user.id);
       continue;
