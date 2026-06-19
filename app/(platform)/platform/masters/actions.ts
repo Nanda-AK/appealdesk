@@ -96,14 +96,14 @@ export async function deleteMasterRecord(id: string) {
   }
 
   const supabase = await createServiceClient();
-  // Soft-delete: also soft-delete children (proceeding types under this act)
+  // Cascade hard-delete children (proceeding types under this act)
   await supabase
     .from("master_records")
-    .update({ deleted_at: new Date().toISOString(), is_active: false })
+    .delete()
     .eq("parent_id", id);
   await supabase
     .from("master_records")
-    .update({ deleted_at: new Date().toISOString(), is_active: false })
+    .delete()
     .eq("id", id);
 
   revalidatePath("/platform/masters");
