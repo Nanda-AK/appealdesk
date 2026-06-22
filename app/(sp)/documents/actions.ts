@@ -119,6 +119,7 @@ export async function updateForm(id: string, input: FormInput) {
   const { error } = await supabase.from("forms").update(updatePayload).eq("id", id).eq("service_provider_id", spId!);
 
   if (error) throw new Error(error.message);
+  await logAction(supabase, { actorId: user.id, spId: spId!, action: "update", entityType: "document", entityLabel: `Form: ${input.rule_heading}` });
   revalidatePath("/documents");
 }
 
@@ -129,7 +130,9 @@ export async function deleteForm(id: string) {
   const spId = user.service_provider_id ?? user.org_id;
   const supabase = await createServiceClient();
 
+  const { data: form } = await supabase.from("forms").select("rule_heading").eq("id", id).eq("service_provider_id", spId!).single();
   await supabase.from("forms").delete().eq("id", id).eq("service_provider_id", spId!);
+  await logAction(supabase, { actorId: user.id, spId: spId!, action: "delete", entityType: "document", entityLabel: `Form: ${form?.rule_heading ?? id}` });
   revalidatePath("/documents");
 }
 
@@ -140,8 +143,10 @@ export async function removeFormFile(id: string) {
   const spId = user.service_provider_id ?? user.org_id;
   const supabase = await createServiceClient();
 
+  const { data: form } = await supabase.from("forms").select("rule_heading").eq("id", id).eq("service_provider_id", spId!).single();
   const { error } = await supabase.from("forms").update({ file_name: null, file_url: null, file_size: null }).eq("id", id).eq("service_provider_id", spId!);
   if (error) throw new Error(error.message);
+  await logAction(supabase, { actorId: user.id, spId: spId!, action: "update", entityType: "document", entityLabel: `Form: ${form?.rule_heading ?? id} (file removed)` });
   revalidatePath("/documents");
 }
 
@@ -190,6 +195,7 @@ export async function updateTemplate(id: string, input: Pick<TemplateInput, "nam
   }).eq("id", id).eq("service_provider_id", spId!);
 
   if (error) throw new Error(error.message);
+  await logAction(supabase, { actorId: user.id, spId: spId!, action: "update", entityType: "document", entityLabel: `Template: ${input.name}` });
   revalidatePath("/documents");
 }
 
@@ -200,7 +206,9 @@ export async function deleteTemplate(id: string) {
   const spId = user.service_provider_id ?? user.org_id;
   const supabase = await createServiceClient();
 
+  const { data: template } = await supabase.from("templates").select("name").eq("id", id).eq("service_provider_id", spId!).single();
   await supabase.from("templates").delete().eq("id", id).eq("service_provider_id", spId!);
+  await logAction(supabase, { actorId: user.id, spId: spId!, action: "delete", entityType: "document", entityLabel: `Template: ${template?.name ?? id}` });
   revalidatePath("/documents");
 }
 
@@ -253,6 +261,7 @@ export async function updateResource(id: string, input: ResourceInput) {
   }).eq("id", id).eq("service_provider_id", spId!);
 
   if (error) throw new Error(error.message);
+  await logAction(supabase, { actorId: user.id, spId: spId!, action: "update", entityType: "document", entityLabel: `Resource: ${input.description.substring(0, 60)}` });
   revalidatePath("/documents");
 }
 
@@ -263,7 +272,9 @@ export async function deleteResource(id: string) {
   const spId = user.service_provider_id ?? user.org_id;
   const supabase = await createServiceClient();
 
+  const { data: resource } = await supabase.from("resources").select("description").eq("id", id).eq("service_provider_id", spId!).single();
   await supabase.from("resources").delete().eq("id", id).eq("service_provider_id", spId!);
+  await logAction(supabase, { actorId: user.id, spId: spId!, action: "delete", entityType: "document", entityLabel: `Resource: ${resource?.description?.substring(0, 60) ?? id}` });
   revalidatePath("/documents");
 }
 
@@ -294,10 +305,13 @@ export async function deleteFormFile(fileId: string): Promise<void> {
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
   spOnly(user.role);
+  const spId = user.service_provider_id ?? user.org_id;
   const supabase = await createServiceClient();
 
+  const { data: file } = await supabase.from("form_files").select("file_name").eq("id", fileId).single();
   const { error } = await supabase.from("form_files").delete().eq("id", fileId);
   if (error) throw new Error(error.message);
+  await logAction(supabase, { actorId: user.id, spId: spId!, action: "delete", entityType: "document", entityLabel: `Form file: ${file?.file_name ?? fileId}` });
   revalidatePath("/documents");
 }
 
@@ -327,9 +341,12 @@ export async function deleteResourceFile(fileId: string) {
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
   spOnly(user.role);
+  const spId = user.service_provider_id ?? user.org_id;
   const supabase = await createServiceClient();
 
+  const { data: file } = await supabase.from("resource_files").select("file_name").eq("id", fileId).single();
   const { error } = await supabase.from("resource_files").delete().eq("id", fileId);
   if (error) throw new Error(error.message);
+  await logAction(supabase, { actorId: user.id, spId: spId!, action: "delete", entityType: "document", entityLabel: `Resource file: ${file?.file_name ?? fileId}` });
   revalidatePath("/documents");
 }
