@@ -78,21 +78,12 @@ export default async function AppealDetailPage({ params }: { params: Promise<{ i
 
   return (
     <div className="p-8">
-      <div className="mb-6">
-        <Link href="/litigations" className="text-sm text-secondary hover:text-heading flex items-center gap-1 mb-3">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-          Back to Litigations
-        </Link>
-        <h1 className="text-2xl font-semibold text-heading">
-          {clientOrg?.name ?? "Litigation"}
-          {(appeal as any).assessment_year?.name ? ` — AY ${(appeal as any).assessment_year.name}` : ""}
-        </h1>
-        {(appeal as any).act_regulation?.name && (
-          <p className="text-secondary text-sm mt-0.5">{(appeal as any).act_regulation.name}</p>
-        )}
-      </div>
+      <Link href="/litigations" className="text-sm text-secondary hover:text-heading flex items-center gap-1 mb-3">
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+        Back to Litigations
+      </Link>
       <AppealDetailClient
         appeal={appeal as any}
         clients={clients ?? []}

@@ -60,13 +60,20 @@ export function PendingAttachments({
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
           </svg>
           Choose Files
-          <input type="file" multiple className="hidden" onChange={handleFileSelect} />
+          <input type="file" multiple accept=".pdf,.xlsx,.xls,.docx,.doc" className="hidden" onChange={handleFileSelect} />
         </label>
       </div>
 
       {/* Empty state */}
       {files.length === 0 && choosing.length === 0 && (
         <div className="px-4 py-3 text-center text-xs text-muted">No attachments. Use Choose Files to add files.</div>
+      )}
+
+      {/* Warn when files are staged but not yet attached */}
+      {choosing.length > 0 && (
+        <div className="px-4 py-2 bg-warning-light border-b border-warning text-xs text-warning font-medium">
+          {choosing.length === 1 ? "1 file selected but not attached." : `${choosing.length} files selected but not attached.`} Click <span className="font-semibold">Attach File</span> below to confirm before submitting.
+        </div>
       )}
 
       {/* Committed (staged) files — uploaded when the form is submitted */}

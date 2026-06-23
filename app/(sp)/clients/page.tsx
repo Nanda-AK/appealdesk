@@ -33,7 +33,10 @@ export default async function ClientsPage({
     .order("name");
 
   return (
-    <div className="p-8">
+    <div
+      className="p-8 min-h-screen"
+      style={{ background: "linear-gradient(to right, #363636 0%, #ffffff 50%)" }}
+    >
       <ClientsClient
         clients={clients ?? []}
         isAdmin={user?.role === "sp_admin"}

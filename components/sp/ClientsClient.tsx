@@ -106,7 +106,7 @@ function MultiSelect({
   return (
     <div ref={containerRef} className="relative">
       <div
-        className="flex items-center gap-1.5 px-3 py-2 text-sm border border-border rounded-lg bg-white cursor-pointer min-w-[144px] max-w-[200px] h-[38px] select-none"
+        className="flex items-center gap-1.5 px-3 py-2 text-sm border border-border rounded-lg bg-white cursor-pointer min-w-[200px] max-w-[260px] h-[38px] select-none" /* filter width: change min-w / max-w to resize all dropdowns */
         onClick={() => (open ? applyAndClose() : openDropdown())}
       >
         <span className={`flex-1 truncate ${!hasValue ? "text-[#9CA3AF]" : isMulti ? "font-medium text-primary" : "text-[#1A1A2E]"}`}>
@@ -183,6 +183,16 @@ export default function ClientsClient({
   clients, isAdmin,
   currentClientIds, currentBtypes, currentCities, currentStatuses, currentSortDir,
 }: Props) {
+  // ── Table density knobs — change these values to resize header / rows instantly ──
+  const headPx     = "px-4";        // header horizontal padding  → wider: "px-6"
+  const headPy     = "py-3";        // header vertical padding     → shorter: "py-2"
+  const headSize   = "text-base";   // header font size            → larger: "text-base", smaller: "text-xs"
+  const headWeight = "font-bold";   // header font weight          → bolder: "font-semibold" / "font-bold"
+  const cellPx     = "px-4";        // row horizontal padding      → wider: "px-6", narrower: "px-3"
+  const cellPy     = "py-1.5";      // row vertical padding        → taller: "py-3", shorter: "py-1"
+  // Banner width: "w-1/2" = half screen, "w-2/5" = ~40%, "max-w-sm/md/lg/xl" for fixed widths
+  const bannerWidth = "w-1/2";
+
   const router = useRouter();
   const [loading,       setLoading]       = useState<string | null>(null);
   const [confirm,       setConfirm]       = useState<{ id: string; name: string; activate: boolean } | null>(null);
@@ -256,9 +266,9 @@ export default function ClientsClient({
     <>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-[#1A1A2E]">Clients</h1>
-          <p className="text-[#6B7280] text-sm mt-0.5">
+        <div className={`bg-[#606060] rounded-xl px-5 py-1.5 ${bannerWidth}`}>
+          <h1 className="text-2xl font-semibold text-white text-left">Clients</h1>
+          <p className="text-white/60 text-sm mt-0.5 text-left">
             {hasFilters ? `${filtered.length} of ${clients.length}` : clients.length} client organizations
           </p>
         </div>
@@ -327,14 +337,14 @@ export default function ClientsClient({
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-table-header border-b-2 border-table-header-border">
-                <th className="text-center px-4 py-3 font-medium text-[#1A1A2E] w-10">#</th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Name</th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Business Type</th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">City</th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Status</th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Added</th>
-                <th className="text-left px-4 py-3 font-medium text-[#1A1A2E]">Actions</th>
+              <tr className="bg-[#9e9e9e]  border-b-2 border-table-header-border">
+                <th className={`text-center ${headPx} ${headPy} ${headSize} ${headWeight} text-[#1A1A2E] w-10`}>#</th>
+                <th className={`text-left ${headPx} ${headPy} ${headSize} ${headWeight} text-[#1A1A2E] `}>Name</th>
+                <th className={`text-left ${headPx} ${headPy} ${headSize} ${headWeight} text-[#1A1A2E]`}>Business Type</th>
+                <th className={`text-left ${headPx} ${headPy} ${headSize} ${headWeight} text-[#1A1A2E]`}>City</th>
+                <th className={`text-left ${headPx} ${headPy} ${headSize} ${headWeight} text-[#1A1A2E]`}>Status</th>
+                <th className={`text-left ${headPx} ${headPy} ${headSize} ${headWeight} text-[#1A1A2E]`}>Added</th>
+                <th className={`text-left ${headPx} ${headPy} ${headSize} ${headWeight} text-[#1A1A2E]`}>Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E5E7EB]">
@@ -348,21 +358,21 @@ export default function ClientsClient({
                 filtered.map((client, i) => (
                   <tr
                     key={client.id}
-                    className={`hover:bg-[#F8F9FA] transition-colors ${i % 2 === 1 ? "bg-[#FAFAFA]" : ""}`}
+                    className="bg-white hover:bg-[#FAFAFA] transition-colors"
                   >
-                    <td className="px-4 py-3 text-center text-[#9CA3AF] text-xs">{i + 1}</td>
-                    <td className="px-4 py-3 font-medium text-[#1A1A2E]">{client.name}</td>
-                    <td className="px-4 py-3 text-[#6B7280]">{client.business_type ?? "—"}</td>
-                    <td className="px-4 py-3 text-[#6B7280]">{client.city ?? "—"}</td>
-                    <td className="px-4 py-3">
+                    <td className={`${cellPx} ${cellPy} text-center text-[#9CA3AF] text-xs`}>{i + 1}</td>
+                    <td className={`${cellPx} ${cellPy} font-medium text-[#1A1A2E]`}>{client.name}</td>
+                    <td className={`${cellPx} ${cellPy} text-[#6B7280]`}>{client.business_type ?? "—"}</td>
+                    <td className={`${cellPx} ${cellPy} text-[#6B7280]`}>{client.city ?? "—"}</td>
+                    <td className={`${cellPx} ${cellPy}`}>
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${client.is_active ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
                         {client.is_active ? "Active" : "Inactive"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-[#6B7280]">
+                    <td className={`${cellPx} ${cellPy} text-[#6B7280]`}>
                       {new Date(client.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className={`${cellPx} ${cellPy}`}>
                       <div className="flex items-center gap-0.5">
                         <Link
                           href={`/clients/${client.id}`}

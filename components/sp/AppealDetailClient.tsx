@@ -150,26 +150,32 @@ const MAIN_CATEGORY_FIELDS: Record<string, FieldDef[]> = {
   notice_from_authority: [
     { key: "date_of_notice", label: "Notice Date", type: "datetime" },
     { key: "due_date", label: "Due Date", type: "datetime" },
+    { key: "internal_target_date", label: "Internal Target Date", type: "datetime" },
   ],
   show_cause_notice: [
-    { key: "date_of_notice", label: "Notice Date", type: "datetime" },
+    { key: "date_of_notice", label: "SCN Date", type: "datetime" },
     { key: "due_date", label: "Due Date", type: "datetime" },
+    { key: "internal_target_date", label: "Internal Target Date", type: "datetime" },
   ],
   personal_hearing_notice: [
     { key: "hearing_date", label: "Hearing Date", type: "datetime" },
     { key: "due_date", label: "Due Date", type: "datetime" },
+    { key: "internal_target_date", label: "Internal Target Date", type: "datetime" },
   ],
   virtual_hearing_notice: [
     { key: "hearing_date", label: "Hearing Date", type: "datetime" },
     { key: "due_date", label: "Due Date", type: "datetime" },
+    { key: "internal_target_date", label: "Internal Target Date", type: "datetime" },
   ],
   assessment_order: [
     { key: "date_of_order", label: "Date of Order", type: "datetime" },
     { key: "due_date", label: "Due Date", type: "datetime" },
+    { key: "internal_target_date", label: "Internal Target Date", type: "datetime" },
   ],
   penalty_order: [
     { key: "date_of_order", label: "Date of Order", type: "datetime" },
     { key: "due_date", label: "Due Date", type: "datetime" },
+    { key: "internal_target_date", label: "Internal Target Date", type: "datetime" },
   ],
   filing_of_appeal: [
     { key: "appeal_against_proceeding", label: "Appeal Against Proceeding", type: "proceeding_select", fullWidth: true },
@@ -177,10 +183,37 @@ const MAIN_CATEGORY_FIELDS: Record<string, FieldDef[]> = {
     { key: "due_date", label: "Due Date for Filing Appeal", type: "datetime" },
     { key: "target_date_filing", label: "Target Date for Filing Appeal", type: "datetime" },
     { key: "appeal_filed_on", label: "Appeal Filed On", type: "datetime" },
+    { key: "internal_target_date", label: "Internal Target Date", type: "datetime" },
+  ],
+  cit_a_order: [
+    { key: "date_of_order", label: "Date of Order", type: "datetime" },
+    { key: "due_date", label: "Due Date", type: "datetime" },
+    { key: "internal_target_date", label: "Internal Target Date", type: "datetime" },
+  ],
+  itat_order: [
+    { key: "date_of_order", label: "Date of Order", type: "datetime" },
+    { key: "due_date", label: "Due Date", type: "datetime" },
+    { key: "internal_target_date", label: "Internal Target Date", type: "datetime" },
+  ],
+  high_court_order: [
+    { key: "date_of_order", label: "Date of Order", type: "datetime" },
+    { key: "due_date", label: "Due Date", type: "datetime" },
+    { key: "internal_target_date", label: "Internal Target Date", type: "datetime" },
+  ],
+  supreme_court_order: [
+    { key: "date_of_order", label: "Date of Order", type: "datetime" },
+    { key: "due_date", label: "Due Date", type: "datetime" },
+    { key: "internal_target_date", label: "Internal Target Date", type: "datetime" },
+  ],
+  stay_petition: [
+    { key: "date", label: "Date", type: "datetime" },
+    { key: "due_date", label: "Due Date", type: "datetime" },
+    { key: "internal_target_date", label: "Internal Target Date", type: "datetime" },
   ],
   others: [
     { key: "date", label: "Date", type: "datetime" },
     { key: "due_date", label: "Due Date", type: "datetime" },
+    { key: "internal_target_date", label: "Internal Target Date", type: "datetime" },
   ],
 };
 
@@ -188,17 +221,21 @@ const SUB_CATEGORY_FIELDS: Record<string, FieldDef[]> = {
   response_to_notice: [
     { key: "response_submitted_on", label: "Response Submitted On", type: "datetime" },
     { key: "due_date", label: "Due Date", type: "datetime" },
+    { key: "internal_target_date", label: "Internal Target Date", type: "datetime" },
   ],
   adjournment_request: [
     { key: "adjourned_to", label: "Adjourned To", type: "datetime" },
+    { key: "internal_target_date", label: "Internal Target Date", type: "datetime" },
   ],
   personal_follow_up: [
     { key: "follow_up_with", label: "Follow Up With", type: "text" },
     { key: "follow_up_by", label: "Follow Up By", type: "text" },
+    { key: "internal_target_date", label: "Internal Target Date", type: "datetime" },
   ],
   others_sub: [
     { key: "date", label: "Date", type: "datetime" },
     { key: "due_date", label: "Due Date", type: "datetime" },
+    { key: "internal_target_date", label: "Internal Target Date", type: "datetime" },
   ],
 };
 
@@ -212,6 +249,11 @@ const PRIMARY_DATE: Record<string, string> = {
   assessment_order: "date_of_order",
   penalty_order: "date_of_order",
   filing_of_appeal: "order_date",
+  cit_a_order: "date_of_order",
+  itat_order: "date_of_order",
+  high_court_order: "date_of_order",
+  supreme_court_order: "date_of_order",
+  stay_petition: "date",
   others: "date",
   response_to_notice: "response_submitted_on",
   adjournment_request: "adjourned_to",
@@ -226,6 +268,11 @@ const DUE_DATE_KEY: Record<string, string> = {
   assessment_order: "due_date",
   penalty_order: "due_date",
   filing_of_appeal: "due_date",
+  cit_a_order: "due_date",
+  itat_order: "due_date",
+  high_court_order: "due_date",
+  supreme_court_order: "due_date",
+  stay_petition: "due_date",
   others: "due_date",
   response_to_notice: "due_date",
   adjournment_request: "adjourned_to",
@@ -235,12 +282,17 @@ const DUE_DATE_KEY: Record<string, string> = {
 // Maps each main event category → the date field to surface in sub-event parent info panels.
 const PARENT_DATE_FIELD: Record<string, { key: string; label: string }> = {
   notice_from_authority:   { key: "date_of_notice", label: "Notice Date" },
-  show_cause_notice:       { key: "date_of_notice", label: "Notice Date" },
+  show_cause_notice:       { key: "date_of_notice", label: "SCN Date" },
   personal_hearing_notice: { key: "hearing_date",   label: "Hearing Date" },
   virtual_hearing_notice:  { key: "hearing_date",   label: "Hearing Date" },
   assessment_order:        { key: "date_of_order",  label: "Date of Order" },
   penalty_order:           { key: "date_of_order",  label: "Date of Order" },
   filing_of_appeal:        { key: "appeal_filed_on", label: "Appeal Filed On" },
+  cit_a_order:             { key: "date_of_order",  label: "Date of Order" },
+  itat_order:              { key: "date_of_order",  label: "Date of Order" },
+  high_court_order:        { key: "date_of_order",  label: "Date of Order" },
+  supreme_court_order:     { key: "date_of_order",  label: "Date of Order" },
+  stay_petition:           { key: "date",            label: "Date" },
   others:                  { key: "date",            label: "Date" },
 };
 
@@ -252,6 +304,11 @@ const MAIN_EVENT_LABELS: Record<string, string> = {
   assessment_order: "Assessment Order",
   penalty_order: "Penalty Order",
   filing_of_appeal: "Filing of Appeal",
+  cit_a_order: "CIT(A) Order",
+  itat_order: "ITAT Order",
+  high_court_order: "High Court Order",
+  supreme_court_order: "Supreme Court Order",
+  stay_petition: "Stay Petition",
   others: "Others",
 };
 
@@ -279,10 +336,10 @@ const EVENT_STATUS_CFG: Record<string, { label: string; cls: string }> = {
 
 // ─── Other Constants ──────────────────────────────────────────────
 const IMPORTANCE: Record<string, { label: string; cls: string }> = {
-  critical: { label: "Critical", cls: "bg-red-100 text-red-700" },
-  high: { label: "High", cls: "bg-orange-100 text-orange-700" },
-  medium: { label: "Medium", cls: "bg-yellow-100 text-yellow-700" },
-  low: { label: "Low", cls: "bg-green-100 text-green-700" },
+  critical: { label: "Critical", cls: "bg-white text-red-700" },
+  high: { label: "High", cls: "bg-white text-orange-700" },
+  medium: { label: "Medium", cls: "bg-white text-yellow-700" },
+  low: { label: "Low", cls: "bg-white text-green-700" },
 };
 const OUTCOME: Record<string, { label: string; cls: string }> = {
   favourable: { label: "Favourable", cls: "bg-green-100 text-green-700" },
@@ -290,9 +347,9 @@ const OUTCOME: Record<string, { label: string; cls: string }> = {
   unfavourable: { label: "Unfavourable", cls: "bg-red-100 text-red-700" },
 };
 const STATUS_CFG: Record<string, { label: string; cls: string }> = {
-  open: { label: "Open", cls: "bg-blue-50 text-blue-700" },
-  "in-progress": { label: "In Progress", cls: "bg-amber-50 text-amber-700" },
-  closed: { label: "Closed", cls: "bg-gray-100 text-gray-500" },
+  open: { label: "Open", cls: "bg-white text-blue-700" },
+  "in-progress": { label: "In Progress", cls: "bg-white text-amber-700" },
+  closed: { label: "Closed", cls: "bg-white text-gray-500" },
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────
@@ -359,11 +416,12 @@ function DateTimeField({ value, onChange, className }: { value: string; onChange
   );
 }
 
-function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
+function DetailRow({ label, value, light }: { label: string; value: React.ReactNode; light?: boolean }) {
+  const shadow = !light ? { textShadow: "0 0 8px rgba(0,0,0,0.7)" } : undefined;
   return (
     <div>
-      <p className="text-xs text-muted mb-0.5">{label}</p>
-      <p className="text-sm text-heading">{value || "—"}</p>
+      <p className={`text-xs mb-0.5 ${light ? "text-muted" : "text-white/70"}`} style={shadow}>{label}</p>
+      <p className={`text-sm ${light ? "text-heading" : "text-white"}`} style={shadow}>{value || "—"}</p>
     </div>
   );
 }
@@ -371,31 +429,35 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 // ─── Attachment Panels ────────────────────────────────────────────
 function AttachmentRow({ doc, onDelete, canEdit }: { doc: AttachedFile; onDelete: () => void; canEdit: boolean }) {
   return (
-    <div className="px-4 py-2.5 flex items-start justify-between gap-3">
-      <div className="flex items-start gap-2 min-w-0">
-        <svg className="w-3.5 h-3.5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <div className="grid items-center bg-white hover:bg-surface-hover transition-colors"
+         style={{ gridTemplateColumns: "1fr 80px auto" }}>
+      {/* Filename + description */}
+      <div className="flex items-center gap-2 px-4 py-3 min-w-0">
+        <svg className="w-3.5 h-3.5 text-accent shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-heading truncate">{doc.file_name}</span>
-            {doc.file_size && <span className="text-xs text-muted shrink-0">{(doc.file_size / 1024).toFixed(0)} KB</span>}
-          </div>
-          {doc.description && <p className="text-xs text-secondary mt-0.5">{doc.description}</p>}
+          <span className="text-xs font-medium text-heading block truncate">{doc.file_name}</span>
+          {doc.description && <p className="text-xs text-secondary mt-0.5 truncate">{doc.description}</p>}
         </div>
       </div>
-      <div className="flex items-center gap-0.5 shrink-0">
+      {/* Size — fixed column */}
+      <div className="py-3">
+        <span className="text-xs text-muted">{doc.file_size ? `${(doc.file_size / 1024).toFixed(0)} KB` : "—"}</span>
+      </div>
+      {/* Actions */}
+      <div className="flex items-center gap-0.5 px-4 py-3">
         <a href={doc.file_url} target="_blank" rel="noopener noreferrer" title="View file"
           className="p-1.5 rounded hover:bg-surface-hover transition-colors text-accent hover:text-primary inline-flex">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
         </a>
         <a href={doc.file_url} download={doc.file_name} title="Download file"
           className="p-1.5 rounded hover:bg-surface-hover transition-colors text-secondary hover:text-heading inline-flex">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
         </a>
         {canEdit && (
           <button type="button" onClick={onDelete} title="Delete file" className="p-1.5 rounded hover:bg-surface-hover transition-colors text-red-400 hover:text-red-600 inline-flex">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
           </button>
         )}
       </div>
@@ -483,78 +545,73 @@ function ProceedingAttachments({ proceedingId, docs, canEdit }: {
   }
 
   return (
-    <div className="px-5 pb-4 pt-1">
-      {/* CE-ATTACHMENTS-CARD: outer border="border-border", inner header bg="bg-page"(#FFFFFF), header border="border-border"(#C7C7C7) */}
-      <div className="border border-border rounded-lg overflow-hidden">
-        {/* Header */}
-        {/* CE-ATTACHMENTS-HEADER: bg="bg-page" text label="text-secondary" "Choose Files" button border="border-border" bg="bg-white" */}
-        <div className="px-4 py-2 bg-page flex items-center justify-between border-b border-border">
-          <span className="text-xs font-semibold text-secondary uppercase tracking-wide">Attachments ({activeDocs.length})</span>
-          {canEdit && (
-            <label className="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium border border-border bg-white rounded-lg text-secondary hover:bg-page transition">
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-              Choose Files
-              <input type="file" multiple className="hidden" onChange={handleFileSelect} />
-            </label>
-          )}
-        </div>
-
-        {/* Existing files */}
-        {error && pendingFiles.length === 0 && (
-          <div className="px-4 py-2 text-xs text-red-600 bg-red-50 border-b border-red-100">{error}</div>
-        )}
-        {activeDocs.length === 0 && pendingFiles.length === 0 ? (
-          <div className="px-4 py-3 text-center text-xs text-muted">
-            No attachments.{canEdit ? " Use Choose Files to add files." : ""}
-          </div>
-        ) : activeDocs.length > 0 ? (
-          <div className="divide-y divide-surface-hover">
-            {activeDocs.map((doc) => (
-              <AttachmentRow key={doc.id} doc={doc} canEdit={canEdit} onDelete={() => setConfirmDelete(doc)} />
-            ))}
-          </div>
-        ) : null}
-
-        {/* Pending files with description inputs */}
-        {pendingFiles.length > 0 && (
-          <div className="border-t border-border bg-page px-4 py-3 space-y-3">
-            {error && <div className="text-xs text-red-600 bg-red-50 border border-red-100 rounded px-3 py-1.5">{error}</div>}
-            {pendingFiles.map(({ file, desc }, idx) => (
-              <div key={idx} className="flex items-center gap-3">
-                <svg className="w-3.5 h-3.5 text-accent shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <span className="text-xs text-heading font-medium truncate w-32 shrink-0">{file.name}</span>
-                <input
-                  type="text"
-                  placeholder="Description (optional)"
-                  value={desc}
-                  onChange={(e) => updateDesc(idx, e.target.value)}
-                  className="flex-1 px-2.5 py-1 text-xs border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary bg-white"
-                />
-                <button type="button" onClick={() => removePending(idx)}
-                  className="p-1 text-muted hover:text-red-500 transition shrink-0">
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            ))}
-            <div className="flex gap-2 pt-1">
-              <button type="button" onClick={handleUploadAll} disabled={uploading}
-                className="px-3 py-1 text-xs bg-primary hover:bg-primary-dark text-white rounded-lg font-medium disabled:opacity-50">
-                {uploading ? "Uploading…" : `Attach ${pendingFiles.length > 1 ? `All (${pendingFiles.length})` : "File"}`}
-              </button>
-              <button type="button" onClick={() => { setPendingFiles([]); setError(null); }}
-                className="px-3 py-1 text-xs border border-border rounded-lg text-secondary hover:bg-white">
-                Cancel
-              </button>
-            </div>
-          </div>
+    <div className="px-5 py-4 bg-accent-tint">
+      {/* Header — matches Events section style */}
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs font-semibold text-secondary uppercase tracking-wide">Attachments ({activeDocs.length})</p>
+        {canEdit && (
+          <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-primary hover:bg-primary-dark text-white rounded-lg transition font-medium">
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            Choose Files
+            <input type="file" multiple accept=".pdf,.xlsx,.xls,.docx,.doc" className="hidden" onChange={handleFileSelect} />
+          </label>
         )}
       </div>
+
+      {error && pendingFiles.length === 0 && (
+        <div className="mb-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded px-3 py-1.5">{error}</div>
+      )}
+
+      {/* Existing files */}
+      {activeDocs.length === 0 && pendingFiles.length === 0 ? (
+        <p className="text-xs text-muted">{canEdit ? "No attachments. Use Choose Files to add files." : "No attachments."}</p>
+      ) : activeDocs.length > 0 ? (
+        <div className="rounded-lg border border-border overflow-hidden divide-y divide-border">
+          {activeDocs.map((doc) => (
+            <AttachmentRow key={doc.id} doc={doc} canEdit={canEdit} onDelete={() => setConfirmDelete(doc)} />
+          ))}
+        </div>
+      ) : null}
+
+      {/* Pending files with description inputs */}
+      {pendingFiles.length > 0 && (
+        <div className={`${activeDocs.length > 0 ? "mt-3" : ""} rounded-lg border border-border bg-white px-4 py-3 space-y-3`}>
+          {error && <div className="text-xs text-red-600 bg-red-50 border border-red-100 rounded px-3 py-1.5">{error}</div>}
+          {pendingFiles.map(({ file, desc }, idx) => (
+            <div key={idx} className="flex items-center gap-3">
+              <svg className="w-3.5 h-3.5 text-accent shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span className="text-xs text-heading font-medium truncate w-32 shrink-0">{file.name}</span>
+              <input
+                type="text"
+                placeholder="Description (optional)"
+                value={desc}
+                onChange={(e) => updateDesc(idx, e.target.value)}
+                className="flex-1 px-2.5 py-1 text-xs border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary bg-white"
+              />
+              <button type="button" onClick={() => removePending(idx)}
+                className="p-1 text-muted hover:text-red-500 transition shrink-0">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          ))}
+          <div className="flex gap-2 pt-1">
+            <button type="button" onClick={handleUploadAll} disabled={uploading}
+              className="px-3 py-1.5 text-xs bg-primary hover:bg-primary-dark text-white rounded-lg font-medium disabled:opacity-50">
+              {uploading ? "Uploading…" : `Attach ${pendingFiles.length > 1 ? `All (${pendingFiles.length})` : "File"}`}
+            </button>
+            <button type="button" onClick={() => { setPendingFiles([]); setError(null); }}
+              className="px-3 py-1.5 text-xs border border-border rounded-lg text-secondary hover:bg-white">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
       {confirmDelete && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl border border-border w-full max-w-sm p-6">
@@ -664,7 +721,7 @@ function EventAttachments({ eventId, docs, canEdit }: {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
               Choose Files
-              <input type="file" multiple className="hidden" onChange={handleFileSelect} />
+              <input type="file" multiple accept=".pdf,.xlsx,.xls,.docx,.doc" className="hidden" onChange={handleFileSelect} />
             </label>
           )}
         </div>
@@ -821,6 +878,9 @@ function ProceedingFormFields({
     ? allProcs.filter(m => m.parent_id === actRegulationId)
     : allProcs;
 
+  const isFaceless = (values.authority_type ?? "").trim().toLowerCase() === "faceless";
+  const disabledCls = "bg-surface-hover text-muted cursor-not-allowed border-border";
+
   return (
     <div className="grid grid-cols-2 gap-4">
       <Field label="Proceeding">
@@ -836,10 +896,22 @@ function ProceedingFormFields({
         <input value={values.authority_name ?? ""} onChange={(e) => onChange("authority_name", e.target.value)} placeholder="e.g. ACIT, Circle 1(1)" className={inp} />
       </Field>
       <Field label="Jurisdiction City">
-        <input value={values.jurisdiction_city ?? ""} onChange={(e) => onChange("jurisdiction_city", e.target.value)} placeholder="e.g. Chennai" className={inp} />
+        <input
+          value={isFaceless ? "" : (values.jurisdiction_city ?? "")}
+          onChange={(e) => onChange("jurisdiction_city", e.target.value)}
+          placeholder={isFaceless ? "N/A — Faceless" : "e.g. Chennai"}
+          disabled={isFaceless}
+          className={`${inp} ${isFaceless ? disabledCls : ""}`}
+        />
       </Field>
       <Field label="Jurisdiction / Address" fullWidth>
-        <input value={values.jurisdiction ?? ""} onChange={(e) => onChange("jurisdiction", e.target.value)} placeholder="Full jurisdiction or address" className={inp} />
+        <input
+          value={isFaceless ? "" : (values.jurisdiction ?? "")}
+          onChange={(e) => onChange("jurisdiction", e.target.value)}
+          placeholder={isFaceless ? "N/A — Faceless" : "Full jurisdiction or address"}
+          disabled={isFaceless}
+          className={`${inp} ${isFaceless ? disabledCls : ""}`}
+        />
       </Field>
       <Field label="Importance">
         <select value={values.importance ?? ""} onChange={(e) => onChange("importance", e.target.value)} className={inp}>
@@ -1241,7 +1313,14 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
 
   function handleEventCategoryChange(cat: string) {
     setEventCategory(cat);
-    setEventDetails({}); // Reset all fields when category changes
+    const baseDetails: Record<string, string> = {};
+    if (cat === "response_to_notice" && addEventParentId) {
+      const parent = allEventsById[addEventParentId];
+      if (parent?.category === "notice_from_authority" && parent.details?.due_date) {
+        baseDetails["due_date"] = parent.details.due_date;
+      }
+    }
+    setEventDetails(baseDetails);
   }
 
   function setDetail(key: string, value: string) {
@@ -1361,41 +1440,52 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
 
   // ── Render ──
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
 
       {/* CE-APPEAL-CARD: outer card bg="bg-white", border="border-border", padding="p-5" */}
       {/* Appeal Header */}
-      <div className="bg-white border border-border rounded-xl p-5 shadow-sm flex items-start justify-between gap-4">
-        <div className={`grid ${detailHideAY ? "grid-cols-4" : "grid-cols-5"} gap-6 flex-1`}>
+      <div
+        className="rounded-xl shadow-sm overflow-hidden"
+        style={{ background: "linear-gradient(to right, #363636 0%, #696969 100%)" }}
+      >
+        <div className={`grid ${detailHideAY ? "grid-cols-[2fr_3fr_1fr_auto]" : "grid-cols-[2fr_3fr_1fr_1fr_auto]"} items-center gap-4 px-6 py-5`}>
           <DetailRow label="Client" value={<span className="font-medium">{clientOrg?.name}</span>} />
+          <DetailRow label="Act / Regulation" value={appeal.act_regulation?.name} />
           <DetailRow label="Financial Year" value={appeal.financial_year?.name} />
           {!detailHideAY && <DetailRow label="Assessment Year" value={appeal.assessment_year?.name} />}
-          <DetailRow label="Act / Regulation" value={appeal.act_regulation?.name} />
-          <DetailRow label="Status" value={(() => { const s = STATUS_CFG[appeal.status ?? "open"]; return s ? <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${s.cls}`}>{s.label}</span> : null; })()} />
-        </div>
-        {canEdit && (
-          <div className="flex items-center gap-0.5 shrink-0">
-            <button
-              onClick={() => { setEditClientId(clientOrg?.id ?? ""); setEditFY(appeal.financial_year?.id ?? ""); setEditAY(appeal.assessment_year?.id ?? ""); setEditAct(appeal.act_regulation?.id ?? ""); setEditAppealStatus(appeal.status ?? "open"); setAppealError(null); setShowEditAppeal(true); }}
-              title="Edit Litigation" className="p-1.5 rounded hover:bg-surface-hover transition-colors text-secondary hover:text-heading inline-flex"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-            </button>
-            <button
-              onClick={() => setConfirmDeleteAppeal(true)}
-              title="Delete Litigation" className="p-1.5 rounded hover:bg-surface-hover transition-colors text-red-400 hover:text-red-600 inline-flex"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-            </button>
+          <div className="flex items-center gap-6 shrink-0">
+            <DetailRow label="Status" value={(() => {
+              const s = STATUS_CFG[appeal.status ?? "open"];
+              const textCls = appeal.status === "in-progress"
+                ? "text-amber-400"
+                : (s?.cls.split(" ").find(c => c.startsWith("text-")) ?? "text-white");
+              return s ? <span className={`text-sm font-semibold ${textCls}`}>{s.label}</span> : null;
+            })()} />
+            {canEdit && (
+              <div className="flex items-center gap-0.5">
+                <button
+                  onClick={() => { setEditClientId(clientOrg?.id ?? ""); setEditFY(appeal.financial_year?.id ?? ""); setEditAY(appeal.assessment_year?.id ?? ""); setEditAct(appeal.act_regulation?.id ?? ""); setEditAppealStatus(appeal.status ?? "open"); setAppealError(null); setShowEditAppeal(true); }}
+                  title="Edit Litigation" className="p-1.5 rounded hover:bg-white/10 transition-colors text-white/50 hover:text-white inline-flex"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                </button>
+                <button
+                  onClick={() => setConfirmDeleteAppeal(true)}
+                  title="Delete Litigation" className="p-1.5 rounded hover:bg-red-900/20 transition-colors text-red-400 hover:text-red-300 inline-flex"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                </button>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {/* Proceedings */}
       {sortedProceedings.length === 0 ? (
         <div className="bg-white border border-border rounded-xl p-8 text-center text-secondary text-sm">No proceedings yet.</div>
       ) : (
-        <div className="space-y-3">
+        <div className="flex flex-col gap-3">
           {sortedProceedings.map((proc, idx) => {
             const impCfg = proc.importance ? IMPORTANCE[proc.importance] : null;
             const outCfg = proc.possible_outcome ? OUTCOME[proc.possible_outcome] : null;
@@ -1407,57 +1497,73 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
             const procStatusCfg = STATUS_CFG[proc.status ?? "open"];
             const isExpanded = expandedProcs.has(proc.id);
 
-            // CE-PROC-CARD: proceeding outer card bg="bg-white" border="border-border"
+            // CE-PROC-CARD: proceeding row within unified container
             return (
-              <div key={proc.id} className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
+              <div key={proc.id} className="bg-white border border-border rounded-xl overflow-hidden shadow-sm">
 
                 {/* CE-PROC-HEADER: header row bg="bg-accent-light"(#F7F7F7) hover="bg-accent-tint-hover"(#E8E8E8) */}
                 {/* ── Collapsed summary row (always visible) ── */}
                 <div
-                  className="px-5 py-3.5 flex items-center gap-3 cursor-pointer bg-accent-light hover:bg-accent-tint-hover transition-colors select-none"
+                  className="grid items-center bg-[#696969] hover:bg-[#595959] transition-colors cursor-pointer select-none overflow-hidden"
+                  style={{ gridTemplateColumns: "1fr 136px 124px 72px 72px 56px auto" }}
                   onClick={() => toggleProc(proc.id)}
                 >
-                  {/* Chevron */}
-                  <svg
-                    className={`w-4 h-4 shrink-0 text-muted transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`}
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                  </svg>
+                  {/* COL 1 — chevron + number + name */}
+                  <div className="flex items-center gap-3 px-5 py-4 min-w-0">
+                    <svg
+                      className={`w-4 h-4 shrink-0 text-white/60 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`}
+                      fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                    <span className="text-xs text-white/70 font-medium bg-white/10 px-2 py-0.5 rounded shrink-0">
+                      #{idx + 1}
+                    </span>
+                    <span className="font-semibold text-white text-sm truncate">
+                      {proc.proceeding_type?.name ?? "—"}
+                    </span>
+                  </div>
 
-                  {/* Number */}
-                  <span className="text-xs text-muted font-medium bg-surface-hover px-2 py-0.5 rounded shrink-0">
-                    #{idx + 1}
-                  </span>
+                  {/* COL 2 — Initiated On */}
+                  <div className="py-4">
+                    <DetailRow label="Initiated On" value={proc.initiated_on ? fmtDate(proc.initiated_on) : "—"} />
+                  </div>
 
-                  {/* Forum / type */}
-                  <span className="font-semibold text-heading text-sm truncate">
-                    {proc.proceeding_type?.name ?? "—"}
-                  </span>
+                  {/* COL 3 — Deadline */}
+                  <div className="py-4">
+                    <DetailRow label="Deadline" value={proc.to_be_completed_by ? fmtDate(proc.to_be_completed_by) : "—"} />
+                  </div>
 
-                  {/* Badges + actions */}
-                  <div className="ml-auto flex items-center gap-2 shrink-0">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${impCfg ? impCfg.cls : "bg-surface-hover text-muted"}`}>{impCfg ? impCfg.label : "—"}</span>
-                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-surface-hover text-secondary capitalize hidden md:inline-flex">{proc.mode ?? "—"}</span>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${procStatusCfg ? procStatusCfg.cls : "bg-surface-hover text-muted"}`}>{procStatusCfg ? procStatusCfg.label : "—"}</span>
-                    <span className="text-xs text-secondary hidden lg:block">Due {proc.to_be_completed_by ? fmtDate(proc.to_be_completed_by) : "—"}</span>
-                    {/* Attachment count — always shown */}
-                    {(() => { const cnt = (proc.proceeding_documents ?? []).filter(d => !d.deleted_at).length; return (
-                      <span className="inline-flex items-center gap-0.5 text-xs text-secondary">
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
-                        {cnt}
-                      </span>
-                    ); })()}
-                    {/* Edit / Delete icons */}
+                  {/* COL 4 — Importance */}
+                  <div className="py-4">
+                    <span className={`text-xs font-semibold ${impCfg ? impCfg.cls.split(" ").filter(c => c.startsWith("text-")).join(" ") : "text-white/70"}`}>
+                      {impCfg ? impCfg.label : "—"}
+                    </span>
+                  </div>
+
+                  {/* COL 5 — Mode */}
+                  <div className="py-4">
+                    <span className="text-xs text-white/70 capitalize">{proc.mode ?? "—"}</span>
+                  </div>
+
+                  {/* COL 6 — Status (color inherits from importance level) */}
+                  <div className="py-4">
+                    <span className={`text-xs font-medium ${impCfg ? impCfg.cls.split(" ").filter(c => c.startsWith("text-")).join(" ") : procStatusCfg ? procStatusCfg.cls.split(" ").filter(c => c.startsWith("text-")).join(" ") : "text-white/70"}`}>
+                      {procStatusCfg ? procStatusCfg.label : "—"}
+                    </span>
+                  </div>
+
+                  {/* COL 7 — Actions */}
+                  <div className="flex items-center gap-0.5 px-4 py-4" onClick={(e) => e.stopPropagation()}>
                     {canEdit && (
-                      <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
-                        <button onClick={() => openEditProc(proc)} title="Edit Proceeding" className="p-1.5 rounded hover:bg-accent-tint-hover transition-colors text-secondary hover:text-heading inline-flex">
+                      <>
+                        <button onClick={() => openEditProc(proc)} title="Edit Proceeding" className="p-1.5 rounded hover:bg-white/10 transition-colors text-white/50 hover:text-white inline-flex">
                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                         </button>
-                        <button onClick={() => setConfirmDeleteProc(proc)} title="Delete Proceeding" className="p-1.5 rounded hover:bg-accent-tint-hover transition-colors text-red-400 hover:text-red-600 inline-flex">
+                        <button onClick={() => setConfirmDeleteProc(proc)} title="Delete Proceeding" className="p-1.5 rounded hover:bg-red-900/20 transition-colors text-red-400 hover:text-red-300 inline-flex">
                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                         </button>
-                      </div>
+                      </>
                     )}
                   </div>
                 </div>
@@ -1467,14 +1573,12 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                   <div className="border-t border-border">
                     {/* CE-PROC-DETAILS: expanded details panel bg="bg-accent-tint"(#F0F0F0) divider="border-table-header"(#D2D2D2) */}
                     {/* Proceeding details */}
-                    <div className="px-5 py-4 grid grid-cols-3 gap-x-6 gap-y-4 border-b border-table-header bg-accent-tint">
-                      <DetailRow label="Authority" value={[proc.authority_type, proc.authority_name].filter(Boolean).join(" · ")} />
-                      <DetailRow label="Jurisdiction" value={[proc.jurisdiction_city, proc.jurisdiction].filter(Boolean).join(", ")} />
-                      <DetailRow label="Assigned To" value={assignedNames.length > 0 ? assignedNames.join(", ") : null} />
-                      <DetailRow label="Client Staff" value={clientStaffNames.length > 0 ? clientStaffNames.join(", ") : null} />
-                      <DetailRow label="Initiated On" value={fmtDate(proc.initiated_on)} />
-                      <DetailRow label="Deadline" value={fmtDate(proc.to_be_completed_by)} />
-                      <DetailRow label="Possible Outcome" value={outCfg ? (
+                    <div className="px-5 py-4 grid grid-cols-3 gap-x-6 gap-y-4 border-b border-table-header bg-white">
+                      <DetailRow light label="Authority" value={[proc.authority_type, proc.authority_name].filter(Boolean).join(" · ")} />
+                      <DetailRow light label="Jurisdiction" value={[proc.jurisdiction_city, proc.jurisdiction].filter(Boolean).join(", ")} />
+                      <DetailRow light label="Assigned To" value={assignedNames.length > 0 ? assignedNames.join(", ") : null} />
+                      <DetailRow light label="Client Staff" value={clientStaffNames.length > 0 ? clientStaffNames.join(", ") : null} />
+                      <DetailRow light label="Possible Outcome" value={outCfg ? (
                         <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${outCfg.cls}`}>{outCfg.label}</span>
                       ) : null} />
                     </div>
@@ -1520,7 +1624,10 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                         );
                       }
 
-                      function EventRow({ ev, isSub }: { ev: AppEvent; isSub?: boolean }) {
+                      const EVENT_GRID = "1fr 156px 130px 88px 36px auto";
+                      const LEFT_INNER = "14px auto 1fr";
+
+                      function EventRow({ ev, isSub, subIdx }: { ev: AppEvent; isSub?: boolean; subIdx?: number }) {
                         const effectiveCat = ev.event_type === "sub" && ev.category === "others" ? "others_sub" : ev.category;
                         const primaryKey = PRIMARY_DATE[effectiveCat];
                         const noticeDate = primaryKey && ev.details?.[primaryKey]
@@ -1529,36 +1636,30 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                         const dueDateKey = DUE_DATE_KEY[effectiveCat];
                         const dueDate = dueDateKey && ev.details?.[dueDateKey] ? fmtDateTime(ev.details[dueDateKey]) : "—";
                         const statusCfg = EVENT_STATUS_CFG[ev.status ?? "open"] ?? EVENT_STATUS_CFG.open;
+                        const statusTextCls = statusCfg.cls.split(" ").filter(c => c.startsWith("text-")).join(" ");
+                        const cnt = (ev.event_documents ?? []).filter(d => !d.deleted_at).length;
                         return (
-                          <div className={isSub ? "bg-white border-t border-surface-hover" : ""}>
-                            {/* Single-record row — no detail panel below */}
-                            {/* CE-EVENT-ROW: event row bg="bg-accent-faint"(#F9F9F9) hover="bg-page"(#FFFFFF) | Main tag: bg="bg-accent-light" text="text-accent" | Sub tag: bg="bg-purple-50" text="text-purple-700" */}
-                            <div
-                              className={`flex items-center gap-3 px-3 py-2.5 transition-colors ${isSub ? "pl-6 bg-accent-faint" : "bg-accent-faint cursor-pointer hover:bg-page"}`}
-                            >
-                              <span className={`inline-flex px-1.5 py-0.5 rounded text-xs font-medium shrink-0 ${isSub ? "bg-purple-50 text-purple-700" : "bg-accent-light text-accent"}`}>
-                                {isSub ? "Sub" : "Main"}
+                          <div
+                            className="grid items-center bg-white hover:bg-surface-hover transition-colors border-t border-surface-hover"
+                            style={{ gridTemplateColumns: EVENT_GRID }}
+                          >
+                            <div className="grid items-center gap-2 pl-8 pr-4 py-1.5 min-w-0" style={{ gridTemplateColumns: LEFT_INNER }}>
+                              <div /> {/* empty chevron slot — aligns with main row chevron */}
+                              <span className="inline-flex justify-center px-1.5 py-0.5 rounded text-xs font-semibold shrink-0 bg-accent-light text-accent">
+                                SE{(subIdx ?? 0) + 1}
                               </span>
-                              <span className="text-xs text-heading font-medium flex-1 min-w-0 truncate">{getEventLabel(ev.category, ev.details)}</span>
-                              <div className="ml-auto flex items-center gap-2 shrink-0">
-                                <span className="inline-flex items-center gap-1 whitespace-nowrap hidden sm:inline-flex">
-                                  <span className="text-xs text-muted">Notice:</span>
-                                  <span className="text-xs text-secondary">{noticeDate}</span>
-                                </span>
-                                <span className="inline-flex items-center gap-1 whitespace-nowrap hidden md:inline-flex">
-                                  <span className="text-xs text-muted">Due:</span>
-                                  <span className="text-xs text-secondary">{dueDate}</span>
-                                </span>
-                                <span className={`inline-flex px-1.5 py-0.5 rounded text-xs font-medium shrink-0 ${statusCfg.cls}`}>{statusCfg.label}</span>
-                                {(() => { const cnt = (ev.event_documents ?? []).filter(d => !d.deleted_at).length; return (
-                                  <span className="inline-flex items-center gap-0.5 text-xs text-secondary shrink-0">
-                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
-                                    {cnt}
-                                  </span>
-                                ); })()}
-                                <EventActions ev={ev} />
-                              </div>
+                              <span className="text-xs text-heading font-medium min-w-0 truncate">{getEventLabel(ev.category, ev.details)}</span>
                             </div>
+                            <div className="py-1.5"><span className="text-xs text-muted">Notice: </span><span className="text-xs text-secondary">{noticeDate}</span></div>
+                            <div className="py-1.5"><span className="text-xs text-muted">Due: </span><span className="text-xs text-secondary">{dueDate}</span></div>
+                            <div className="py-1.5"><span className={`text-xs font-medium ${statusTextCls}`}>{statusCfg.label}</span></div>
+                            <div className="py-1.5 flex items-center">
+                              <span className="inline-flex items-center gap-0.5 text-xs text-secondary">
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                                {cnt}
+                              </span>
+                            </div>
+                            <div className="py-1.5 pr-4"><EventActions ev={ev} /></div>
                           </div>
                         );
                       }
@@ -1581,74 +1682,73 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                           {sortedEvents.length === 0 ? (
                             <p className="text-xs text-muted">No events recorded yet.</p>
                           ) : (
-                            <div className="rounded-lg border border-border overflow-hidden divide-y divide-border">
+                            <div className="flex flex-col gap-3">
                               {/* Main events with their sub events */}
                               {mainEvents.map((master, mIdx) => {
                                 const subs = subEventsByParent[master.id] ?? [];
                                 const isSubsExpanded = expandedMasters.has(master.id);
                                 return (
-                                  <div key={master.id}>
+                                  <div key={master.id} className="rounded-lg border border-border overflow-hidden">
                                     {/* Main row — click to expand/collapse sub events */}
-                                    <div
-                                      className="flex items-center gap-3 px-3 py-2.5 bg-accent-faint cursor-pointer hover:bg-accent-light transition-colors"
-                                      onClick={() => toggleMaster(master.id)}
-                                    >
-                                      <svg className={`w-3.5 h-3.5 shrink-0 text-muted transition-transform duration-150 ${isSubsExpanded ? "rotate-90" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                                      </svg>
-                                      <span className="text-xs text-muted font-medium bg-surface-hover px-1.5 py-0.5 rounded shrink-0">#{mIdx + 1}</span>
-                                      <span className="inline-flex px-1.5 py-0.5 rounded text-xs font-medium shrink-0 bg-accent-light text-accent">Main</span>
-                                      <span className="text-xs text-heading font-medium flex-1 min-w-0 truncate">{getEventLabel(master.category, master.details)}</span>
-                                      <div className="ml-auto flex items-center gap-2 shrink-0">
-                                        {(() => {
-                                          const effectiveCat = master.category;
-                                          const primaryKey = PRIMARY_DATE[effectiveCat];
-                                          const noticeDate = primaryKey && master.details?.[primaryKey] ? fmtDateTime(master.details[primaryKey]) : master.event_date ? fmtDateTime(master.event_date) : "—";
-                                          const dueDateKey = DUE_DATE_KEY[effectiveCat];
-                                          const dueDate = dueDateKey && master.details?.[dueDateKey] ? fmtDateTime(master.details[dueDateKey]) : "—";
-                                          const statusCfg = EVENT_STATUS_CFG[master.status ?? "open"] ?? EVENT_STATUS_CFG.open;
-                                          const cnt = (master.event_documents ?? []).filter(d => !d.deleted_at).length;
-                                          return (
-                                            <>
-                                              <span className="inline-flex items-center gap-1 whitespace-nowrap hidden sm:inline-flex">
-                                                <span className="text-xs text-muted">Notice:</span>
-                                                <span className="text-xs text-secondary">{noticeDate}</span>
-                                              </span>
-                                              <span className="inline-flex items-center gap-1 whitespace-nowrap hidden md:inline-flex">
-                                                <span className="text-xs text-muted">Due:</span>
-                                                <span className="text-xs text-secondary">{dueDate}</span>
-                                              </span>
-                                              <span className={`inline-flex px-1.5 py-0.5 rounded text-xs font-medium shrink-0 ${statusCfg.cls}`}>{statusCfg.label}</span>
-                                              <span className="inline-flex items-center gap-0.5 text-xs text-secondary shrink-0">
-                                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
-                                                {cnt}
-                                              </span>
-                                            </>
-                                          );
-                                        })()}
-                                        <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
-                                          <button onClick={() => setViewEvent(master)} title="View" className="p-1.5 rounded hover:bg-surface-hover transition-colors text-accent hover:text-primary inline-flex">
-                                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                                          </button>
-                                          {canEdit && (
-                                            <>
-                                              <button onClick={() => openEditEvent(master)} title="Edit" className="p-1.5 rounded hover:bg-surface-hover transition-colors text-secondary hover:text-heading inline-flex">
-                                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                    {(() => {
+                                      const effectiveCat = master.category;
+                                      const primaryKey = PRIMARY_DATE[effectiveCat];
+                                      const noticeDate = primaryKey && master.details?.[primaryKey] ? fmtDateTime(master.details[primaryKey]) : master.event_date ? fmtDateTime(master.event_date) : "—";
+                                      const dueDateKey = DUE_DATE_KEY[effectiveCat];
+                                      const dueDate = dueDateKey && master.details?.[dueDateKey] ? fmtDateTime(master.details[dueDateKey]) : "—";
+                                      const statusCfg = EVENT_STATUS_CFG[master.status ?? "open"] ?? EVENT_STATUS_CFG.open;
+                                      const statusTextCls = statusCfg.cls.split(" ").filter(c => c.startsWith("text-")).join(" ");
+                                      const cnt = (master.event_documents ?? []).filter(d => !d.deleted_at).length;
+                                      return (
+                                        <div
+                                          className="grid items-center bg-white hover:bg-surface-hover transition-colors cursor-pointer"
+                                          style={{ gridTemplateColumns: EVENT_GRID }}
+                                          onClick={() => toggleMaster(master.id)}
+                                        >
+                                          <div className="grid items-center gap-2 px-4 py-2.5 min-w-0" style={{ gridTemplateColumns: LEFT_INNER }}>
+                                            <svg className={`w-3.5 h-3.5 shrink-0 text-muted transition-transform duration-150 ${isSubsExpanded ? "rotate-90" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                                            </svg>
+                                            <span className="inline-flex justify-center px-1.5 py-0.5 rounded text-xs font-semibold shrink-0 bg-accent-light text-accent">
+                                              ME{mIdx + 1}
+                                            </span>
+                                            <span className="text-xs text-heading font-bold min-w-0 truncate">{getEventLabel(master.category, master.details)}</span>
+                                          </div>
+                                          <div className="py-2.5"><span className="text-xs text-muted font-semibold">Notice: </span><span className="text-xs text-secondary font-semibold">{noticeDate}</span></div>
+                                          <div className="py-2.5"><span className="text-xs text-muted font-semibold">Due: </span><span className="text-xs text-secondary font-semibold">{dueDate}</span></div>
+                                          <div className="py-2.5"><span className={`text-xs font-bold ${statusTextCls}`}>{statusCfg.label}</span></div>
+                                          <div className="py-2.5 flex items-center">
+                                            <span className="inline-flex items-center gap-0.5 text-xs text-secondary font-semibold">
+                                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                                              {cnt}
+                                            </span>
+                                          </div>
+                                          <div className="py-2.5 pr-4" onClick={(e) => e.stopPropagation()}>
+                                            <div className="flex items-center gap-0.5">
+                                              <button onClick={() => setViewEvent(master)} title="View" className="p-1.5 rounded hover:bg-surface-hover transition-colors text-accent hover:text-primary inline-flex">
+                                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                                               </button>
-                                              <button onClick={() => setConfirmDeleteEvent(master)} title="Delete" className="p-1.5 rounded hover:bg-surface-hover transition-colors text-red-400 hover:text-red-600 inline-flex">
-                                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                              </button>
-                                            </>
-                                          )}
+                                              {canEdit && (
+                                                <>
+                                                  <button onClick={() => openEditEvent(master)} title="Edit" className="p-1.5 rounded hover:bg-surface-hover transition-colors text-secondary hover:text-heading inline-flex">
+                                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                                  </button>
+                                                  <button onClick={() => setConfirmDeleteEvent(master)} title="Delete" className="p-1.5 rounded hover:bg-surface-hover transition-colors text-red-400 hover:text-red-600 inline-flex">
+                                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                  </button>
+                                                </>
+                                              )}
+                                            </div>
+                                          </div>
                                         </div>
-                                      </div>
-                                    </div>
+                                      );
+                                    })()}
 
                                     {/* Sub events + Add Sub Event — shown when main row is expanded */}
                                     {isSubsExpanded && (
                                       <>
-                                        {subs.map((sub) => (
-                                          <EventRow key={sub.id} ev={sub} isSub />
+                                        {subs.map((sub, subIdx) => (
+                                          <EventRow key={sub.id} ev={sub} isSub subIdx={subIdx} />
                                         ))}
                                         {canEdit && (
                                           <div className="pl-8 pr-3 py-1.5 bg-white border-t border-surface-hover" onClick={(e) => e.stopPropagation()}>
@@ -1669,8 +1769,8 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                                 );
                               })}
                               {/* Orphaned sub events (legacy — no parent) */}
-                              {orphanedSubs.map((ev) => (
-                                <EventRow key={ev.id} ev={ev} isSub />
+                              {orphanedSubs.map((ev, subIdx) => (
+                                <EventRow key={ev.id} ev={ev} isSub subIdx={subIdx} />
                               ))}
                             </div>
                           )}
@@ -1902,9 +2002,9 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
               </Field>
             )}
 
-            {/* Order Number — main events only */}
+            {/* Order Number / Notice Number — main events only */}
             {editEventType === "main" && (
-              <Field label="Order Number">
+              <Field label={editEventCategory === "notice_from_authority" ? "Notice Number / Document Identification Number (DIN)" : "Order Number"}>
                 <input type="text" value={editEventNoticeNumber} onChange={(e) => setEditEventNoticeNumber(e.target.value)} className={inp} />
               </Field>
             )}
@@ -2019,14 +2119,17 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
               />
             </Field>
 
-            {/* Status */}
-            <Field label="Status">
-              <select value={editEventStatus} onChange={(e) => setEditEventStatus(e.target.value)} className={inp}>
-                <option value="open">Open</option>
-                <option value="in_progress">In Progress</option>
-                <option value="closed">Closed</option>
-              </select>
-            </Field>
+            {/* Status — hidden for Response to Notice (point-in-time action, no workflow state needed) */}
+            {editEventCategory !== "response_to_notice" && (
+              <Field label="Event Status">
+                <select value={editEventStatus} onChange={(e) => setEditEventStatus(e.target.value)} className={inp}>
+                  <option value="open">Open</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="closed">Closed</option>
+                </select>
+                <p className="mt-1 text-xs text-muted">Tracks the workflow progress of this event (open → in progress → closed).</p>
+              </Field>
+            )}
 
             {editEventError && <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">{editEventError}</div>}
 
@@ -2114,9 +2217,9 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
               </Field>
             )}
 
-            {/* Order Number — main events only */}
+            {/* Order Number / Notice Number — main events only */}
             {!addEventParentId && (
-              <Field label="Order Number">
+              <Field label={eventCategory === "notice_from_authority" ? "Notice Number / Document Identification Number (DIN)" : "Order Number"}>
                 <input type="text" value={eventNoticeNumber} onChange={(e) => setEventNoticeNumber(e.target.value)} className={inp} />
               </Field>
             )}
@@ -2152,14 +2255,17 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
               </div>
             )}
 
-            {/* Status */}
-            <Field label="Status">
-              <select value={eventStatus} onChange={(e) => setEventStatus(e.target.value)} className={inp}>
-                <option value="open">Open</option>
-                <option value="in_progress">In Progress</option>
-                <option value="closed">Closed</option>
-              </select>
-            </Field>
+            {/* Status — hidden for Response to Notice (point-in-time action, no workflow state needed) */}
+            {eventCategory !== "response_to_notice" && (
+              <Field label="Event Status">
+                <select value={eventStatus} onChange={(e) => setEventStatus(e.target.value)} className={inp}>
+                  <option value="open">Open</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="closed">Closed</option>
+                </select>
+                <p className="mt-1 text-xs text-muted">Tracks the workflow progress of this event (open → in progress → closed).</p>
+              </Field>
+            )}
 
             {/* Notes */}
             <Field label="Notes (optional)">
