@@ -13,6 +13,8 @@ interface Props {
   events: CalendarEvent[]
   visibleTypes: CalendarEventSourceType[]
   currentDate: Date
+  selectedDay?: string
+  onDayClick?: (date: string) => void
 }
 
 const COL_BODY_TINTS = [
@@ -24,7 +26,7 @@ const COL_HEADER_TINTS = [
   '#DDD6FE', '#FBCFE8', '#99F6E4',
 ]
 
-export function CalendarWeekGrid({ events, visibleTypes, currentDate }: Props) {
+export function CalendarWeekGrid({ events, visibleTypes, currentDate, selectedDay, onDayClick }: Props) {
   const router = useRouter()
   const today = toDateStr(new Date())
   const weekDays = getWeekDays(currentDate)
@@ -32,30 +34,34 @@ export function CalendarWeekGrid({ events, visibleTypes, currentDate }: Props) {
   const byDate = groupEventsByDate(filtered)
 
   return (
-    <div className="grid grid-cols-7 gap-2 flex-1 min-h-[400px]">
+    <div className="grid grid-cols-7 gap-2 flex-1 min-h-0">
       {weekDays.map((day, i) => {
         const dateStr = toDateStr(day)
         const dayEvents = byDate.get(dateStr) ?? []
         const dayName = day.toLocaleDateString('en-IN', { weekday: 'short' }).toUpperCase()
         const dayLabel = day.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
         const isToday = dateStr === today
+        const isSelected = dateStr === selectedDay
 
         return (
           <div
             key={dateStr}
-            className="flex flex-col rounded-lg overflow-hidden border border-border"
+            className={`flex flex-col rounded-lg overflow-hidden border transition ${
+              isSelected ? 'border-primary ring-2 ring-primary' : 'border-border'
+            }`}
           >
             <div
-              className="text-center py-2 border-b border-border flex-shrink-0"
-              style={{ background: COL_HEADER_TINTS[i] }}
+              className="text-center py-2 border-b border-border flex-shrink-0 cursor-pointer hover:opacity-80 transition"
+              style={{ background: isSelected ? '#363636' : COL_HEADER_TINTS[i] }}
+              onClick={() => onDayClick?.(dateStr)}
             >
-              <p className="text-xs font-bold text-heading">{dayName}</p>
-              <p className={`text-xs font-semibold ${isToday ? 'text-primary font-bold' : 'text-secondary'}`}>
+              <p className={`text-xs font-bold ${isSelected ? 'text-white' : 'text-heading'}`}>{dayName}</p>
+              <p className={`text-xs font-semibold ${isSelected ? 'text-white' : isToday ? 'text-primary font-bold' : 'text-secondary'}`}>
                 {dayLabel}
               </p>
             </div>
             <div
-              className="flex-1 overflow-y-auto p-1.5 space-y-1.5 min-h-[300px]"
+              className="flex-1 overflow-y-auto p-1.5 space-y-1.5 min-h-0"
               style={{ background: COL_BODY_TINTS[i] }}
             >
               {dayEvents.map(event => (

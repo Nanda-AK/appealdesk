@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { UserRole } from "@/lib/types";
 
@@ -192,25 +192,8 @@ export default function Sidebar({
 }: Props) {
   const pathname = usePathname();
   const router = useRouter();
-  // pinned=false → auto-collapse mode (hover to expand)
-  // pinned=true  → always expanded
-  const [pinned, setPinned] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [logoFailed, setLogoFailed] = useState(false);
-
-  useEffect(() => {
-    const stored = localStorage.getItem("sidebar-pinned");
-    if (stored !== null) setPinned(stored === "true");
-  }, []);
-
-  function togglePin() {
-    const next = !pinned;
-    setPinned(next);
-    localStorage.setItem("sidebar-pinned", String(next));
-  }
-
-  // Sidebar is visually expanded when pinned OR when hovered
-  const isExpanded = pinned || isHovered;
 
   const navItems = isPlatform ? platformNav : spNav;
   const visibleItems = navItems.filter((item) => item.roles.includes(userRole));
@@ -265,8 +248,7 @@ export default function Sidebar({
 
   return (
     <aside
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseLeave={() => setIsExpanded(false)}
       className={`relative shrink-0 bg-primary flex flex-col h-full transition-all duration-200 ${
         isExpanded ? "w-56" : "w-16"
       }`}
@@ -396,25 +378,18 @@ export default function Sidebar({
         </button>
       </div>
 
-      {/* Pin / unpin button — appears on hover, on right edge */}
+      {/* Expand / collapse button — always visible on right edge, centred */}
       <button
-        onClick={togglePin}
-        className={`absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-primary border-2 flex items-center justify-center hover:border-white/50 transition-all duration-200 z-10 ${
-          isHovered || pinned ? "opacity-100" : "opacity-0 pointer-events-none"
-        } ${pinned ? "border-white/50" : "border-white/20"}`}
-        title={pinned ? "Unpin sidebar" : "Pin sidebar open"}
+        onClick={() => setIsExpanded(e => !e)}
+        className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-primary border-2 border-white/20 flex items-center justify-center hover:border-white/50 transition-all duration-200 z-10"
+        title={isExpanded ? "Collapse sidebar" : "Expand sidebar"}
       >
-        {pinned ? (
-          // Pinned: show left-pointing chevron (click to unpin/collapse)
-          <svg className="w-3 h-3 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-        ) : (
-          // Hovered but not pinned: show pin icon (click to pin)
-          <svg className="w-3 h-3 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-          </svg>
-        )}
+        <svg className="w-3 h-3 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          {isExpanded
+            ? <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            : <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          }
+        </svg>
       </button>
 
       {/* Change Password Modal */}

@@ -36,6 +36,8 @@ export default async function DashboardPage() {
         id,
         to_be_completed_by,
         initiated_on,
+        importance,
+        assigned_to_ids,
         appeal:appeals!proceedings_appeal_id_fkey (
           id,
           client_org:organizations!appeals_client_org_id_fkey ( name ),
@@ -58,6 +60,8 @@ export default async function DashboardPage() {
         event_date,
         category,
         proceeding:proceedings!events_proceeding_id_fkey (
+          importance,
+          assigned_to_ids,
           appeal:appeals!proceedings_appeal_id_fkey (
             id,
             client_org:organizations!appeals_client_org_id_fkey ( name ),
@@ -92,14 +96,16 @@ export default async function DashboardPage() {
     const fy: string = pick((appeal as any).financial_year)?.name ?? ''
     const pt: string = pick(p.proceeding_type as any)?.name ?? ''
     const appealId: string = (appeal as any).id
+    const importance = (p.importance ?? null) as CalendarEvent['importance']
+    const assignedToIds = (p.assigned_to_ids as string[] | null) ?? []
 
     const deadline = extractDate(p.to_be_completed_by as string | null)
     if (deadline) {
-      events.push({ id: p.id, appealId, date: deadline, sourceType: 'deadline', label: EVENT_SOURCE_LABELS['deadline'], clientName, proceedingType: pt, actName, financialYear: fy })
+      events.push({ id: p.id, appealId, date: deadline, sourceType: 'deadline', label: EVENT_SOURCE_LABELS['deadline'], clientName, proceedingType: pt, actName, financialYear: fy, importance, assignedToIds })
     }
     const initiatedOn = extractDate(p.initiated_on as string | null)
     if (initiatedOn) {
-      events.push({ id: `${p.id}-initiated`, appealId, date: initiatedOn, sourceType: 'initiated_on', label: EVENT_SOURCE_LABELS['initiated_on'], clientName, proceedingType: pt, actName, financialYear: fy })
+      events.push({ id: `${p.id}-initiated`, appealId, date: initiatedOn, sourceType: 'initiated_on', label: EVENT_SOURCE_LABELS['initiated_on'], clientName, proceedingType: pt, actName, financialYear: fy, importance, assignedToIds })
     }
   }
 
@@ -116,7 +122,9 @@ export default async function DashboardPage() {
     const pt: string = pick((proc as any).proceeding_type)?.name ?? ''
     const appealId: string = (appeal as any).id
     const sourceType = e.category as CalendarEvent['sourceType']
-    events.push({ id: e.id, appealId, date, sourceType, label: EVENT_SOURCE_LABELS[sourceType] ?? String(e.category), clientName, proceedingType: pt, actName, financialYear: fy })
+    const importance = ((proc as any).importance ?? null) as CalendarEvent['importance']
+    const assignedToIds = ((proc as any).assigned_to_ids as string[] | null) ?? []
+    events.push({ id: e.id, appealId, date, sourceType, label: EVENT_SOURCE_LABELS[sourceType] ?? String(e.category), clientName, proceedingType: pt, actName, financialYear: fy, importance, assignedToIds })
   }
 
   const firstName = user.first_name ?? 'there'

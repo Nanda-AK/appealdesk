@@ -1,9 +1,8 @@
 'use client'
-import { useRouter } from 'next/navigation'
-import type { CalendarEvent, CalendarEventSourceType } from '@/lib/calendarUtils'
+import type { CalendarEvent, CalendarEventSourceType, ImportanceLevel } from '@/lib/calendarUtils'
 import {
-  EVENT_SOURCE_COLORS,
-  EVENT_SOURCE_LABELS,
+  IMPORTANCE_COLORS,
+  IMPORTANCE_LABELS,
   groupEventsByDate,
   getDaysInMonth,
   toDateStr,
@@ -13,12 +12,14 @@ interface Props {
   events: CalendarEvent[]
   visibleTypes: CalendarEventSourceType[]
   currentDate: Date
+  selectedDay?: string
+  onDayClick?: (date: string) => void
 }
 
 const DAY_HEADERS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const IMPORTANCE_ORDER: ImportanceLevel[] = ['critical', 'high', 'medium', 'low']
 
-export function CalendarMonthGrid({ events, visibleTypes, currentDate }: Props) {
-  const router = useRouter()
+export function CalendarMonthGrid({ events, visibleTypes, currentDate, selectedDay, onDayClick }: Props) {
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
   const today = toDateStr(new Date())
@@ -27,77 +28,92 @@ export function CalendarMonthGrid({ events, visibleTypes, currentDate }: Props) 
   const byDate = groupEventsByDate(filtered)
   const days = getDaysInMonth(year, month)
 
-  // Monday-start offset: Sun(0)→6, Mon(1)→0, Tue(2)→1, etc.
   const firstDow = new Date(year, month, 1).getDay()
   const leadingBlanks = firstDow === 0 ? 6 : firstDow - 1
-
-  // One legend entry per distinct colour
-  const legendEntries = Array.from(
-    visibleTypes.reduce((map, t) => {
-      const color = EVENT_SOURCE_COLORS[t]
-      if (!map.has(color)) map.set(color, EVENT_SOURCE_LABELS[t])
-      return map
-    }, new Map<string, string>())
-  )
+  const numWeeks = Math.ceil((leadingBlanks + days.length) / 7)
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      {legendEntries.length > 0 && (
-        <div className="flex flex-wrap gap-x-4 gap-y-1 mb-3">
-          {legendEntries.map(([color, label]) => (
-            <span key={color} className="flex items-center gap-1 text-xs text-secondary">
-              <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
-              {label}
-            </span>
-          ))}
-        </div>
-      )}
+      {/* Importance colour legend */}
+      <div className="flex flex-wrap gap-x-4 gap-y-1 mb-2 flex-shrink-0">
+        {IMPORTANCE_ORDER.map(level => (
+          <span key={level} className="flex items-center gap-1 text-xs text-secondary">
+            <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ background: IMPORTANCE_COLORS[level] }} />
+            {IMPORTANCE_LABELS[level]}
+          </span>
+        ))}
+      </div>
 
-      <div className="grid grid-cols-7 border-b border-border">
+      {/* Day-of-week headers */}
+      <div className="grid grid-cols-7 border-b border-border flex-shrink-0">
         {DAY_HEADERS.map(d => (
-          <div key={d} className="text-xs font-semibold text-muted text-center py-2">
+          <div key={d} className="text-xs font-semibold text-muted text-center py-1.5">
             {d}
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-7 flex-1 border-l border-t border-border overflow-y-auto">
+      {/* Calendar grid — rows divide available height equally */}
+      <div
+        className="grid grid-cols-7 flex-1 border-l border-t border-border min-h-0"
+        style={{ gridTemplateRows: `repeat(${numWeeks}, 1fr)` }}
+      >
         {Array.from({ length: leadingBlanks }).map((_, i) => (
-          <div key={`blank-${i}`} className="border-r border-b border-border bg-surface min-h-[90px]" />
+          <div key={`blank-${i}`} className="border-r border-b border-border bg-surface" />
         ))}
+
         {days.map(day => {
           const dateStr = toDateStr(day)
           const dayEvents = byDate.get(dateStr) ?? []
           const isToday = dateStr === today
+          const isSelected = dateStr === selectedDay
+
+          const counts = IMPORTANCE_ORDER.reduce((acc, level) => {
+            acc[level] = dayEvents.filter(e => e.importance === level).length
+            return acc
+          }, {} as Record<ImportanceLevel, number>)
+
+          const activeImportances = IMPORTANCE_ORDER.filter(l => counts[l] > 0)
+
           return (
             <div
               key={dateStr}
-              className={`border-r border-b border-border min-h-[90px] p-1 ${
-                isToday ? 'ring-2 ring-inset ring-accent bg-accent-faint' : ''
+              onClick={() => onDayClick?.(dateStr)}
+              className={`border-r border-b border-border p-1 cursor-pointer transition overflow-hidden flex flex-col ${
+                isSelected
+                  ? 'bg-primary/5 ring-2 ring-inset ring-primary'
+                  : isToday
+                  ? 'ring-2 ring-inset ring-accent bg-accent-faint'
+                  : 'hover:bg-surface-hover'
               }`}
             >
+              {/* Date number */}
               <div className={`
-                text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full mb-1
-                ${isToday ? 'bg-primary text-white' : 'text-heading'}
+                text-xs font-semibold w-5 h-5 flex items-center justify-center rounded-full mb-1 flex-shrink-0
+                ${isToday ? 'bg-primary text-white' : isSelected ? 'bg-primary/20 text-primary' : 'text-heading'}
               `}>
                 {day.getDate()}
               </div>
-              <div className="space-y-0.5">
-                {dayEvents.slice(0, 3).map(event => (
-                  <button
-                    key={`${event.sourceType}-${event.id}`}
-                    onClick={() => router.push(`/litigations/${event.appealId}`)}
-                    title={`${EVENT_SOURCE_LABELS[event.sourceType]} — ${event.clientName} · ${event.actName}`}
-                    className="w-full text-left text-xs px-1.5 py-0.5 rounded truncate text-white font-medium hover:opacity-80 transition"
-                    style={{ background: EVENT_SOURCE_COLORS[event.sourceType] }}
-                  >
-                    {EVENT_SOURCE_LABELS[event.sourceType]}
-                  </button>
-                ))}
-                {dayEvents.length > 3 && (
-                  <p className="text-xs text-muted pl-1">+{dayEvents.length - 3} more</p>
-                )}
-              </div>
+
+              {/* Importance counts — 2-column compact grid */}
+              {activeImportances.length > 0 && (
+                <div className="grid grid-cols-2 gap-0.5 flex-1 content-start">
+                  {activeImportances.map(level => (
+                    <div
+                      key={level}
+                      className="flex items-center justify-between rounded px-1 leading-none"
+                      style={{ background: IMPORTANCE_COLORS[level], minHeight: '16px' }}
+                    >
+                      <span className="text-white font-semibold truncate" style={{ fontSize: '9px' }}>
+                        {IMPORTANCE_LABELS[level][0]}
+                      </span>
+                      <span className="text-white font-bold ml-0.5" style={{ fontSize: '9px' }}>
+                        {counts[level]}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )
         })}

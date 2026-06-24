@@ -15,6 +15,8 @@ export type CalendarEventSourceType =
   | 'limitation'
   | 'others'
 
+export type ImportanceLevel = 'critical' | 'high' | 'medium' | 'low'
+
 export interface CalendarEvent {
   id: string
   appealId: string
@@ -25,6 +27,8 @@ export interface CalendarEvent {
   proceedingType: string
   actName: string
   financialYear: string
+  importance: ImportanceLevel | null
+  assignedToIds: string[]
 }
 
 export const EVENT_SOURCE_LABELS: Record<CalendarEventSourceType, string> = {
@@ -61,6 +65,20 @@ export const EVENT_SOURCE_COLORS: Record<CalendarEventSourceType, string> = {
   personal_follow_up: '#9CA3AF',
   others: '#9CA3AF',
   initiated_on: '#9CA3AF',
+}
+
+export const IMPORTANCE_COLORS: Record<ImportanceLevel, string> = {
+  critical: '#DC2626',
+  high: '#D97706',
+  medium: '#2563EB',
+  low: '#16A34A',
+}
+
+export const IMPORTANCE_LABELS: Record<ImportanceLevel, string> = {
+  critical: 'Critical',
+  high: 'High',
+  medium: 'Medium',
+  low: 'Low',
 }
 
 export const ALL_SOURCE_TYPES: CalendarEventSourceType[] = [
@@ -134,4 +152,20 @@ export function getWeekDays(date: Date): Date[] {
     day.setDate(d.getDate() + i)
     return day
   })
+}
+
+export function getViewDateRange(
+  viewMode: 'month' | 'week',
+  currentDate: Date
+): { start: string; end: string } {
+  if (viewMode === 'month') {
+    const y = currentDate.getFullYear()
+    const m = currentDate.getMonth()
+    return {
+      start: toDateStr(new Date(y, m, 1)),
+      end: toDateStr(new Date(y, m + 1, 0)),
+    }
+  }
+  const days = getWeekDays(currentDate)
+  return { start: toDateStr(days[0]), end: toDateStr(days[6]) }
 }

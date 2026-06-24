@@ -1,6 +1,6 @@
 'use client'
 import type { CalendarEventSourceType } from '@/lib/calendarUtils'
-import { EVENT_SOURCE_LABELS, EVENT_SOURCE_COLORS } from '@/lib/calendarUtils'
+import { EVENT_SOURCE_LABELS, EVENT_SOURCE_COLORS, ALL_SOURCE_TYPES } from '@/lib/calendarUtils'
 
 const GROUPS: { label: string; types: CalendarEventSourceType[] }[] = [
   { label: 'Proceedings Dates', types: ['deadline', 'initiated_on'] },
@@ -26,6 +26,9 @@ export function CalendarSettingsPanel({ visibleTypes, onChange, onClose }: Props
     onChange(next)
   }
 
+  const allSelected = ALL_SOURCE_TYPES.every(t => visibleTypes.includes(t))
+  const noneSelected = visibleTypes.length === 0
+
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-end" onClick={onClose}>
       <div
@@ -42,9 +45,28 @@ export function CalendarSettingsPanel({ visibleTypes, onChange, onClose }: Props
             ×
           </button>
         </div>
-        <p className="text-xs text-secondary mb-4">
+        <p className="text-xs text-secondary mb-3">
           Choose which date types appear on the calendar and upcoming events list.
         </p>
+
+        {/* Select All / Unselect All */}
+        <div className="flex gap-2 mb-4">
+          <button
+            onClick={() => onChange([...ALL_SOURCE_TYPES])}
+            disabled={allSelected}
+            className="flex-1 text-xs px-3 py-1.5 rounded-lg border border-border text-secondary hover:bg-surface-hover transition disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Select All
+          </button>
+          <button
+            onClick={() => onChange([])}
+            disabled={noneSelected}
+            className="flex-1 text-xs px-3 py-1.5 rounded-lg border border-border text-secondary hover:bg-surface-hover transition disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Unselect All
+          </button>
+        </div>
+
         {GROUPS.map(group => (
           <div key={group.label} className="mb-4">
             <p className="text-xs font-semibold text-muted uppercase tracking-wide mb-2">
