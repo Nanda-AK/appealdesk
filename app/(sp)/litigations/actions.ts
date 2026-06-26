@@ -28,6 +28,7 @@ export interface ProceedingInput {
   client_staff_ids?: string[];
   possible_outcome?: string;
   status?: string;
+  gst_number?: string;
 }
 
 export interface EventInput {
@@ -54,7 +55,7 @@ function cleanProceeding(proc: ProceedingInput) {
     jurisdiction: proc.jurisdiction || null,
     jurisdiction_city: proc.jurisdiction_city || null,
     importance: (proc.importance as "critical" | "high" | "medium" | "low") || null,
-    mode: (proc.mode as "online" | "offline") || null,
+    mode: (proc.mode as "faceless" | "jurisdictional" | "both") || null,
     initiated_on: proc.initiated_on || null,
     to_be_completed_by: proc.to_be_completed_by || null,
     assigned_to: proc.assigned_to_ids?.[0] || null,
@@ -63,6 +64,7 @@ function cleanProceeding(proc: ProceedingInput) {
     client_staff_ids: proc.client_staff_ids ?? [],
     possible_outcome: (proc.possible_outcome as "favourable" | "doubtful" | "unfavourable") || null,
     status: proc.status || "open",
+    gst_number: proc.gst_number || null,
   };
 }
 

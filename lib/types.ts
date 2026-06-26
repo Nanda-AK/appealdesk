@@ -26,7 +26,7 @@ export type ImportanceLevel = "critical" | "high" | "medium" | "low";
 
 export type PossibleOutcome = "favourable" | "doubtful" | "unfavourable";
 
-export type ProceedingMode = "online" | "offline";
+export type ProceedingMode = "faceless" | "jurisdictional" | "both";
 
 export type EventCategory =
   | "notice_from_authority"

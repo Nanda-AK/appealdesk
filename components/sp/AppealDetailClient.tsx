@@ -110,6 +110,7 @@ interface Proceeding {
   is_active: boolean;
   created_at: string;
   deleted_at?: string | null;
+  gst_number?: string | null;
   events: AppEvent[];
   proceeding_documents?: AttachedFile[];
 }
@@ -134,6 +135,7 @@ interface Props {
   mastersByType: Record<string, MasterItem[]>;
   canEdit: boolean;
   clientPan?: string;
+  clientGstNumbers?: string[];
 }
 
 // ─── Event Category Field Config ─────────────────────────────────
@@ -864,7 +866,7 @@ function MultiSelect({ options, selected, onChange, placeholder }: {
 
 // ─── Proceeding Form Fields ────────────────────────────────────────
 function ProceedingFormFields({
-  values, onChange, onMultiChange, mastersByType, teamMembers, clientUsers, actRegulationId, clientPan,
+  values, onChange, onMultiChange, mastersByType, teamMembers, clientUsers, actRegulationId, clientPan, clientGstNumbers,
 }: {
   values: ProceedingInput;
   onChange: (field: keyof ProceedingInput, value: string) => void;
@@ -874,19 +876,23 @@ function ProceedingFormFields({
   clientUsers: { id: string; first_name: string; last_name: string }[];
   actRegulationId?: string;
   clientPan?: string;
+  clientGstNumbers?: string[];
 }) {
   const allProcs = mastersByType["proceeding_type"] ?? [];
   const availableProcs = actRegulationId
     ? allProcs.filter(m => m.parent_id === actRegulationId)
     : allProcs;
 
-  const isFaceless = (values.authority_type ?? "").trim().toLowerCase() === "faceless";
+  const isFaceless =
+    (values.authority_type ?? "").trim().toLowerCase() === "faceless" ||
+    values.mode === "faceless";
   const disabledCls = "bg-surface-hover text-muted cursor-not-allowed border-border";
   // Compact input style for the 3-column proceeding form
   const pInp = "w-full px-2.5 py-1.5 text-xs border border-accent rounded-lg focus:outline-none focus:ring-1 focus:ring-primary";
 
   const actRecord = (mastersByType["act_regulation"] ?? []).find(m => m.id === actRegulationId);
   const isITAct = actRecord?.name.toLowerCase().includes("income") ?? false;
+  const isGSTAct = !!(actRecord?.name.toLowerCase().includes("central goods") || actRecord?.name.toLowerCase().includes("gst"));
 
   return (
     <div className="grid grid-cols-3 gap-3">
@@ -903,6 +909,16 @@ function ProceedingFormFields({
       <Field label="Authority Name">
         <input value={values.authority_name ?? ""} onChange={(e) => onChange("authority_name", e.target.value)} placeholder="e.g. ACIT, Circle 1(1)" className={pInp} />
       </Field>
+      {/* GST Number row — only for GST acts */}
+      {isGSTAct && (
+        <div className="col-span-3">
+          <label className="block text-xs font-medium text-secondary mb-1">GST Number</label>
+          <select value={values.gst_number ?? ""} onChange={(e) => onChange("gst_number", e.target.value)} className={pInp}>
+            <option value="">{(clientGstNumbers ?? []).length ? "Select GST number…" : "No GST numbers on file"}</option>
+            {(clientGstNumbers ?? []).map((g) => <option key={g} value={g}>{g}</option>)}
+          </select>
+        </div>
+      )}
       {/* Row 2: Jurisdiction City (1 col) + Jurisdiction / Address (2 cols = fullWidth) */}
       <Field label="Jurisdiction City">
         <input
@@ -935,8 +951,9 @@ function ProceedingFormFields({
       <Field label="Mode">
         <select value={values.mode ?? ""} onChange={(e) => onChange("mode", e.target.value)} className={pInp}>
           <option value="">Select…</option>
-          <option value="online">Online</option>
-          <option value="offline">Offline / Physical</option>
+          <option value="faceless">Faceless</option>
+          <option value="jurisdictional">Jurisdictional</option>
+          <option value="both">Both</option>
         </select>
       </Field>
       <Field label="Initiated On">
@@ -1044,7 +1061,7 @@ function Modal({ title, onClose, isDirty, children }: {
 }
 
 // ─── Main Component ───────────────────────────────────────────────
-export default function AppealDetailClient({ appeal, clients, teamMembers, clientUsers, mastersByType, canEdit, clientPan }: Props) {
+export default function AppealDetailClient({ appeal, clients, teamMembers, clientUsers, mastersByType, canEdit, clientPan, clientGstNumbers }: Props) {
   const router = useRouter();
   const clientOrg = appeal.client_org ?? null;
 
@@ -1128,6 +1145,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
       client_staff_ids: proc.client_staff_ids ?? [],
       possible_outcome: proc.possible_outcome ?? "",
       status: proc.status ?? "open",
+      gst_number: proc.gst_number ?? "",
     };
     editProcInitRef.current = initValues;
     setEditProc(proc);
@@ -1599,6 +1617,9 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
                       <DetailRow light label="Possible Outcome" value={outCfg ? (
                         <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${outCfg.cls}`}>{outCfg.label}</span>
                       ) : null} />
+                      {proc.gst_number && (
+                        <DetailRow light label="GST Number" value={proc.gst_number} />
+                      )}
                     </div>
 
                     {/* Proceeding Attachments */}
@@ -1867,7 +1888,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
       {editProc && (
         <Modal title="Edit Proceeding" onClose={() => setEditProc(null)} isDirty={editProcIsDirty}>
           <form onSubmit={handleSaveProc} className="space-y-4">
-            <ProceedingFormFields values={editProcValues} onChange={proceedingFormChange(setEditProcValues)} onMultiChange={proceedingMultiChange(setEditProcValues)} mastersByType={mastersByType} teamMembers={teamMembers} clientUsers={clientUsers} actRegulationId={appeal.act_regulation?.id ?? undefined} clientPan={clientPan} />
+            <ProceedingFormFields values={editProcValues} onChange={proceedingFormChange(setEditProcValues)} onMultiChange={proceedingMultiChange(setEditProcValues)} mastersByType={mastersByType} teamMembers={teamMembers} clientUsers={clientUsers} actRegulationId={appeal.act_regulation?.id ?? undefined} clientPan={clientPan} clientGstNumbers={clientGstNumbers} />
             {editProcError && <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">{editProcError}</div>}
             <div className="border-t border-border -mx-6 px-6 pt-4">
               <ProceedingAttachments proceedingId={editProc.id} docs={editProc.proceeding_documents ?? []} canEdit={canEdit} />
@@ -1886,7 +1907,7 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
       {showAddProc && (
         <Modal title="Add Proceeding" onClose={() => { setShowAddProc(false); setAddProcPendingFiles([]); }} isDirty={addProcIsDirty}>
           <form onSubmit={handleAddProc} className="space-y-4">
-            <ProceedingFormFields values={addProcValues} onChange={proceedingFormChange(setAddProcValues)} onMultiChange={proceedingMultiChange(setAddProcValues)} mastersByType={mastersByType} teamMembers={teamMembers} clientUsers={clientUsers} actRegulationId={appeal.act_regulation?.id ?? undefined} clientPan={clientPan} />
+            <ProceedingFormFields values={addProcValues} onChange={proceedingFormChange(setAddProcValues)} onMultiChange={proceedingMultiChange(setAddProcValues)} mastersByType={mastersByType} teamMembers={teamMembers} clientUsers={clientUsers} actRegulationId={appeal.act_regulation?.id ?? undefined} clientPan={clientPan} clientGstNumbers={clientGstNumbers} />
             {/* Attachments */}
             <PendingAttachments files={addProcPendingFiles} onChange={setAddProcPendingFiles} />
             {addProcError && <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">{addProcError}</div>}

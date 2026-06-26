@@ -199,6 +199,24 @@ export async function updateTemplate(id: string, input: Pick<TemplateInput, "nam
   revalidatePath("/documents");
 }
 
+export async function updateTemplateFile(id: string, fileName: string, fileUrl: string, fileType?: string, fileSize?: number) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+  spOnly(user.role);
+  const spId = user.service_provider_id ?? user.org_id;
+  const supabase = await createServiceClient();
+
+  const { data: template } = await supabase.from("templates").select("name").eq("id", id).eq("service_provider_id", spId!).single();
+  const { error } = await supabase.from("templates").update({
+    file_url: fileUrl,
+    file_type: fileType || null,
+    file_size: fileSize || null,
+  }).eq("id", id).eq("service_provider_id", spId!);
+  if (error) throw new Error(error.message);
+  await logAction(supabase, { actorId: user.id, spId: spId!, action: "update", entityType: "document", entityLabel: `Template: ${template?.name ?? id} (file replaced: ${fileName})` });
+  revalidatePath("/documents");
+}
+
 export async function deleteTemplate(id: string) {
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
