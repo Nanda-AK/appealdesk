@@ -1818,12 +1818,14 @@ export default function AppealDetailClient({ appeal, clients, teamMembers, clien
   }
 
   function toggleProc(id: string) {
+    const willExpand = !expandedProcs.has(id);
     setExpandedProcs((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
-      else { next.add(id); loadDemandForProc(id); }
+      else next.add(id);
       return next;
     });
+    if (willExpand) loadDemandForProc(id);
   }
 
   // Tracks which main event rows have their sub events expanded
