@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -1074,7 +1074,7 @@ function DemandIssuesEditor({ issues, onChange }: {
               {issues.map((iss, i) => {
                 const issueTotals = { demanded: (parseFloat(iss.tax_demanded)||0)+(parseFloat(iss.interest_demanded)||0)+(parseFloat(iss.penalty_demanded)||0), acceptable: (parseFloat(iss.tax_acceptable)||0)+(parseFloat(iss.interest_acceptable)||0)+(parseFloat(iss.penalty_acceptable)||0) };
                 return (
-                  <>
+                  <React.Fragment key={i}>
                     {DEMAND_TYPES.map((type, ti) => {
                       const demanded = getDraftAmount(iss, type.key, "demanded");
                       const acceptable = getDraftAmount(iss, type.key, "acceptable");
@@ -1104,7 +1104,7 @@ function DemandIssuesEditor({ issues, onChange }: {
                       <td className="px-2 py-1 text-right font-semibold text-heading">{fmtInr(issueTotals.demanded-issueTotals.acceptable)}</td>
                       <td></td>
                     </tr>
-                  </>
+                  </React.Fragment>
                 );
               })}
             </tbody>
@@ -1164,7 +1164,7 @@ function DemandIssuesReadOnly({ issues }: { issues: DemandIssue[] }) {
               const rows = [{ label: "Tax demand", demanded: iss.tax_demanded, acceptable: iss.tax_acceptable }, { label: "Interest demand", demanded: iss.interest_demanded, acceptable: iss.interest_acceptable }, { label: "Penalty demand", demanded: iss.penalty_demanded, acceptable: iss.penalty_acceptable }];
               const issueTotals = rows.reduce((a, r) => ({ demanded: a.demanded+r.demanded, acceptable: a.acceptable+r.acceptable }), { demanded: 0, acceptable: 0 });
               return (
-                <>
+                <React.Fragment key={iss.id}>
                   {rows.map((row, ri) => (
                     <tr key={`${i}-${ri}`} className="border-t border-border">
                       {ri === 0 && (<><td rowSpan={3} className="px-2 py-1.5 text-center text-muted align-top">{i+1}</td><td rowSpan={3} className="px-2 py-1.5 align-top text-secondary">{iss.notice_no||"—"}</td><td rowSpan={3} className="px-2 py-1.5 align-top text-secondary whitespace-nowrap">{iss.notice_date?new Date(iss.notice_date).toLocaleDateString("en-IN"):"—"}</td><td rowSpan={3} className="px-2 py-1.5 align-top text-secondary">{iss.description||"—"}</td></>)}
@@ -1180,7 +1180,7 @@ function DemandIssuesReadOnly({ issues }: { issues: DemandIssue[] }) {
                     <td className="px-2 py-1 text-right font-semibold text-heading">{fmtInr(issueTotals.acceptable)}</td>
                     <td className="px-2 py-1 text-right font-semibold text-heading">{fmtInr(issueTotals.demanded-issueTotals.acceptable)}</td>
                   </tr>
-                </>
+                </React.Fragment>
               );
             })}
           </tbody>
