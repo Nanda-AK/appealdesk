@@ -1,10 +1,17 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PER_PAGE_OPTIONS } from "@/lib/constants";
 import { exportLitigationsReport, getLitigationReport } from "@/app/(sp)/litigations/actions";
+
+interface AppealProceeding {
+  id: string;
+  status: string | null;
+  deleted_at: string | null;
+  proceeding_type: { id: string; name: string } | null;
+}
 
 interface Appeal {
   id: string;
@@ -14,6 +21,7 @@ interface Appeal {
   status: string | null;
   created_at: string;
   client_org: { id: string; name: string } | null;
+  proceedings?: AppealProceeding[];
 }
 
 interface NamedRecord {
@@ -626,62 +634,94 @@ export default function AppealsClient({
                   </td>
                 </tr>
               ) : (
-                appeals.map((appeal, i) => (
-                  <tr
-                    key={appeal.id}
-                    className="hover:bg-page transition-colors cursor-pointer"
-                    onClick={() => router.push(`/litigations/${appeal.id}`)}
-                  >
-                    <td className="px-4 py-3 text-muted text-xs">
-                      {rowOffset + i + 1}
-                    </td>
-                    <td className="px-4 py-3 text-secondary whitespace-nowrap max-w-80 truncate" title={appeal.client_org?.name ?? "—"}>
-                      {appeal.client_org?.name ?? "—"}
-                    </td>
-                    <td className="px-4 py-3 text-secondary whitespace-nowrap text-sm">
-                      {appeal.financial_year?.name ?? "—"}
-                    </td>
-                    <td className="px-4 py-3 text-secondary whitespace-nowrap text-sm">
-                      {appeal.assessment_year?.name ?? "—"}
-                    </td>
-                    <td className="px-4 py-3 text-secondary whitespace-nowrap max-w-72 truncate" title={appeal.act_regulation?.name ?? "—"}>
-                      {appeal.act_regulation?.name ?? "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      {(() => {
-                        const s = STATUS_DISPLAY[appeal.status ?? "open"];
-                        return s ? (
-                          <span
-                            className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${s.cls}`}
-                          >
-                            {s.label}
-                          </span>
-                        ) : (
-                          <span className="text-muted">—</span>
-                        );
-                      })()}
-                    </td>
-                    <td className="px-2 py-3 text-center" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={(e) => handleDownloadLitigation(e, appeal.id, appeal.client_org?.name ?? "litigation")}
-                        disabled={downloadingId === appeal.id}
-                        title="Download PDF Report"
-                        className="inline-flex items-center justify-center w-7 h-7 rounded hover:bg-page transition-colors text-muted hover:text-accent disabled:opacity-40"
+                appeals.map((appeal, i) => {
+                  const procs = (appeal.proceedings ?? []).filter(p => !p.deleted_at);
+                  const rowNum = rowOffset + i + 1;
+                  const s = STATUS_DISPLAY[appeal.status ?? "open"];
+                  return (
+                    <React.Fragment key={appeal.id}>
+                      {/* ── Litigation row ── */}
+                      <tr
+                        className="hover:bg-page transition-colors cursor-pointer"
+                        onClick={() => router.push(`/litigations/${appeal.id}`)}
                       >
-                        {downloadingId === appeal.id ? (
-                          <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                          </svg>
-                        ) : (
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                          </svg>
-                        )}
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                        <td className="px-4 py-3 text-muted text-xs font-medium">{rowNum}</td>
+                        <td className="px-4 py-3 text-secondary whitespace-nowrap max-w-80 truncate" title={appeal.client_org?.name ?? "—"}>
+                          {appeal.client_org?.name ?? "—"}
+                        </td>
+                        <td className="px-4 py-3 text-secondary whitespace-nowrap text-sm">
+                          {appeal.financial_year?.name ?? "—"}
+                        </td>
+                        <td className="px-4 py-3 text-secondary whitespace-nowrap text-sm">
+                          {appeal.assessment_year?.name ?? "—"}
+                        </td>
+                        <td className="px-4 py-3 text-secondary whitespace-nowrap max-w-72 truncate" title={appeal.act_regulation?.name ?? "—"}>
+                          {appeal.act_regulation?.name ?? "—"}
+                        </td>
+                        <td className="px-4 py-3">
+                          {s ? (
+                            <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${s.cls}`}>{s.label}</span>
+                          ) : (
+                            <span className="text-muted">—</span>
+                          )}
+                        </td>
+                        <td className="px-2 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            onClick={(e) => handleDownloadLitigation(e, appeal.id, appeal.client_org?.name ?? "litigation")}
+                            disabled={downloadingId === appeal.id}
+                            title="Download PDF Report"
+                            className="inline-flex items-center justify-center w-7 h-7 rounded hover:bg-page transition-colors text-muted hover:text-accent disabled:opacity-40"
+                          >
+                            {downloadingId === appeal.id ? (
+                              <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                              </svg>
+                            ) : (
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                              </svg>
+                            )}
+                          </button>
+                        </td>
+                      </tr>
+                      {/* ── Proceeding sub-rows ── */}
+                      {procs.map((proc, j) => {
+                        const ps = STATUS_DISPLAY[proc.status ?? "open"];
+                        const letter = String.fromCharCode(97 + j); // a, b, c…
+                        return (
+                          <tr
+                            key={proc.id}
+                            className="bg-accent-faint hover:bg-accent-light transition-colors cursor-pointer border-t border-dashed border-border"
+                            onClick={() => router.push(`/litigations/${appeal.id}`)}
+                          >
+                            <td className="px-4 py-2.5 text-muted text-xs pl-7">{rowNum}.{letter}</td>
+                            <td className="px-4 py-2.5 text-muted whitespace-nowrap max-w-80 truncate text-xs" title={appeal.client_org?.name ?? "—"}>
+                              {appeal.client_org?.name ?? "—"}
+                            </td>
+                            <td className="px-4 py-2.5 text-muted whitespace-nowrap text-xs">
+                              {appeal.financial_year?.name ?? "—"}
+                            </td>
+                            <td className="px-4 py-2.5 text-muted whitespace-nowrap text-xs">
+                              {appeal.assessment_year?.name ?? "—"}
+                            </td>
+                            <td className="px-4 py-2.5 text-muted whitespace-nowrap max-w-72 truncate text-xs" title={proc.proceeding_type?.name ?? (appeal.act_regulation?.name ?? "—")}>
+                              {proc.proceeding_type?.name ?? (appeal.act_regulation?.name ?? "—")}
+                            </td>
+                            <td className="px-4 py-2.5">
+                              {ps ? (
+                                <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${ps.cls}`}>{ps.label}</span>
+                              ) : (
+                                <span className="text-muted text-xs">—</span>
+                              )}
+                            </td>
+                            <td />
+                          </tr>
+                        );
+                      })}
+                    </React.Fragment>
+                  );
+                })
               )}
             </tbody>
           </table>
