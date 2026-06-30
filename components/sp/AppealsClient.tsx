@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PER_PAGE_OPTIONS } from "@/lib/constants";
-import { exportLitigationsReport } from "@/app/(sp)/litigations/actions";
+import { exportLitigationsReport, getLitigationReport } from "@/app/(sp)/litigations/actions";
 
 interface Appeal {
   id: string;
@@ -297,6 +297,7 @@ export default function AppealsClient({
   );
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!exportMenuOpen) return;
@@ -352,6 +353,23 @@ export default function AppealsClient({
       alert("Export failed. Please try again.");
     } finally {
       setExporting(null);
+    }
+  }
+
+  async function handleDownloadLitigation(e: React.MouseEvent, appealId: string, clientName: string) {
+    e.stopPropagation();
+    if (downloadingId) return;
+    setDownloadingId(appealId);
+    try {
+      const data = await getLitigationReport(appealId);
+      const { generateLitigationPDF } = await import("@/lib/reports/pdf");
+      const dateStamp = new Date().toISOString().slice(0, 10);
+      triggerDownload(generateLitigationPDF(data), `litigation-${clientName.replace(/[^a-z0-9]/gi, "_").slice(0, 30)}-${dateStamp}.pdf`);
+    } catch (err) {
+      console.error("Download failed:", err);
+      alert("Report download failed. Please try again.");
+    } finally {
+      setDownloadingId(null);
     }
   }
 
@@ -590,13 +608,14 @@ export default function AppealsClient({
                 <th className="text-left px-4 py-3 font-semibold text-heading whitespace-nowrap w-28">
                   Status
                 </th>
+                <th className="w-10" />
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {appeals.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="px-4 py-16 text-center text-secondary"
                   >
                     {hasFilters
@@ -633,7 +652,7 @@ export default function AppealsClient({
                         const s = STATUS_DISPLAY[appeal.status ?? "open"];
                         return s ? (
                           <span
-                            className={`inline-flex whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-medium ${s.cls}`}
+                            className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${s.cls}`}
                           >
                             {s.label}
                           </span>
@@ -641,6 +660,25 @@ export default function AppealsClient({
                           <span className="text-muted">—</span>
                         );
                       })()}
+                    </td>
+                    <td className="px-2 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={(e) => handleDownloadLitigation(e, appeal.id, appeal.client_org?.name ?? "litigation")}
+                        disabled={downloadingId === appeal.id}
+                        title="Download PDF Report"
+                        className="inline-flex items-center justify-center w-7 h-7 rounded hover:bg-page transition-colors text-muted hover:text-accent disabled:opacity-40"
+                      >
+                        {downloadingId === appeal.id ? (
+                          <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                          </svg>
+                        ) : (
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                          </svg>
+                        )}
+                      </button>
                     </td>
                   </tr>
                 ))
