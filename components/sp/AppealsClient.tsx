@@ -11,6 +11,10 @@ interface AppealProceeding {
   status: string | null;
   deleted_at: string | null;
   created_at: string;
+  jurisdiction: string | null;
+  jurisdiction_city: string | null;
+  to_be_completed_by: string | null;
+  assigned_to_ids: string[] | null;
   proceeding_type: { id: string; name: string } | null;
 }
 
@@ -599,24 +603,16 @@ export default function AppealsClient({
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="border-b-2 border-table-header-border bg-table-header">
-                <th className="text-left px-4 py-3 font-semibold text-heading w-10">
-                  #
-                </th>
-                <th className="text-left px-4 py-3 font-semibold text-heading whitespace-nowrap">
-                  Client
-                </th>
-                <th className="text-left px-4 py-3 font-semibold text-heading whitespace-nowrap w-24">
-                  FY
-                </th>
-                <th className="text-left px-4 py-3 font-semibold text-heading whitespace-nowrap w-24">
-                  AY
-                </th>
-                <th className="text-left px-4 py-3 font-semibold text-heading whitespace-nowrap">
-                  Act
-                </th>
-                <th className="text-left px-4 py-3 font-semibold text-heading whitespace-nowrap w-28">
-                  Status
-                </th>
+                <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap w-16">Sl. No.</th>
+                <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap w-24">File No.</th>
+                <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap">Client Name</th>
+                <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap">Act</th>
+                <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap w-24">FY/TY</th>
+                <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap">Proceeding</th>
+                <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap w-28">Proceeding Status</th>
+                <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap">Jurisdiction</th>
+                <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap w-28">Limitation Date</th>
+                <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap">Assigned To</th>
                 <th className="w-10" />
               </tr>
             </thead>
@@ -624,7 +620,7 @@ export default function AppealsClient({
               {appeals.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={11}
                     className="px-4 py-16 text-center text-secondary"
                   >
                     {hasFilters
@@ -641,49 +637,30 @@ export default function AppealsClient({
                     .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
                   const rowNum = rowOffset + i + 1;
                   const s = STATUS_DISPLAY[appeal.status ?? "open"];
+                  const tdLit = "px-3 py-3 text-secondary whitespace-nowrap";
+                  const tdSub = "px-3 py-2.5 text-muted whitespace-nowrap text-xs";
                   return (
                     <React.Fragment key={appeal.id}>
                       {/* ── Litigation row ── */}
-                      <tr
-                        className="hover:bg-page transition-colors cursor-pointer"
-                        onClick={() => router.push(`/litigations/${appeal.id}`)}
-                      >
-                        <td className="px-4 py-3 text-muted text-xs font-medium">{rowNum}</td>
-                        <td className="px-4 py-3 text-secondary whitespace-nowrap max-w-80 truncate" title={appeal.client_org?.name ?? "—"}>
-                          {appeal.client_org?.name ?? "—"}
+                      <tr className="hover:bg-page transition-colors cursor-pointer" onClick={() => router.push(`/litigations/${appeal.id}`)}>
+                        <td className={`${tdLit} text-xs font-medium w-16`}>{rowNum}</td>
+                        <td className={`${tdLit} text-xs`}>—</td>
+                        <td className={`${tdLit} max-w-60 truncate text-sm`} title={appeal.client_org?.name ?? "—"}>{appeal.client_org?.name ?? "—"}</td>
+                        <td className={`${tdLit} max-w-52 truncate text-sm`} title={appeal.act_regulation?.name ?? "—"}>{appeal.act_regulation?.name ?? "—"}</td>
+                        <td className={`${tdLit} text-sm`}>{appeal.financial_year?.name ?? "—"}</td>
+                        <td className={`${tdLit} text-xs text-muted`}>—</td>
+                        <td className="px-3 py-3">
+                          {s ? <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${s.cls}`}>{s.label}</span> : <span className="text-muted text-xs">—</span>}
                         </td>
-                        <td className="px-4 py-3 text-secondary whitespace-nowrap text-sm">
-                          {appeal.financial_year?.name ?? "—"}
-                        </td>
-                        <td className="px-4 py-3 text-secondary whitespace-nowrap text-sm">
-                          {appeal.assessment_year?.name ?? "—"}
-                        </td>
-                        <td className="px-4 py-3 text-secondary whitespace-nowrap max-w-72 truncate" title={appeal.act_regulation?.name ?? "—"}>
-                          {appeal.act_regulation?.name ?? "—"}
-                        </td>
-                        <td className="px-4 py-3">
-                          {s ? (
-                            <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${s.cls}`}>{s.label}</span>
-                          ) : (
-                            <span className="text-muted">—</span>
-                          )}
-                        </td>
+                        <td className={`${tdLit} text-xs text-muted`}>—</td>
+                        <td className={`${tdLit} text-xs text-muted`}>—</td>
+                        <td className={`${tdLit} text-xs text-muted`}>—</td>
                         <td className="px-2 py-3 text-center" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            onClick={(e) => handleDownloadLitigation(e, appeal.id, appeal.client_org?.name ?? "litigation")}
-                            disabled={downloadingId === appeal.id}
-                            title="Download PDF Report"
-                            className="inline-flex items-center justify-center w-7 h-7 rounded hover:bg-page transition-colors text-muted hover:text-accent disabled:opacity-40"
-                          >
+                          <button onClick={(e) => handleDownloadLitigation(e, appeal.id, appeal.client_org?.name ?? "litigation")} disabled={downloadingId === appeal.id} title="Download PDF Report" className="inline-flex items-center justify-center w-7 h-7 rounded hover:bg-page transition-colors text-muted hover:text-accent disabled:opacity-40">
                             {downloadingId === appeal.id ? (
-                              <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                              </svg>
+                              <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
                             ) : (
-                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                              </svg>
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                             )}
                           </button>
                         </td>
@@ -691,33 +668,29 @@ export default function AppealsClient({
                       {/* ── Proceeding sub-rows ── */}
                       {procs.map((proc, j) => {
                         const ps = STATUS_DISPLAY[proc.status ?? "open"];
-                        const letter = String.fromCharCode(97 + j); // a, b, c…
+                        const letter = String.fromCharCode(97 + j);
+                        const assignedNames = (proc.assigned_to_ids ?? [])
+                          .map(id => teamMembers.find(m => m.id === id)?.name)
+                          .filter(Boolean)
+                          .join(", ") || "—";
+                        const jurisdiction = proc.jurisdiction_city || proc.jurisdiction || "—";
+                        const limitDate = proc.to_be_completed_by
+                          ? new Date(proc.to_be_completed_by).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+                          : "—";
                         return (
-                          <tr
-                            key={proc.id}
-                            className="bg-accent-faint hover:bg-accent-light transition-colors cursor-pointer border-t border-dashed border-border"
-                            onClick={() => router.push(`/litigations/${appeal.id}`)}
-                          >
-                            <td className="px-4 py-2.5 text-muted text-xs pl-7">{rowNum}.{letter}</td>
-                            <td className="px-4 py-2.5 text-muted whitespace-nowrap max-w-80 truncate text-xs" title={appeal.client_org?.name ?? "—"}>
-                              {appeal.client_org?.name ?? "—"}
+                          <tr key={proc.id} className="bg-accent-faint hover:bg-accent-light transition-colors cursor-pointer border-t border-dashed border-border" onClick={() => router.push(`/litigations/${appeal.id}`)}>
+                            <td className={`${tdSub} pl-7`}>{rowNum}.{letter}</td>
+                            <td className={`${tdSub}`}>—</td>
+                            <td className={`${tdSub} max-w-60 truncate`} title={appeal.client_org?.name ?? "—"}>{appeal.client_org?.name ?? "—"}</td>
+                            <td className={`${tdSub} max-w-52 truncate`} title={appeal.act_regulation?.name ?? "—"}>{appeal.act_regulation?.name ?? "—"}</td>
+                            <td className={tdSub}>{appeal.financial_year?.name ?? "—"}</td>
+                            <td className={`${tdSub} max-w-40 truncate`} title={proc.proceeding_type?.name ?? "—"}>{proc.proceeding_type?.name ?? "—"}</td>
+                            <td className="px-3 py-2.5">
+                              {ps ? <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${ps.cls}`}>{ps.label}</span> : <span className="text-muted text-xs">—</span>}
                             </td>
-                            <td className="px-4 py-2.5 text-muted whitespace-nowrap text-xs">
-                              {appeal.financial_year?.name ?? "—"}
-                            </td>
-                            <td className="px-4 py-2.5 text-muted whitespace-nowrap text-xs">
-                              {appeal.assessment_year?.name ?? "—"}
-                            </td>
-                            <td className="px-4 py-2.5 text-muted whitespace-nowrap max-w-72 truncate text-xs" title={proc.proceeding_type?.name ?? (appeal.act_regulation?.name ?? "—")}>
-                              {proc.proceeding_type?.name ?? (appeal.act_regulation?.name ?? "—")}
-                            </td>
-                            <td className="px-4 py-2.5">
-                              {ps ? (
-                                <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${ps.cls}`}>{ps.label}</span>
-                              ) : (
-                                <span className="text-muted text-xs">—</span>
-                              )}
-                            </td>
+                            <td className={`${tdSub} max-w-36 truncate`} title={jurisdiction}>{jurisdiction}</td>
+                            <td className={tdSub}>{limitDate}</td>
+                            <td className={`${tdSub} max-w-40 truncate`} title={assignedNames}>{assignedNames}</td>
                             <td />
                           </tr>
                         );
