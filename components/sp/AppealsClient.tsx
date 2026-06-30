@@ -34,6 +34,24 @@ interface NamedRecord {
   name: string;
 }
 
+// ─── Column visibility ────────────────────────────────────────────────────────
+const ALL_COLUMNS = [
+  { key: "file_no",           label: "File No."          },
+  { key: "client_name",       label: "Client Name"       },
+  { key: "act",               label: "Act"               },
+  { key: "fy_ty",             label: "FY/TY"             },
+  { key: "proceeding",        label: "Proceeding"        },
+  { key: "proceeding_status", label: "Proceeding Status" },
+  { key: "jurisdiction",      label: "Jurisdiction"      },
+  { key: "limitation_date",   label: "Limitation Date"   },
+  { key: "assigned_to",       label: "Assigned To"       },
+] as const;
+
+type ColKey = (typeof ALL_COLUMNS)[number]["key"];
+const ALL_COL_KEYS = ALL_COLUMNS.map(c => c.key) as ColKey[];
+
+function storageKey(userId: string) { return `appealdesk_col_vis_${userId}`; }
+
 interface Props {
   appeals: Appeal[];
   clients: NamedRecord[];
@@ -52,6 +70,7 @@ interface Props {
   currentStatuses: string[];
   currentAssigned: string[];
   currentSortDir: string;
+  userId: string;
 }
 
 const STATUS_DISPLAY: Record<string, { label: string; cls: string }> = {
@@ -302,15 +321,52 @@ export default function AppealsClient({
   currentStatuses,
   currentAssigned,
   currentSortDir,
+  userId,
 }: Props) {
   const router = useRouter();
 
-  const [exporting, setExporting] = useState<"excel" | "pdf" | "docx" | null>(
-    null,
-  );
+  const [exporting, setExporting] = useState<"excel" | "pdf" | "docx" | null>(null);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  // Column visibility — null until loaded from localStorage to avoid hydration mismatch
+  const [visibleCols, setVisibleCols] = useState<Set<ColKey> | null>(null);
+  const effectiveCols = visibleCols ?? new Set<ColKey>(ALL_COL_KEYS);
+  const col = (key: ColKey) => effectiveCols.has(key);
+  const visibleColCount = 1 + effectiveCols.size + 1; // Sl.No + visible + action
+
+  const [colMenuOpen, setColMenuOpen] = useState(false);
+  const colMenuRef = useRef<HTMLDivElement>(null);
+
+  // Load from localStorage after mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(storageKey(userId));
+      if (saved) {
+        const parsed = JSON.parse(saved) as ColKey[];
+        setVisibleCols(new Set(parsed.filter(k => ALL_COL_KEYS.includes(k))));
+      } else {
+        setVisibleCols(new Set(ALL_COL_KEYS));
+      }
+    } catch { setVisibleCols(new Set(ALL_COL_KEYS)); }
+  }, [userId]);
+
+  function toggleCol(key: ColKey) {
+    setVisibleCols(prev => {
+      const base = prev ?? new Set(ALL_COL_KEYS);
+      const next = new Set(base);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      try { localStorage.setItem(storageKey(userId), JSON.stringify([...next])); } catch { /* */ }
+      return next;
+    });
+  }
+
+  function resetCols() {
+    const full = new Set<ColKey>(ALL_COL_KEYS);
+    setVisibleCols(full);
+    try { localStorage.removeItem(storageKey(userId)); } catch { /* */ }
+  }
 
   useEffect(() => {
     if (!exportMenuOpen) return;
@@ -325,6 +381,15 @@ export default function AppealsClient({
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [exportMenuOpen]);
+
+  useEffect(() => {
+    if (!colMenuOpen) return;
+    function handler(e: MouseEvent) {
+      if (colMenuRef.current && !colMenuRef.current.contains(e.target as Node)) setColMenuOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [colMenuOpen]);
 
   function triggerDownload(blob: Blob, fileName: string) {
     const url = URL.createObjectURL(blob);
@@ -554,8 +619,43 @@ export default function AppealsClient({
           </button>
         )}
 
+        {/* Column visibility settings */}
+        <div ref={colMenuRef} className="relative ml-auto">
+          <button
+            onClick={() => setColMenuOpen(v => !v)}
+            title="Column settings"
+            className={`inline-flex items-center justify-center w-9.5 h-9.5 border rounded-lg hover:bg-page transition ${colMenuOpen ? "border-primary text-primary bg-accent-light" : "border-accent text-accent"}`}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+            </svg>
+          </button>
+          {colMenuOpen && (
+            <div className="absolute right-0 top-full mt-1 bg-white border border-border rounded-xl shadow-xl z-50 w-52 py-2">
+              <p className="px-3 pb-2 text-xs font-semibold text-heading border-b border-border mb-1">Column Visibility</p>
+              {ALL_COLUMNS.map(({ key, label }) => {
+                const checked = effectiveCols.has(key);
+                return (
+                  <label key={key} className="flex items-center gap-2.5 px-3 py-1.5 hover:bg-page cursor-pointer select-none">
+                    <div
+                      onClick={() => toggleCol(key)}
+                      className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors cursor-pointer ${checked ? "bg-primary border-primary" : "border-border-strong"}`}
+                    >
+                      {checked && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                    </div>
+                    <span onClick={() => toggleCol(key)} className="text-sm text-secondary flex-1">{label}</span>
+                  </label>
+                );
+              })}
+              <div className="border-t border-border mt-1 px-3 pt-2">
+                <button onClick={resetCols} className="text-xs text-accent hover:underline">Reset to default</button>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Export dropdown */}
-        <div ref={exportMenuRef} className="relative ml-auto">
+        <div ref={exportMenuRef} className="relative">
           <button
             onClick={() => setExportMenuOpen((v) => !v)}
             disabled={!!exporting || totalCount === 0}
@@ -604,15 +704,15 @@ export default function AppealsClient({
             <thead>
               <tr className="border-b-2 border-table-header-border bg-table-header">
                 <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap w-16">Sl. No.</th>
-                <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap w-24">File No.</th>
-                <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap">Client Name</th>
-                <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap">Act</th>
-                <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap w-24">FY/TY</th>
-                <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap">Proceeding</th>
-                <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap w-28">Proceeding Status</th>
-                <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap">Jurisdiction</th>
-                <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap w-28">Limitation Date</th>
-                <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap">Assigned To</th>
+                {col("file_no")           && <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap w-24">File No.</th>}
+                {col("client_name")       && <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap">Client Name</th>}
+                {col("act")               && <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap">Act</th>}
+                {col("fy_ty")             && <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap w-24">FY/TY</th>}
+                {col("proceeding")        && <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap">Proceeding</th>}
+                {col("proceeding_status") && <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap w-28">Proceeding Status</th>}
+                {col("jurisdiction")      && <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap">Jurisdiction</th>}
+                {col("limitation_date")   && <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap w-28">Limitation Date</th>}
+                {col("assigned_to")       && <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap">Assigned To</th>}
                 <th className="w-10" />
               </tr>
             </thead>
@@ -620,7 +720,7 @@ export default function AppealsClient({
               {appeals.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={11}
+                    colSpan={visibleColCount}
                     className="px-4 py-16 text-center text-secondary"
                   >
                     {hasFilters
@@ -644,17 +744,15 @@ export default function AppealsClient({
                       {/* ── Litigation row ── */}
                       <tr className="hover:bg-page transition-colors cursor-pointer" onClick={() => router.push(`/litigations/${appeal.id}`)}>
                         <td className={`${tdLit} text-xs font-medium w-16`}>{rowNum}</td>
-                        <td className={`${tdLit} text-xs`}>—</td>
-                        <td className={`${tdLit} max-w-60 truncate text-sm`} title={appeal.client_org?.name ?? "—"}>{appeal.client_org?.name ?? "—"}</td>
-                        <td className={`${tdLit} max-w-52 truncate text-sm`} title={appeal.act_regulation?.name ?? "—"}>{appeal.act_regulation?.name ?? "—"}</td>
-                        <td className={`${tdLit} text-sm`}>{appeal.financial_year?.name ?? "—"}</td>
-                        <td className={`${tdLit} text-xs text-muted`}>—</td>
-                        <td className="px-3 py-3">
-                          {s ? <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${s.cls}`}>{s.label}</span> : <span className="text-muted text-xs">—</span>}
-                        </td>
-                        <td className={`${tdLit} text-xs text-muted`}>—</td>
-                        <td className={`${tdLit} text-xs text-muted`}>—</td>
-                        <td className={`${tdLit} text-xs text-muted`}>—</td>
+                        {col("file_no")           && <td className={`${tdLit} text-xs`}>—</td>}
+                        {col("client_name")       && <td className={`${tdLit} max-w-60 truncate text-sm`} title={appeal.client_org?.name ?? "—"}>{appeal.client_org?.name ?? "—"}</td>}
+                        {col("act")               && <td className={`${tdLit} max-w-52 truncate text-sm`} title={appeal.act_regulation?.name ?? "—"}>{appeal.act_regulation?.name ?? "—"}</td>}
+                        {col("fy_ty")             && <td className={`${tdLit} text-sm`}>{appeal.financial_year?.name ?? "—"}</td>}
+                        {col("proceeding")        && <td className={`${tdLit} text-xs text-muted`}>—</td>}
+                        {col("proceeding_status") && <td className="px-3 py-3">{s ? <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${s.cls}`}>{s.label}</span> : <span className="text-muted text-xs">—</span>}</td>}
+                        {col("jurisdiction")      && <td className={`${tdLit} text-xs text-muted`}>—</td>}
+                        {col("limitation_date")   && <td className={`${tdLit} text-xs text-muted`}>—</td>}
+                        {col("assigned_to")       && <td className={`${tdLit} text-xs text-muted`}>—</td>}
                         <td className="px-2 py-3 text-center" onClick={(e) => e.stopPropagation()}>
                           <button onClick={(e) => handleDownloadLitigation(e, appeal.id, appeal.client_org?.name ?? "litigation")} disabled={downloadingId === appeal.id} title="Download PDF Report" className="inline-flex items-center justify-center w-7 h-7 rounded hover:bg-page transition-colors text-muted hover:text-accent disabled:opacity-40">
                             {downloadingId === appeal.id ? (
@@ -680,17 +778,15 @@ export default function AppealsClient({
                         return (
                           <tr key={proc.id} className="bg-accent-faint hover:bg-accent-light transition-colors cursor-pointer border-t border-dashed border-border" onClick={() => router.push(`/litigations/${appeal.id}`)}>
                             <td className={`${tdSub} pl-7`}>{rowNum}.{letter}</td>
-                            <td className={`${tdSub}`}>—</td>
-                            <td className={`${tdSub} max-w-60 truncate`} title={appeal.client_org?.name ?? "—"}>{appeal.client_org?.name ?? "—"}</td>
-                            <td className={`${tdSub} max-w-52 truncate`} title={appeal.act_regulation?.name ?? "—"}>{appeal.act_regulation?.name ?? "—"}</td>
-                            <td className={tdSub}>{appeal.financial_year?.name ?? "—"}</td>
-                            <td className={`${tdSub} max-w-40 truncate`} title={proc.proceeding_type?.name ?? "—"}>{proc.proceeding_type?.name ?? "—"}</td>
-                            <td className="px-3 py-2.5">
-                              {ps ? <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${ps.cls}`}>{ps.label}</span> : <span className="text-muted text-xs">—</span>}
-                            </td>
-                            <td className={`${tdSub} max-w-36 truncate`} title={jurisdiction}>{jurisdiction}</td>
-                            <td className={tdSub}>{limitDate}</td>
-                            <td className={`${tdSub} max-w-40 truncate`} title={assignedNames}>{assignedNames}</td>
+                            {col("file_no")           && <td className={tdSub}>—</td>}
+                            {col("client_name")       && <td className={`${tdSub} max-w-60 truncate`} title={appeal.client_org?.name ?? "—"}>{appeal.client_org?.name ?? "—"}</td>}
+                            {col("act")               && <td className={`${tdSub} max-w-52 truncate`} title={appeal.act_regulation?.name ?? "—"}>{appeal.act_regulation?.name ?? "—"}</td>}
+                            {col("fy_ty")             && <td className={tdSub}>{appeal.financial_year?.name ?? "—"}</td>}
+                            {col("proceeding")        && <td className={`${tdSub} max-w-40 truncate`} title={proc.proceeding_type?.name ?? "—"}>{proc.proceeding_type?.name ?? "—"}</td>}
+                            {col("proceeding_status") && <td className="px-3 py-2.5">{ps ? <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${ps.cls}`}>{ps.label}</span> : <span className="text-muted text-xs">—</span>}</td>}
+                            {col("jurisdiction")      && <td className={`${tdSub} max-w-36 truncate`} title={jurisdiction}>{jurisdiction}</td>}
+                            {col("limitation_date")   && <td className={tdSub}>{limitDate}</td>}
+                            {col("assigned_to")       && <td className={`${tdSub} max-w-40 truncate`} title={assignedNames}>{assignedNames}</td>}
                             <td />
                           </tr>
                         );

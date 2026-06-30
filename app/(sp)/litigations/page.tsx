@@ -112,6 +112,7 @@ export default async function AppealsPage({
         currentStatuses={filterStatuses}
         currentAssigned={filterAssigned}
         currentSortDir={sortAsc ? "asc" : "desc"}
+        userId={user?.id ?? ""}
       />
     </div>
   );
