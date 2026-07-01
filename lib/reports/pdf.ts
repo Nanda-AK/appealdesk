@@ -84,9 +84,8 @@ export function generatePDF(data: LitigationReportData): Blob {
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
 
-  const open       = data.appeals.filter((a) => a.status === "open").length;
-  const inProgress = data.appeals.filter((a) => a.status === "in-progress").length;
-  const closed     = data.appeals.filter((a) => a.status === "closed").length;
+  const open   = data.appeals.filter((a) => a.status === "open").length;
+  const closed = data.appeals.filter((a) => a.status === "closed").length;
 
   const common = {
     margin: { left: 14, right: 14 },
@@ -107,12 +106,12 @@ export function generatePDF(data: LitigationReportData): Blob {
   autoTable(doc, {
     ...common,
     startY: 27,
-    head: [["Total Litigations", "Open", "In-Progress", "Closed"]],
-    body:  [[data.appeals.length, open, inProgress, closed]],
+    head: [["Total Litigations", "Open", "Closed"]],
+    body:  [[data.appeals.length, open, closed]],
     theme: "grid",
     headStyles: { fillColor: NAVY, textColor: 255, fontSize: 9, fontStyle: "bold", halign: "center" },
     bodyStyles: { fontSize: 11, halign: "center", fontStyle: "bold" },
-    columnStyles: { 0: { cellWidth: 50 }, 1: { cellWidth: 40 }, 2: { cellWidth: 40 }, 3: { cellWidth: 40 } },
+    columnStyles: { 0: { cellWidth: 60 }, 1: { cellWidth: 50 }, 2: { cellWidth: 50 } },
     tableWidth: 170,
   });
 

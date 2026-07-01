@@ -4,7 +4,26 @@ import type { CalendarEvent, CalendarEventSourceType, ImportanceLevel } from '@/
 import {
   loadVisibleTypes, saveVisibleTypes, getWeekDays,
   getViewDateRange, IMPORTANCE_COLORS, IMPORTANCE_LABELS, toDateStr,
+  DEFAULT_VISIBLE_TYPES,
 } from '@/lib/calendarUtils'
+import {
+  DAY_PANEL_WIDTH,
+  FILTER_ACTIVE_CLS,
+  FILTER_INACTIVE_CLS,
+  FILTER_DROPDOWN_WIDTH,
+  STATS_CHIP_PADDING,
+  STATS_CHIP_BG,
+  IMPORTANCE_ORDER,
+  DEFAULT_VIEW_MODE,
+  getDefaultDate,
+  NAV_DATE_LOCALE,
+  NAV_WEEK_PREFIX,
+  NAV_BTN_CLS,
+  VIEW_TOGGLE_ACTIVE_CLS,
+  VIEW_TOGGLE_INACTIVE_CLS,
+  VIEW_TOGGLE_CONTAINER_CLS,
+  type ViewMode,
+} from '@/lib/dashboardConfig'
 import { CalendarMonthGrid } from './CalendarMonthGrid'
 import { CalendarWeekGrid } from './CalendarWeekGrid'
 import { CalendarDayPanel } from './CalendarDayPanel'
@@ -14,20 +33,22 @@ interface Props {
   events: CalendarEvent[]
 }
 
-type ViewMode = 'month' | 'week'
-
-const IMPORTANCE_ORDER: ImportanceLevel[] = ['critical', 'high', 'medium', 'low']
-
 function todayStr() {
   return toDateStr(new Date())
 }
 
 export function DashboardCalendar({ events }: Props) {
-  const [viewMode, setViewMode] = useState<ViewMode>('week')
-  const [currentDate, setCurrentDate] = useState<Date>(new Date())
-  const [visibleTypes, setVisibleTypes] = useState<CalendarEventSourceType[]>([])
+  const [viewMode, setViewMode] = useState<ViewMode>(DEFAULT_VIEW_MODE)
+  const [currentDate, setCurrentDate] = useState<Date>(getDefaultDate)
+  // Start with SSR-safe defaults; sync from localStorage after hydration to avoid mismatch
+  const [visibleTypes, setVisibleTypes] = useState<CalendarEventSourceType[]>(DEFAULT_VISIBLE_TYPES)
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [selectedDay, setSelectedDay] = useState<string>(todayStr())
+  const [selectedDay, setSelectedDay] = useState<string>('')
+
+  useEffect(() => {
+    setVisibleTypes(loadVisibleTypes())
+    setSelectedDay(todayStr())
+  }, [])
 
   // Client filter
   const [selectedClients, setSelectedClients] = useState<string[]>([])
@@ -40,10 +61,6 @@ export function DashboardCalendar({ events }: Props) {
   const [actSearch, setActSearch] = useState('')
   const [actDropdownOpen, setActDropdownOpen] = useState(false)
   const actDropdownRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    setVisibleTypes(loadVisibleTypes())
-  }, [])
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -82,10 +99,10 @@ export function DashboardCalendar({ events }: Props) {
   }
 
   const navLabel = viewMode === 'month'
-    ? currentDate.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
+    ? currentDate.toLocaleDateString(NAV_DATE_LOCALE, { month: 'long', year: 'numeric' })
     : (() => {
         const start = getWeekDays(currentDate)[0]
-        return `Week of ${start.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`
+        return `${NAV_WEEK_PREFIX} ${start.toLocaleDateString(NAV_DATE_LOCALE, { day: 'numeric', month: 'short', year: 'numeric' })}`
       })()
 
   // All unique client names
@@ -140,7 +157,7 @@ export function DashboardCalendar({ events }: Props) {
         <div className="flex items-center justify-between mb-3 flex-shrink-0 gap-2 flex-wrap">
           {/* Navigation */}
           <div className="flex items-center gap-2">
-            <button onClick={navPrev} className="p-1 rounded hover:bg-surface-hover text-secondary transition" aria-label="Previous">
+            <button onClick={navPrev} className={NAV_BTN_CLS} aria-label="Previous">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="15 18 9 12 15 6"/>
               </svg>
@@ -148,7 +165,7 @@ export function DashboardCalendar({ events }: Props) {
             <span className="text-sm font-semibold text-heading min-w-[180px] text-center select-none">
               {navLabel}
             </span>
-            <button onClick={navNext} className="p-1 rounded hover:bg-surface-hover text-secondary transition" aria-label="Next">
+            <button onClick={navNext} className={NAV_BTN_CLS} aria-label="Next">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="9 18 15 12 9 6"/>
               </svg>
@@ -161,9 +178,7 @@ export function DashboardCalendar({ events }: Props) {
               <button
                 onClick={() => { setClientDropdownOpen(o => !o); setClientSearch('') }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border transition ${
-                  selectedClients.length > 0
-                    ? 'border-primary bg-primary text-white'
-                    : 'border-border text-secondary hover:bg-surface-hover'
+                  selectedClients.length > 0 ? FILTER_ACTIVE_CLS : FILTER_INACTIVE_CLS
                 }`}
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -178,7 +193,7 @@ export function DashboardCalendar({ events }: Props) {
                 </svg>
               </button>
               {clientDropdownOpen && (
-                <div className="absolute right-0 top-full mt-1 w-64 bg-white border border-border rounded-xl shadow-lg z-40">
+                <div className={`absolute right-0 top-full mt-1 ${FILTER_DROPDOWN_WIDTH} bg-white border border-border rounded-xl shadow-lg z-40`}>
                   <div className="p-2 border-b border-border">
                     <input
                       autoFocus
@@ -217,9 +232,7 @@ export function DashboardCalendar({ events }: Props) {
               <button
                 onClick={() => { setActDropdownOpen(o => !o); setActSearch('') }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border transition ${
-                  selectedActs.length > 0
-                    ? 'border-primary bg-primary text-white'
-                    : 'border-border text-secondary hover:bg-surface-hover'
+                  selectedActs.length > 0 ? FILTER_ACTIVE_CLS : FILTER_INACTIVE_CLS
                 }`}
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -232,7 +245,7 @@ export function DashboardCalendar({ events }: Props) {
                 </svg>
               </button>
               {actDropdownOpen && (
-                <div className="absolute right-0 top-full mt-1 w-64 bg-white border border-border rounded-xl shadow-lg z-40">
+                <div className={`absolute right-0 top-full mt-1 ${FILTER_DROPDOWN_WIDTH} bg-white border border-border rounded-xl shadow-lg z-40`}>
                   <div className="p-2 border-b border-border">
                     <input
                       autoFocus
@@ -267,11 +280,11 @@ export function DashboardCalendar({ events }: Props) {
             </div>
 
             {/* Month / Week toggle */}
-            <div className="flex bg-surface-hover rounded-lg p-1">
+            <div className={VIEW_TOGGLE_CONTAINER_CLS}>
               <button
                 onClick={() => setViewMode('month')}
                 className={`px-3 py-1 rounded text-xs font-medium transition ${
-                  viewMode === 'month' ? 'bg-white shadow-sm text-heading' : 'text-secondary hover:text-heading'
+                  viewMode === 'month' ? VIEW_TOGGLE_ACTIVE_CLS : VIEW_TOGGLE_INACTIVE_CLS
                 }`}
               >
                 Month
@@ -279,7 +292,7 @@ export function DashboardCalendar({ events }: Props) {
               <button
                 onClick={() => setViewMode('week')}
                 className={`px-3 py-1 rounded text-xs font-medium transition ${
-                  viewMode === 'week' ? 'bg-white shadow-sm text-heading' : 'text-secondary hover:text-heading'
+                  viewMode === 'week' ? VIEW_TOGGLE_ACTIVE_CLS : VIEW_TOGGLE_INACTIVE_CLS
                 }`}
               >
                 Week
@@ -321,25 +334,25 @@ export function DashboardCalendar({ events }: Props) {
 
         {/* Stats bar — below calendar */}
         <div className="flex items-center gap-2 mt-3 flex-shrink-0 flex-wrap border-t border-border pt-3">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-surface-hover rounded-lg select-none">
+          <div className={`flex items-center gap-1.5 ${STATS_CHIP_PADDING} ${STATS_CHIP_BG} rounded-lg select-none`}>
             <span className="text-xs font-bold text-heading">{totalCount}</span>
             <span className="text-xs text-muted">Events</span>
           </div>
-          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-surface-hover rounded-lg select-none">
+          <div className={`flex items-center gap-1.5 ${STATS_CHIP_PADDING} ${STATS_CHIP_BG} rounded-lg select-none`}>
             <span className="text-xs font-bold text-heading">{litigationCount}</span>
             <span className="text-xs text-muted">Litigations</span>
           </div>
-          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-surface-hover rounded-lg select-none">
+          <div className={`flex items-center gap-1.5 ${STATS_CHIP_PADDING} ${STATS_CHIP_BG} rounded-lg select-none`}>
             <span className="text-xs font-bold text-heading">{uniqueClients}</span>
             <span className="text-xs text-muted">Clients</span>
           </div>
-          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-surface-hover rounded-lg select-none">
+          <div className={`flex items-center gap-1.5 ${STATS_CHIP_PADDING} ${STATS_CHIP_BG} rounded-lg select-none`}>
             <span className="text-xs font-bold text-heading">{assignedStaffCount}</span>
             <span className="text-xs text-muted">Staff</span>
           </div>
           <div className="w-px h-4 bg-border mx-1" />
           {IMPORTANCE_ORDER.map(level => (
-            <div key={level} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-hover select-none">
+            <div key={level} className={`flex items-center gap-1.5 ${STATS_CHIP_PADDING} rounded-lg ${STATS_CHIP_BG} select-none`}>
               <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ background: IMPORTANCE_COLORS[level] }} />
               <span className="text-xs font-bold text-heading">{importanceCounts[level]}</span>
               <span className="text-xs text-muted">{IMPORTANCE_LABELS[level]}</span>
@@ -349,7 +362,7 @@ export function DashboardCalendar({ events }: Props) {
       </div>
 
       {/* Day Events panel */}
-      <div className="w-72 flex-shrink-0 bg-white border border-border rounded-xl p-4 overflow-hidden flex flex-col">
+      <div className={`${DAY_PANEL_WIDTH} flex-shrink-0 bg-white border border-border rounded-xl p-4 overflow-hidden flex flex-col`}>
         <CalendarDayPanel
           events={filteredEvents}
           visibleTypes={visibleTypes}

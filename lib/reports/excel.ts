@@ -11,18 +11,16 @@ export function generateExcel(data: LitigationReportData): Blob {
   const wb = XLSX.utils.book_new();
 
   // ── Sheet 1: Summary ──────────────────────────────────────────────
-  const open       = data.appeals.filter((a) => a.status === "open").length;
-  const inProgress = data.appeals.filter((a) => a.status === "in-progress").length;
-  const closed     = data.appeals.filter((a) => a.status === "closed").length;
+  const open   = data.appeals.filter((a) => a.status === "open").length;
+  const closed = data.appeals.filter((a) => a.status === "closed").length;
 
   const summaryRows = [
     [`${data.spName} — Litigation Report`],
     ["Generated on", fmtDate(data.generatedAt)],
     [],
     ["Total Litigations", data.appeals.length],
-    ["Open",             open],
-    ["In-Progress",      inProgress],
-    ["Closed",           closed],
+    ["Open",   open],
+    ["Closed", closed],
     [],
     ["#", "Client", "Financial Year", "Assessment Year", "Act / Regulation", "Status", "Created On"],
     ...data.appeals.map((a, i) => [

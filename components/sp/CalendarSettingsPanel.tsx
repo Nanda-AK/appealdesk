@@ -1,6 +1,12 @@
 'use client'
 import type { CalendarEventSourceType } from '@/lib/calendarUtils'
 import { EVENT_SOURCE_LABELS, EVENT_SOURCE_COLORS, ALL_SOURCE_TYPES } from '@/lib/calendarUtils'
+import {
+  SETTINGS_PANEL_WIDTH,
+  SETTINGS_PANEL_TOP,
+  SETTINGS_PANEL_RIGHT,
+  SETTINGS_PANEL_MAX_HEIGHT,
+} from '@/lib/dashboardConfig'
 
 const GROUPS: { label: string; types: CalendarEventSourceType[] }[] = [
   { label: 'Proceedings Dates', types: ['deadline', 'initiated_on'] },
@@ -32,7 +38,7 @@ export function CalendarSettingsPanel({ visibleTypes, onChange, onClose }: Props
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-end" onClick={onClose}>
       <div
-        className="mt-16 mr-4 w-72 bg-white border border-border rounded-xl shadow-lg p-5 max-h-[80vh] overflow-y-auto"
+        className={`${SETTINGS_PANEL_TOP} ${SETTINGS_PANEL_RIGHT} ${SETTINGS_PANEL_WIDTH} bg-white border border-border rounded-xl shadow-lg p-5 ${SETTINGS_PANEL_MAX_HEIGHT} overflow-y-auto`}
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-3">

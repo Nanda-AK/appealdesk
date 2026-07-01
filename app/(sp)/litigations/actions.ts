@@ -46,7 +46,7 @@ export interface EventInput {
   category: string;
   parent_event_id?: string;  // sub events reference their parent main event
   event_date?: string;
-  status?: string;           // 'open' | 'in_progress' | 'closed'
+  status?: string;           // 'open' | 'closed'
   event_notice_number?: string;
   description?: string;
   details?: Record<string, string>;
@@ -322,10 +322,19 @@ export async function deleteEvent(eventId: string): Promise<void> {
   const { data: evtRef } = await supabase.from("events").select("category").eq("id", eventId).single();
   const evtLabel = evtRef?.category ? EVENT_CATEGORY_LABELS[evtRef.category] ?? evtRef.category : eventId;
 
-  await supabase.from("event_documents").delete().eq("event_id", eventId);
+  // Delete child sub-events first (FK: events.parent_event_id → events.id)
+  const { data: subEvents } = await supabase.from("events").select("id").eq("parent_event_id", eventId);
+  if (subEvents && subEvents.length > 0) {
+    const subIds = subEvents.map(e => e.id);
+    await supabase.from("event_documents").delete().in("event_id", subIds);
+    await supabase.from("events").delete().in("id", subIds);
+  }
 
+  // Delete this event's documents, then the event itself
+  await supabase.from("event_documents").delete().eq("event_id", eventId);
   const { error } = await supabase.from("events").delete().eq("id", eventId);
   if (error) throw new Error(error.message);
+
   await logAction(supabase, { actorId: user.id, spId: spId!, action: "delete", entityType: "event", entityLabel: evtLabel });
   revalidatePath("/litigations");
 }

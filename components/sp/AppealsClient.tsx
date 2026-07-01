@@ -75,13 +75,11 @@ interface Props {
 
 const STATUS_DISPLAY: Record<string, { label: string; cls: string }> = {
   open: { label: "Open", cls: "bg-blue-50 text-blue-700" },
-  "in-progress": { label: "In Progress", cls: "bg-amber-50 text-amber-700" },
   closed: { label: "Closed", cls: "bg-gray-100 text-gray-500" },
 };
 
 const STATUS_OPTIONS: NamedRecord[] = [
   { id: "open", name: "Open" },
-  { id: "in-progress", name: "In Progress" },
   { id: "closed", name: "Closed" },
 ];
 
