@@ -2,6 +2,7 @@
 import { useRouter } from 'next/navigation'
 import type { CalendarEvent, CalendarEventSourceType } from '@/lib/calendarUtils'
 import { EVENT_SOURCE_LABELS, EVENT_SOURCE_COLORS } from '@/lib/calendarUtils'
+import { DAY_PANEL_CARD_LEFT_BORDER, DAY_PANEL_CARD_PADDING, NAV_DATE_LOCALE } from '@/lib/dashboardConfig'
 
 interface Props {
   events: CalendarEvent[]
@@ -17,7 +18,7 @@ export function CalendarDayPanel({ events, visibleTypes, selectedDate }: Props) 
   )
 
   const [y, m, d] = selectedDate.split('-').map(Number)
-  const dateLabel = new Date(y, m - 1, d).toLocaleDateString('en-IN', {
+  const dateLabel = new Date(y, m - 1, d).toLocaleDateString(NAV_DATE_LOCALE, {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   })
   const isToday = selectedDate === (() => {
@@ -55,8 +56,8 @@ export function CalendarDayPanel({ events, visibleTypes, selectedDate }: Props) 
           <button
             key={`${event.sourceType}-${event.id}`}
             onClick={() => router.push(`/litigations/${event.appealId}`)}
-            className="w-full text-left rounded-lg bg-white border border-border p-2.5 hover:shadow-sm transition"
-            style={{ borderLeftColor: EVENT_SOURCE_COLORS[event.sourceType], borderLeftWidth: 3 }}
+            className={`w-full text-left rounded-lg bg-white border border-border ${DAY_PANEL_CARD_PADDING} hover:shadow-sm transition`}
+            style={{ borderLeftColor: EVENT_SOURCE_COLORS[event.sourceType], borderLeftWidth: DAY_PANEL_CARD_LEFT_BORDER }}
           >
             <p className="text-xs font-semibold text-heading leading-tight mb-0.5">
               {EVENT_SOURCE_LABELS[event.sourceType]}

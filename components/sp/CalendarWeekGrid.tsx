@@ -8,6 +8,15 @@ import {
   getWeekDays,
   toDateStr,
 } from '@/lib/calendarUtils'
+import {
+  WEEK_COL_BODY_TINTS,
+  WEEK_COL_HEADER_TINTS,
+  WEEK_SELECTED_HEADER_BG,
+  WEEK_EVENT_CARD_LEFT_BORDER,
+  WEEK_EVENT_CARD_PADDING,
+  WEEK_COL_GAP,
+  NAV_DATE_LOCALE,
+} from '@/lib/dashboardConfig'
 
 interface Props {
   events: CalendarEvent[]
@@ -17,15 +26,6 @@ interface Props {
   onDayClick?: (date: string) => void
 }
 
-const COL_BODY_TINTS = [
-  '#FFF5F5', '#FFFBEB', '#F0FFF4', '#EFF6FF',
-  '#F5F3FF', '#FFF0F6', '#F0FDFA',
-]
-const COL_HEADER_TINTS = [
-  '#FECACA', '#FDE68A', '#BBF7D0', '#BFDBFE',
-  '#DDD6FE', '#FBCFE8', '#99F6E4',
-]
-
 export function CalendarWeekGrid({ events, visibleTypes, currentDate, selectedDay, onDayClick }: Props) {
   const router = useRouter()
   const today = toDateStr(new Date())
@@ -34,12 +34,12 @@ export function CalendarWeekGrid({ events, visibleTypes, currentDate, selectedDa
   const byDate = groupEventsByDate(filtered)
 
   return (
-    <div className="grid grid-cols-7 gap-2 flex-1 min-h-0">
+    <div className={`grid grid-cols-7 ${WEEK_COL_GAP} flex-1 min-h-0`}>
       {weekDays.map((day, i) => {
         const dateStr = toDateStr(day)
         const dayEvents = byDate.get(dateStr) ?? []
-        const dayName = day.toLocaleDateString('en-IN', { weekday: 'short' }).toUpperCase()
-        const dayLabel = day.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+        const dayName = day.toLocaleDateString(NAV_DATE_LOCALE, { weekday: 'short' }).toUpperCase()
+        const dayLabel = day.toLocaleDateString(NAV_DATE_LOCALE, { day: 'numeric', month: 'short' })
         const isToday = dateStr === today
         const isSelected = dateStr === selectedDay
 
@@ -52,7 +52,7 @@ export function CalendarWeekGrid({ events, visibleTypes, currentDate, selectedDa
           >
             <div
               className="text-center py-2 border-b border-border flex-shrink-0 cursor-pointer hover:opacity-80 transition"
-              style={{ background: isSelected ? '#363636' : COL_HEADER_TINTS[i] }}
+              style={{ background: isSelected ? WEEK_SELECTED_HEADER_BG : WEEK_COL_HEADER_TINTS[i] }}
               onClick={() => onDayClick?.(dateStr)}
             >
               <p className={`text-xs font-bold ${isSelected ? 'text-white' : 'text-heading'}`}>{dayName}</p>
@@ -62,14 +62,14 @@ export function CalendarWeekGrid({ events, visibleTypes, currentDate, selectedDa
             </div>
             <div
               className="flex-1 overflow-y-auto p-1.5 space-y-1.5 min-h-0"
-              style={{ background: COL_BODY_TINTS[i] }}
+              style={{ background: WEEK_COL_BODY_TINTS[i] }}
             >
               {dayEvents.map(event => (
                 <button
                   key={`${event.sourceType}-${event.id}`}
                   onClick={() => router.push(`/litigations/${event.appealId}`)}
-                  className="w-full text-left rounded bg-white border border-border text-xs p-2 hover:shadow-sm transition"
-                  style={{ borderLeftColor: EVENT_SOURCE_COLORS[event.sourceType], borderLeftWidth: 3 }}
+                  className={`w-full text-left rounded bg-white border border-border text-xs ${WEEK_EVENT_CARD_PADDING} hover:shadow-sm transition`}
+                  style={{ borderLeftColor: EVENT_SOURCE_COLORS[event.sourceType], borderLeftWidth: WEEK_EVENT_CARD_LEFT_BORDER }}
                 >
                   <p className="font-semibold text-heading mb-0.5 leading-tight">
                     {EVENT_SOURCE_LABELS[event.sourceType]}

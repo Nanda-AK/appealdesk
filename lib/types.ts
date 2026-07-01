@@ -49,7 +49,7 @@ export type EventCategory =
   | "stay_petition"
   | "others";
 
-export type NoticeStatus = "open" | "in_progress" | "closed";
+export type NoticeStatus = "open" | "closed";
 
 // ─── Organizations ────────────────────────────────────────────────────────────
 

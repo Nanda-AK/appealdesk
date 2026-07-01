@@ -54,9 +54,8 @@ function spacer(): Paragraph {
 }
 
 export async function generateDocx(data: LitigationReportData): Promise<Blob> {
-  const open       = data.appeals.filter((a) => a.status === "open").length;
-  const inProgress = data.appeals.filter((a) => a.status === "in-progress").length;
-  const closed     = data.appeals.filter((a) => a.status === "closed").length;
+  const open   = data.appeals.filter((a) => a.status === "open").length;
+  const closed = data.appeals.filter((a) => a.status === "closed").length;
 
   const children: (Paragraph | Table)[] = [
     new Paragraph({ text: `${data.spName} — Litigation Report`, heading: HeadingLevel.HEADING_1 }),
@@ -73,7 +72,6 @@ export async function generateDocx(data: LitigationReportData): Promise<Blob> {
         new TableRow({ children: [hCell("Metric"), hCell("Count")] }),
         new TableRow({ children: [dCell("Total Litigations"), dCell(String(data.appeals.length))] }),
         new TableRow({ children: [dCell("Open", true), dCell(String(open), true)] }),
-        new TableRow({ children: [dCell("In-Progress"), dCell(String(inProgress))] }),
         new TableRow({ children: [dCell("Closed", true), dCell(String(closed), true)] }),
       ],
     }),

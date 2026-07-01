@@ -7,6 +7,18 @@ import {
   getDaysInMonth,
   toDateStr,
 } from '@/lib/calendarUtils'
+import {
+  MONTH_CELL_SELECTED,
+  MONTH_CELL_TODAY,
+  MONTH_CELL_HOVER,
+  MONTH_DATE_TODAY,
+  MONTH_DATE_SELECTED,
+  MONTH_DATE_DEFAULT,
+  MONTH_DATE_CIRCLE_SIZE,
+  MONTH_BADGE_FONT_SIZE,
+  MONTH_BADGE_MIN_HEIGHT,
+  IMPORTANCE_ORDER,
+} from '@/lib/dashboardConfig'
 
 interface Props {
   events: CalendarEvent[]
@@ -17,7 +29,6 @@ interface Props {
 }
 
 const DAY_HEADERS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-const IMPORTANCE_ORDER: ImportanceLevel[] = ['critical', 'high', 'medium', 'low']
 
 export function CalendarMonthGrid({ events, visibleTypes, currentDate, selectedDay, onDayClick }: Props) {
   const year = currentDate.getFullYear()
@@ -80,17 +91,13 @@ export function CalendarMonthGrid({ events, visibleTypes, currentDate, selectedD
               key={dateStr}
               onClick={() => onDayClick?.(dateStr)}
               className={`border-r border-b border-border p-1 cursor-pointer transition overflow-hidden flex flex-col ${
-                isSelected
-                  ? 'bg-primary/5 ring-2 ring-inset ring-primary'
-                  : isToday
-                  ? 'ring-2 ring-inset ring-accent bg-accent-faint'
-                  : 'hover:bg-surface-hover'
+                isSelected ? MONTH_CELL_SELECTED : isToday ? MONTH_CELL_TODAY : MONTH_CELL_HOVER
               }`}
             >
               {/* Date number */}
               <div className={`
-                text-xs font-semibold w-5 h-5 flex items-center justify-center rounded-full mb-1 flex-shrink-0
-                ${isToday ? 'bg-primary text-white' : isSelected ? 'bg-primary/20 text-primary' : 'text-heading'}
+                text-xs font-semibold ${MONTH_DATE_CIRCLE_SIZE} flex items-center justify-center rounded-full mb-1 flex-shrink-0
+                ${isToday ? MONTH_DATE_TODAY : isSelected ? MONTH_DATE_SELECTED : MONTH_DATE_DEFAULT}
               `}>
                 {day.getDate()}
               </div>
@@ -102,12 +109,12 @@ export function CalendarMonthGrid({ events, visibleTypes, currentDate, selectedD
                     <div
                       key={level}
                       className="flex items-center justify-between rounded px-1 leading-none"
-                      style={{ background: IMPORTANCE_COLORS[level], minHeight: '16px' }}
+                      style={{ background: IMPORTANCE_COLORS[level], minHeight: MONTH_BADGE_MIN_HEIGHT }}
                     >
-                      <span className="text-white font-semibold truncate" style={{ fontSize: '9px' }}>
+                      <span className="text-white font-semibold truncate" style={{ fontSize: MONTH_BADGE_FONT_SIZE }}>
                         {IMPORTANCE_LABELS[level][0]}
                       </span>
-                      <span className="text-white font-bold ml-0.5" style={{ fontSize: '9px' }}>
+                      <span className="text-white font-bold ml-0.5" style={{ fontSize: MONTH_BADGE_FONT_SIZE }}>
                         {counts[level]}
                       </span>
                     </div>

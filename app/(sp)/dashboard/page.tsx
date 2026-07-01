@@ -4,6 +4,13 @@ import { redirect } from 'next/navigation'
 import { DashboardCalendar } from '@/components/sp/DashboardCalendar'
 import type { CalendarEvent } from '@/lib/calendarUtils'
 import { EVENT_SOURCE_LABELS } from '@/lib/calendarUtils'
+import {
+  GREETING_PREFIX,
+  GREETING_SUBTITLE_ADMIN,
+  GREETING_SUBTITLE_STAFF,
+  GREETING_HEADING_CLS,
+  GREETING_SUBTITLE_CLS,
+} from '@/lib/dashboardConfig'
 
 function extractDate(val: string | null | undefined): string | null {
   if (!val) return null
@@ -129,14 +136,14 @@ export default async function DashboardPage() {
 
   const firstName = user.first_name ?? 'there'
   const subtitle = user.role === 'sp_admin'
-    ? "Here's an overview of your workspace"
-    : "Here's your workload for today"
+    ? GREETING_SUBTITLE_ADMIN
+    : GREETING_SUBTITLE_STAFF
 
   return (
     <div className="p-6 flex flex-col gap-4" style={{ height: 'calc(100vh - 64px)' }}>
       <div className="flex-shrink-0">
-        <h1 className="text-xl font-bold text-heading">Good morning, {firstName}</h1>
-        <p className="text-sm text-secondary">{subtitle}</p>
+        <h1 className={GREETING_HEADING_CLS}>{GREETING_PREFIX}, {firstName}</h1>
+        <p className={GREETING_SUBTITLE_CLS}>{subtitle}</p>
       </div>
       <div className="flex-1 min-h-0">
         <DashboardCalendar events={events} />

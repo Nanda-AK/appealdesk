@@ -287,7 +287,6 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
           <Field label="Status">
             <select value={appealStatus} onChange={(e) => setAppealStatus(e.target.value)} className={inp}>
               <option value="open">Open</option>
-              <option value="in-progress">In Progress</option>
               <option value="closed">Closed</option>
             </select>
           </Field>
@@ -394,7 +393,6 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
           <Field label="Status">
             <select value={proceedingStatus} onChange={(e) => setProceedingStatus(e.target.value)} className={inp}>
               <option value="open">Open</option>
-              <option value="in-progress">In Progress</option>
               <option value="closed">Closed</option>
             </select>
           </Field>
