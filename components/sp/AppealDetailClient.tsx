@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -50,8 +50,11 @@ import {
   deleteEvent, deleteAppeal, deleteProceeding,
   uploadProceedingDocument, deleteProceedingDocument,
   uploadEventDocument, deleteEventDocument,
+  getProceedingReport,
   ProceedingInput, EventInput, ProceedingContact,
 } from "@/app/(sp)/litigations/actions";
+import { getDemandIssues, saveDemandIssues } from "@/app/(sp)/litigations/demand-actions";
+import type { DemandIssue, DemandIssueInput } from "@/lib/types";
 import { PendingAttachments } from "@/components/sp/PendingAttachments";
 
 // ─── AY helpers (mirrors AppealForm.tsx) ─────────────────────────
@@ -145,6 +148,45 @@ type MasterItem = {
   type: string;
   parent_id: string | null;
 };
+
+// Draft demand issue — string fields for form input compatibility
+interface DraftDemandIssue {
+  notice_no: string;
+  notice_date: string;
+  description: string;
+  tax_demanded: string;
+  tax_acceptable: string;
+  interest_demanded: string;
+  interest_acceptable: string;
+  penalty_demanded: string;
+  penalty_acceptable: string;
+}
+type DemandTypeKey = "tax" | "interest" | "penalty";
+const DEMAND_TYPES: { key: DemandTypeKey; label: string }[] = [
+  { key: "tax", label: "Tax demand" },
+  { key: "interest", label: "Interest demand" },
+  { key: "penalty", label: "Penalty demand" },
+];
+function blankDraftIssue(): DraftDemandIssue {
+  return { notice_no: "", notice_date: "", description: "", tax_demanded: "0", tax_acceptable: "0", interest_demanded: "0", interest_acceptable: "0", penalty_demanded: "0", penalty_acceptable: "0" };
+}
+function toDraftIssue(iss: DemandIssue): DraftDemandIssue {
+  return { notice_no: iss.notice_no, notice_date: iss.notice_date ?? "", description: iss.description, tax_demanded: iss.tax_demanded.toString(), tax_acceptable: iss.tax_acceptable.toString(), interest_demanded: iss.interest_demanded.toString(), interest_acceptable: iss.interest_acceptable.toString(), penalty_demanded: iss.penalty_demanded.toString(), penalty_acceptable: iss.penalty_acceptable.toString() };
+}
+function fromDraftIssue(draft: DraftDemandIssue, sortOrder: number): DemandIssueInput {
+  return { notice_no: draft.notice_no, notice_date: draft.notice_date || null, description: draft.description, tax_demanded: parseFloat(draft.tax_demanded) || 0, tax_acceptable: parseFloat(draft.tax_acceptable) || 0, interest_demanded: parseFloat(draft.interest_demanded) || 0, interest_acceptable: parseFloat(draft.interest_acceptable) || 0, penalty_demanded: parseFloat(draft.penalty_demanded) || 0, penalty_acceptable: parseFloat(draft.penalty_acceptable) || 0, sort_order: sortOrder };
+}
+function getDraftAmount(iss: DraftDemandIssue, key: DemandTypeKey, field: "demanded" | "acceptable"): string {
+  if (key === "tax") return field === "demanded" ? iss.tax_demanded : iss.tax_acceptable;
+  if (key === "interest") return field === "demanded" ? iss.interest_demanded : iss.interest_acceptable;
+  return field === "demanded" ? iss.penalty_demanded : iss.penalty_acceptable;
+}
+function setDraftAmount(iss: DraftDemandIssue, key: DemandTypeKey, field: "demanded" | "acceptable", val: string): DraftDemandIssue {
+  if (key === "tax") return field === "demanded" ? { ...iss, tax_demanded: val } : { ...iss, tax_acceptable: val };
+  if (key === "interest") return field === "demanded" ? { ...iss, interest_demanded: val } : { ...iss, interest_acceptable: val };
+  return field === "demanded" ? { ...iss, penalty_demanded: val } : { ...iss, penalty_acceptable: val };
+}
+function fmtInr(n: number): string { return n.toLocaleString("en-IN", { maximumFractionDigits: 2 }); }
 
 interface Props {
   appeal: Appeal;
@@ -1620,11 +1662,179 @@ function ProceedingFormFields({
   );
 }
 
+// ─── Demand Issues Editor (Amount tab in modal) ────────────────────
+function DemandIssuesEditor({ issues, onChange }: {
+  issues: DraftDemandIssue[];
+  onChange: (issues: DraftDemandIssue[]) => void;
+}) {
+  const cInp = "w-full px-1.5 py-1 text-xs border border-accent rounded focus:outline-none focus:ring-1 focus:ring-primary";
+  const cNum = `${cInp} text-right`;
+  const totals = issues.reduce(
+    (acc, iss) => { acc.demanded += (parseFloat(iss.tax_demanded)||0)+(parseFloat(iss.interest_demanded)||0)+(parseFloat(iss.penalty_demanded)||0); acc.acceptable += (parseFloat(iss.tax_acceptable)||0)+(parseFloat(iss.interest_acceptable)||0)+(parseFloat(iss.penalty_acceptable)||0); return acc; },
+    { demanded: 0, acceptable: 0 }
+  );
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-3 gap-3">
+        {[{ label: "Total Amount Demanded", value: totals.demanded }, { label: "Total Amount Acceptable", value: totals.acceptable }, { label: "Total Amount Disputed", value: totals.demanded - totals.acceptable }].map(({ label, value }) => (
+          <div key={label} className="bg-accent-tint border border-border rounded-lg px-3 py-2.5">
+            <p className="text-xs text-muted mb-0.5">{label}</p>
+            <p className="text-sm font-semibold text-heading">₹{fmtInr(value)}</p>
+          </div>
+        ))}
+      </div>
+      {issues.length > 0 && (
+        <div className="overflow-x-auto rounded-lg border border-border">
+          <table className="w-full text-xs border-collapse">
+            <thead>
+              <tr className="bg-table-header text-left">
+                <th className="px-2 py-2 font-semibold text-heading w-8">#</th>
+                <th className="px-2 py-2 font-semibold text-heading">Notice No</th>
+                <th className="px-2 py-2 font-semibold text-heading">Notice Date</th>
+                <th className="px-2 py-2 font-semibold text-heading">Description of Issue</th>
+                <th className="px-2 py-2 font-semibold text-heading">Type</th>
+                <th className="px-2 py-2 font-semibold text-heading text-right">Demanded (₹)</th>
+                <th className="px-2 py-2 font-semibold text-heading text-right">Acceptable (₹)</th>
+                <th className="px-2 py-2 font-semibold text-heading text-right">Disputed (₹)</th>
+                <th className="w-7"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {issues.map((iss, i) => {
+                const issueTotals = { demanded: (parseFloat(iss.tax_demanded)||0)+(parseFloat(iss.interest_demanded)||0)+(parseFloat(iss.penalty_demanded)||0), acceptable: (parseFloat(iss.tax_acceptable)||0)+(parseFloat(iss.interest_acceptable)||0)+(parseFloat(iss.penalty_acceptable)||0) };
+                return (
+                  <React.Fragment key={i}>
+                    {DEMAND_TYPES.map((type, ti) => {
+                      const demanded = getDraftAmount(iss, type.key, "demanded");
+                      const acceptable = getDraftAmount(iss, type.key, "acceptable");
+                      const disputed = (parseFloat(demanded)||0)-(parseFloat(acceptable)||0);
+                      return (
+                        <tr key={`${i}-${type.key}`} className="border-t border-border">
+                          {ti === 0 && (
+                            <>
+                              <td rowSpan={3} className="px-2 py-1.5 text-center text-muted align-top">{i+1}</td>
+                              <td rowSpan={3} className="px-2 py-1.5 align-top min-w-[100px]"><input value={iss.notice_no} onChange={e => onChange(issues.map((x,idx)=>idx===i?{...x,notice_no:e.target.value}:x))} className={cInp} placeholder="Notice No." /></td>
+                              <td rowSpan={3} className="px-2 py-1.5 align-top"><input type="date" value={iss.notice_date} onChange={e => onChange(issues.map((x,idx)=>idx===i?{...x,notice_date:e.target.value}:x))} className={cInp} /></td>
+                              <td rowSpan={3} className="px-2 py-1.5 align-top min-w-[140px]"><input value={iss.description} onChange={e => onChange(issues.map((x,idx)=>idx===i?{...x,description:e.target.value}:x))} className={cInp} placeholder="Description…" /></td>
+                            </>
+                          )}
+                          <td className="px-2 py-1.5 text-secondary whitespace-nowrap">{type.label}</td>
+                          <td className="px-2 py-1.5"><input type="number" min="0" step="1" value={demanded} onChange={e => onChange(issues.map((x,idx)=>idx===i?setDraftAmount(x,type.key,"demanded",e.target.value):x))} className={cNum} /></td>
+                          <td className="px-2 py-1.5"><input type="number" min="0" step="1" value={acceptable} onChange={e => onChange(issues.map((x,idx)=>idx===i?setDraftAmount(x,type.key,"acceptable",e.target.value):x))} className={cNum} /></td>
+                          <td className="px-2 py-1.5 text-right text-secondary">{fmtInr(disputed)}</td>
+                          {ti === 0 && <td rowSpan={3} className="px-2 py-1.5 align-top text-center"><button type="button" onClick={() => onChange(issues.filter((_,idx)=>idx!==i))} title="Remove" className="text-red-400 hover:text-red-600 p-0.5 rounded transition-colors"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button></td>}
+                        </tr>
+                      );
+                    })}
+                    <tr className="border-t border-border bg-surface-hover">
+                      <td colSpan={4} className="px-2 py-1 text-right font-semibold text-heading">Total</td>
+                      <td className="px-2 py-1 text-right font-semibold text-heading">{fmtInr(issueTotals.demanded)}</td>
+                      <td className="px-2 py-1 text-right font-semibold text-heading">{fmtInr(issueTotals.acceptable)}</td>
+                      <td className="px-2 py-1 text-right font-semibold text-heading">{fmtInr(issueTotals.demanded-issueTotals.acceptable)}</td>
+                      <td></td>
+                    </tr>
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+            {issues.length > 1 && (
+              <tfoot>
+                <tr className="border-t-2 border-border-strong bg-accent-tint">
+                  <td colSpan={4} className="px-2 py-1.5 text-right font-bold text-heading">Grand Total</td>
+                  <td className="px-2 py-1.5 text-right font-bold text-heading">{fmtInr(totals.demanded)}</td>
+                  <td className="px-2 py-1.5 text-right font-bold text-heading">{fmtInr(totals.acceptable)}</td>
+                  <td className="px-2 py-1.5 text-right font-bold text-heading">{fmtInr(totals.demanded-totals.acceptable)}</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            )}
+          </table>
+        </div>
+      )}
+      {issues.length === 0 && <p className="text-center text-xs text-muted py-6">No demand issues yet.</p>}
+      <button type="button" onClick={() => onChange([...issues, blankDraftIssue()])} className="flex items-center gap-1.5 text-xs px-3 py-1.5 border border-dashed border-accent text-accent rounded-lg hover:bg-accent-light transition-colors">
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+        Add Issue
+      </button>
+    </div>
+  );
+}
+
+// ─── Demand Issues Read-Only (inline accordion Amount section) ──────
+function DemandIssuesReadOnly({ issues }: { issues: DemandIssue[] }) {
+  const totals = issues.reduce((acc, iss) => { acc.demanded += iss.tax_demanded+iss.interest_demanded+iss.penalty_demanded; acc.acceptable += iss.tax_acceptable+iss.interest_acceptable+iss.penalty_acceptable; return acc; }, { demanded: 0, acceptable: 0 });
+  if (issues.length === 0) return <p className="text-xs text-muted py-2">No demand amounts recorded.</p>;
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-3 gap-3">
+        {[{ label: "Total Amount Demanded", value: totals.demanded }, { label: "Total Amount Acceptable", value: totals.acceptable }, { label: "Total Amount Disputed", value: totals.demanded-totals.acceptable }].map(({ label, value }) => (
+          <div key={label} className="bg-white border border-border rounded-lg px-3 py-2.5">
+            <p className="text-xs text-muted mb-0.5">{label}</p>
+            <p className="text-sm font-semibold text-heading">₹{fmtInr(value)}</p>
+          </div>
+        ))}
+      </div>
+      <div className="overflow-x-auto rounded-lg border border-border">
+        <table className="w-full text-xs border-collapse">
+          <thead>
+            <tr className="bg-table-header text-left">
+              <th className="px-2 py-2 font-semibold text-heading w-8">#</th>
+              <th className="px-2 py-2 font-semibold text-heading">Notice No</th>
+              <th className="px-2 py-2 font-semibold text-heading">Notice Date</th>
+              <th className="px-2 py-2 font-semibold text-heading">Description of Issue</th>
+              <th className="px-2 py-2 font-semibold text-heading">Type</th>
+              <th className="px-2 py-2 font-semibold text-heading text-right">Demanded (₹)</th>
+              <th className="px-2 py-2 font-semibold text-heading text-right">Acceptable (₹)</th>
+              <th className="px-2 py-2 font-semibold text-heading text-right">Disputed (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {issues.map((iss, i) => {
+              const rows = [{ label: "Tax demand", demanded: iss.tax_demanded, acceptable: iss.tax_acceptable }, { label: "Interest demand", demanded: iss.interest_demanded, acceptable: iss.interest_acceptable }, { label: "Penalty demand", demanded: iss.penalty_demanded, acceptable: iss.penalty_acceptable }];
+              const issueTotals = rows.reduce((a, r) => ({ demanded: a.demanded+r.demanded, acceptable: a.acceptable+r.acceptable }), { demanded: 0, acceptable: 0 });
+              return (
+                <React.Fragment key={iss.id}>
+                  {rows.map((row, ri) => (
+                    <tr key={`${i}-${ri}`} className="border-t border-border">
+                      {ri === 0 && (<><td rowSpan={3} className="px-2 py-1.5 text-center text-muted align-top">{i+1}</td><td rowSpan={3} className="px-2 py-1.5 align-top text-secondary">{iss.notice_no||"—"}</td><td rowSpan={3} className="px-2 py-1.5 align-top text-secondary whitespace-nowrap">{iss.notice_date?new Date(iss.notice_date).toLocaleDateString("en-IN"):"—"}</td><td rowSpan={3} className="px-2 py-1.5 align-top text-secondary">{iss.description||"—"}</td></>)}
+                      <td className="px-2 py-1.5 text-secondary whitespace-nowrap">{row.label}</td>
+                      <td className="px-2 py-1.5 text-right text-secondary">{fmtInr(row.demanded)}</td>
+                      <td className="px-2 py-1.5 text-right text-secondary">{fmtInr(row.acceptable)}</td>
+                      <td className="px-2 py-1.5 text-right text-secondary">{fmtInr(row.demanded-row.acceptable)}</td>
+                    </tr>
+                  ))}
+                  <tr className="border-t border-border bg-surface-hover">
+                    <td colSpan={4} className="px-2 py-1 text-right font-semibold text-heading">Total</td>
+                    <td className="px-2 py-1 text-right font-semibold text-heading">{fmtInr(issueTotals.demanded)}</td>
+                    <td className="px-2 py-1 text-right font-semibold text-heading">{fmtInr(issueTotals.acceptable)}</td>
+                    <td className="px-2 py-1 text-right font-semibold text-heading">{fmtInr(issueTotals.demanded-issueTotals.acceptable)}</td>
+                  </tr>
+                </React.Fragment>
+              );
+            })}
+          </tbody>
+          {issues.length > 1 && (
+            <tfoot>
+              <tr className="border-t-2 border-border-strong bg-accent-tint">
+                <td colSpan={4} className="px-2 py-1.5 text-right font-bold text-heading">Grand Total</td>
+                <td className="px-2 py-1.5 text-right font-bold text-heading">{fmtInr(totals.demanded)}</td>
+                <td className="px-2 py-1.5 text-right font-bold text-heading">{fmtInr(totals.acceptable)}</td>
+                <td className="px-2 py-1.5 text-right font-bold text-heading">{fmtInr(totals.demanded-totals.acceptable)}</td>
+              </tr>
+            </tfoot>
+          )}
+        </table>
+      </div>
+    </div>
+  );
+}
+
 // ─── Modal wrapper ─────────────────────────────────────────────────
-function Modal({ title, onClose, isDirty, children }: {
+function Modal({ title, onClose, isDirty, size = "md", children }: {
   title: string;
   onClose: () => void;
   isDirty?: boolean;
+  size?: "md" | "lg";
   children: React.ReactNode;
 }) {
   const [showDiscard, setShowDiscard] = useState(false);
@@ -1643,7 +1853,7 @@ function Modal({ title, onClose, isDirty, children }: {
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl border border-border w-full max-w-2xl max-h-[90vh] flex flex-col">
+      <div className={`bg-white rounded-xl shadow-xl border border-border w-full ${size === "lg" ? "max-w-5xl h-[88vh]" : "max-w-2xl max-h-[90vh]"} flex flex-col`}>
         <div className="px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
           <h3 className="text-base font-semibold text-heading">{title}</h3>
           <button
@@ -2288,11 +2498,12 @@ export default function AppealDetailClient({
   const [editProcValues, setEditProcValues] = useState<ProceedingInput>({});
   const [editProcSaving, setEditProcSaving] = useState(false);
   const [editProcError, setEditProcError] = useState<string | null>(null);
-  const [editProcTab, setEditProcTab] = useState<"details" | "contacts">("details");
+  const [editProcTab, setEditProcTab] = useState<"details" | "contacts" | "amount">("details");
   const [editProcContacts, setEditProcContacts] = useState<ProceedingContact[]>([]);
+  const [editProcDemandIssues, setEditProcDemandIssues] = useState<DraftDemandIssue[]>([]);
   const editProcContactsInitRef = useRef<ProceedingContact[]>([]);
 
-  function openEditProc(proc: Proceeding) {
+  async function openEditProc(proc: Proceeding) {
     const initValues: ProceedingInput = {
       proceeding_type_id: proc.proceeding_type?.id ?? "",
       authority_type: proc.authority_type ?? "",
@@ -2317,6 +2528,10 @@ export default function AppealDetailClient({
     setEditProcContacts(initContacts);
     setEditProcTab("details");
     setEditProcError(null);
+    try {
+      const existing = await getDemandIssues(proc.id);
+      setEditProcDemandIssues(existing.map(toDraftIssue));
+    } catch { setEditProcDemandIssues([]); }
   }
 
   async function handleSaveProc(e: React.FormEvent) {
@@ -2326,6 +2541,10 @@ export default function AppealDetailClient({
     setEditProcError(null);
     try {
       await updateProceeding(editProc.id, { ...editProcValues, contacts: editProcContacts });
+      await saveDemandIssues(editProc.id, editProcDemandIssues.map((d, i) => fromDraftIssue(d, i)));
+      const saved = editProcDemandIssues.map((d, i) => ({ ...fromDraftIssue(d, i), id: "", proceeding_id: editProc.id, created_at: "" } as DemandIssue));
+      setDemandIssuesByProc(prev => ({ ...prev, [editProc.id]: saved }));
+      setDemandLoadedProcs(prev => new Set(prev).add(editProc.id));
       setEditProc(null); router.refresh();
     } catch (err) {
       setEditProcError(err instanceof Error ? err.message : "Failed to save.");
@@ -2339,8 +2558,9 @@ export default function AppealDetailClient({
   const [addProcValues, setAddProcValues] = useState<ProceedingInput>({});
   const [addProcSaving, setAddProcSaving] = useState(false);
   const [addProcError, setAddProcError] = useState<string | null>(null);
-  const [addProcTab, setAddProcTab] = useState<"details" | "contacts">("details");
+  const [addProcTab, setAddProcTab] = useState<"details" | "contacts" | "amount">("details");
   const [addProcContacts, setAddProcContacts] = useState<ProceedingContact[]>([]);
+  const [addProcDemandIssues, setAddProcDemandIssues] = useState<DraftDemandIssue[]>([]);
 
   const [addProcPendingFiles, setAddProcPendingFiles] = useState<
     { file: File; desc: string }[]
@@ -2378,7 +2598,10 @@ export default function AppealDetailClient({
           );
         }
       }
-      setShowAddProc(false); setAddProcValues({}); setAddProcPendingFiles([]); setAddProcContacts([]); setAddProcTab("details"); router.refresh();
+      if (addProcDemandIssues.length > 0) {
+        await saveDemandIssues(procId, addProcDemandIssues.map((d, i) => fromDraftIssue(d, i)));
+      }
+      setShowAddProc(false); setAddProcValues({}); setAddProcPendingFiles([]); setAddProcContacts([]); setAddProcDemandIssues([]); setAddProcTab("details"); router.refresh();
     } catch (err) {
       setAddProcError(
         err instanceof Error ? err.message : "Failed to add proceeding.",
@@ -2726,11 +2949,13 @@ export default function AppealDetailClient({
   );
   const editProcIsDirty = !!editProc && (
     JSON.stringify(editProcValues) !== JSON.stringify(editProcInitRef.current) ||
-    JSON.stringify(editProcContacts) !== JSON.stringify(editProcContactsInitRef.current)
+    JSON.stringify(editProcContacts) !== JSON.stringify(editProcContactsInitRef.current) ||
+    editProcDemandIssues.length > 0
   );
   const addProcIsDirty = showAddProc && (
     addProcPendingFiles.length > 0 ||
     addProcContacts.length > 0 ||
+    addProcDemandIssues.length > 0 ||
     Object.values(addProcValues).some(v => Array.isArray(v) ? v.length > 0 : !!v)
   );
   const editEventIsDirty = !!editEvent && (
@@ -2758,12 +2983,27 @@ export default function AppealDetailClient({
 
   // Track which proceedings are expanded (collapsed by default)
   const [expandedProcs, setExpandedProcs] = useState<Set<string>>(new Set());
+  const [demandIssuesByProc, setDemandIssuesByProc] = useState<Record<string, DemandIssue[]>>({});
+  const [demandLoadedProcs, setDemandLoadedProcs] = useState<Set<string>>(new Set());
+
+  async function loadDemandForProc(procId: string) {
+    if (demandLoadedProcs.has(procId)) return;
+    try {
+      const issues = await getDemandIssues(procId);
+      setDemandIssuesByProc(prev => ({ ...prev, [procId]: issues }));
+      setDemandLoadedProcs(prev => new Set(prev).add(procId));
+    } catch { /* silently ignore */ }
+  }
+
   function toggleProc(id: string) {
+    const willExpand = !expandedProcs.has(id);
     setExpandedProcs((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
+    if (willExpand) loadDemandForProc(id);
   }
 
   // Tracks which main event rows have their sub events expanded
@@ -4116,6 +4356,7 @@ export default function AppealDetailClient({
                     })()}
                   </div>
                 )}
+
               </div>
             );
           })}
@@ -4124,7 +4365,7 @@ export default function AppealDetailClient({
 
       {/* Add Proceeding */}
       {canEdit && (
-        <button onClick={() => { setAddProcValues({}); setAddProcError(null); setShowAddProc(true); }}
+        <button onClick={() => { setAddProcValues({}); setAddProcError(null); setAddProcDemandIssues([]); setAddProcTab("details"); setShowAddProc(true); }}
           className="w-full py-3 cursor-pointer border-2 border-dashed border-border rounded-xl text-sm text-secondary hover:border-primary hover:text-primary transition flex items-center justify-center gap-2">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -4243,14 +4484,14 @@ export default function AppealDetailClient({
 
       {/* ── Edit Proceeding Modal ── */}
       {editProc && (
-        <Modal title="Edit Proceeding" onClose={() => setEditProc(null)} isDirty={editProcIsDirty}>
+        <Modal title="Edit Proceeding" onClose={() => setEditProc(null)} isDirty={editProcIsDirty} size="lg">
           <form onSubmit={handleSaveProc} className="space-y-4">
             {/* Tab strip */}
             <div className="flex border-b border-border -mx-6 px-6">
-              {(["details", "contacts"] as const).map(tab => (
+              {(["details", "contacts", "amount"] as const).map(tab => (
                 <button key={tab} type="button" onClick={() => setEditProcTab(tab)}
                   className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${editProcTab === tab ? "border-primary text-primary" : "border-transparent text-muted hover:text-heading"}`}>
-                  {tab === "details" ? "Proceeding Details" : (
+                  {tab === "details" ? "Proceeding Details" : tab === "contacts" ? (
                     <span className="inline-flex items-center gap-1.5">
                       Contacts
                       {editProcContacts.length > 0 && (
@@ -4259,7 +4500,7 @@ export default function AppealDetailClient({
                         </span>
                       )}
                     </span>
-                  )}
+                  ) : "Amount"}
                 </button>
               ))}
             </div>
@@ -4296,6 +4537,10 @@ export default function AppealDetailClient({
                 canEdit={canEdit}
               />
             </div>
+            {/* Amount tab */}
+            <div className={editProcTab === "amount" ? "block" : "hidden"}>
+              <DemandIssuesEditor issues={editProcDemandIssues} onChange={setEditProcDemandIssues} />
+            </div>
             {editProcError && <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">{editProcError}</div>}
             <div className="flex gap-3 justify-end pt-2">
               <button
@@ -4319,14 +4564,14 @@ export default function AppealDetailClient({
 
       {/* ── Add Proceeding Modal ── */}
       {showAddProc && (
-        <Modal title="Add Proceeding" onClose={() => { setShowAddProc(false); setAddProcPendingFiles([]); setAddProcContacts([]); setAddProcTab("details"); }} isDirty={addProcIsDirty}>
+        <Modal title="Add Proceeding" onClose={() => { setShowAddProc(false); setAddProcPendingFiles([]); setAddProcContacts([]); setAddProcDemandIssues([]); setAddProcTab("details"); }} isDirty={addProcIsDirty} size="lg">
           <form onSubmit={handleAddProc} className="space-y-4">
             {/* Tab strip */}
             <div className="flex border-b border-border -mx-6 px-6">
-              {(["details", "contacts"] as const).map(tab => (
+              {(["details", "contacts", "amount"] as const).map(tab => (
                 <button key={tab} type="button" onClick={() => setAddProcTab(tab)}
                   className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${addProcTab === tab ? "border-primary text-primary" : "border-transparent text-muted hover:text-heading"}`}>
-                  {tab === "details" ? "Proceeding Details" : (
+                  {tab === "details" ? "Proceeding Details" : tab === "contacts" ? (
                     <span className="inline-flex items-center gap-1.5">
                       Contacts
                       {addProcContacts.length > 0 && (
@@ -4335,7 +4580,7 @@ export default function AppealDetailClient({
                         </span>
                       )}
                     </span>
-                  )}
+                  ) : "Amount"}
                 </button>
               ))}
             </div>
@@ -4369,9 +4614,13 @@ export default function AppealDetailClient({
                 canEdit={canEdit}
               />
             </div>
+            {/* Amount tab */}
+            <div className={addProcTab === "amount" ? "block" : "hidden"}>
+              <DemandIssuesEditor issues={addProcDemandIssues} onChange={setAddProcDemandIssues} />
+            </div>
             {addProcError && <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">{addProcError}</div>}
             <div className="flex gap-3 justify-end pt-2">
-              <button type="button" onClick={() => { setShowAddProc(false); setAddProcPendingFiles([]); setAddProcContacts([]); setAddProcTab("details"); }} className="px-4 py-2 text-sm border border-border rounded-lg text-heading hover:bg-page transition">Cancel</button>
+              <button type="button" onClick={() => { setShowAddProc(false); setAddProcPendingFiles([]); setAddProcContacts([]); setAddProcDemandIssues([]); setAddProcTab("details"); }} className="px-4 py-2 text-sm border border-border rounded-lg text-heading hover:bg-page transition">Cancel</button>
               <button type="submit" disabled={addProcSaving} className="px-4 py-2 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition disabled:opacity-60">
                 {addProcSaving ? "Adding…" : "Add Proceeding"}
               </button>

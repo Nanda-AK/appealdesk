@@ -16,7 +16,7 @@ export default async function DocumentsPage() {
 
     supabase
       .from("templates")
-      .select("*, template_files(*)")
+      .select("*")
       .eq("service_provider_id", spId!)
       .order("created_at", { ascending: true }),
 
