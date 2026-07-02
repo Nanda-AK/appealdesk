@@ -26,7 +26,7 @@ export default async function ClientsPage({
 
   const { data: clients } = await supabase
     .from("organizations")
-    .select("id, name, business_type, city, is_active, created_at, date_of_incorporation, compliance_details(type, number)")
+    .select("id, name, business_type, city, is_active, created_at, date_of_incorporation, file_number, compliance_details(type, number)")
     .eq("parent_sp_id", spId!)
     .eq("type", "client")
     .is("deleted_at", null)

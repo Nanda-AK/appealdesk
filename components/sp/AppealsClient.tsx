@@ -25,7 +25,7 @@ interface Appeal {
   assessment_year: { id: string; name: string } | null;
   status: string | null;
   created_at: string;
-  client_org: { id: string; name: string } | null;
+  client_org: { id: string; name: string; file_number: string | null } | null;
   proceedings?: AppealProceeding[];
 }
 
@@ -729,28 +729,49 @@ export default function AppealsClient({
                   </td>
                 </tr>
               ) : (
-                appeals.map((appeal, i) => {
-                  const procs = [...(appeal.proceedings ?? [])]
-                    .filter(p => !p.deleted_at)
-                    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-                  const rowNum = rowOffset + i + 1;
-                  const s = STATUS_DISPLAY[appeal.status ?? "open"];
-                  const tdLit = "px-3 py-3 text-secondary whitespace-nowrap";
-                  const tdSub = "px-3 py-2.5 text-muted whitespace-nowrap text-xs";
-                  return (
-                    <React.Fragment key={appeal.id}>
-                      {/* ── Litigation row ── */}
-                      <tr className="hover:bg-page transition-colors cursor-pointer" onClick={() => router.push(`/litigations/${appeal.id}`)}>
-                        <td className={`${tdLit} text-xs font-medium w-16`}>{rowNum}</td>
-                        {col("file_no")           && <td className={`${tdLit} text-xs`}>—</td>}
-                        {col("client_name")       && <td className={`${tdLit} max-w-60 truncate text-sm`} title={appeal.client_org?.name ?? "—"}>{appeal.client_org?.name ?? "—"}</td>}
-                        {col("act")               && <td className={`${tdLit} max-w-52 truncate text-sm`} title={appeal.act_regulation?.name ?? "—"}>{appeal.act_regulation?.name ?? "—"}</td>}
-                        {col("fy_ty")             && <td className={`${tdLit} text-sm`}>{appeal.financial_year?.name ?? "—"}</td>}
-                        {col("proceeding")        && <td className={`${tdLit} text-xs text-muted`}>—</td>}
-                        {col("proceeding_status") && <td className="px-3 py-3">{s ? <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${s.cls}`}>{s.label}</span> : <span className="text-muted text-xs">—</span>}</td>}
-                        {col("jurisdiction")      && <td className={`${tdLit} text-xs text-muted`}>—</td>}
-                        {col("limitation_date")   && <td className={`${tdLit} text-xs text-muted`}>—</td>}
-                        {col("assigned_to")       && <td className={`${tdLit} text-xs text-muted`}>—</td>}
+                (() => {
+                  // Flatten all proceedings across all appeals into a single ordered list
+                  const flatRows: { appeal: Appeal; proc: AppealProceeding }[] = [];
+                  appeals.forEach(appeal => {
+                    const procs = [...(appeal.proceedings ?? [])]
+                      .filter(p => !p.deleted_at)
+                      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+                    procs.forEach(proc => flatRows.push({ appeal, proc }));
+                  });
+
+                  if (flatRows.length === 0) {
+                    return (
+                      <tr>
+                        <td colSpan={visibleColCount} className="px-4 py-12 text-center text-secondary">
+                          {hasFilters ? "No litigations match your filters." : "No proceedings found."}
+                        </td>
+                      </tr>
+                    );
+                  }
+
+                  const td = "px-3 py-3 text-secondary whitespace-nowrap text-sm";
+                  return flatRows.map(({ appeal, proc }, i) => {
+                    const ps = STATUS_DISPLAY[proc.status ?? "open"];
+                    const assignedNames = (proc.assigned_to_ids ?? [])
+                      .map(id => teamMembers.find(m => m.id === id)?.name)
+                      .filter(Boolean)
+                      .join(", ") || "—";
+                    const jurisdiction = proc.jurisdiction_city || proc.jurisdiction || "—";
+                    const limitDate = proc.to_be_completed_by
+                      ? new Date(proc.to_be_completed_by).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+                      : "—";
+                    return (
+                      <tr key={proc.id} className={`hover:bg-accent-light transition-colors cursor-pointer border-b border-border ${i % 2 === 0 ? "bg-white" : "bg-page"}`} onClick={() => router.push(`/litigations/${appeal.id}`)}>
+                        <td className="px-3 py-3 text-muted text-xs w-16">{rowOffset + i + 1}</td>
+                        {col("file_no")           && <td className={`${td} text-xs font-mono`}>{appeal.client_org?.file_number ?? "—"}</td>}
+                        {col("client_name")       && <td className={`${td} max-w-60 truncate`} title={appeal.client_org?.name ?? "—"}>{appeal.client_org?.name ?? "—"}</td>}
+                        {col("act")               && <td className={`${td} max-w-52 truncate`} title={appeal.act_regulation?.name ?? "—"}>{appeal.act_regulation?.name ?? "—"}</td>}
+                        {col("fy_ty")             && <td className={td}>{appeal.financial_year?.name ?? "—"}</td>}
+                        {col("proceeding")        && <td className={`${td} max-w-40 truncate`} title={proc.proceeding_type?.name ?? "—"}>{proc.proceeding_type?.name ?? "—"}</td>}
+                        {col("proceeding_status") && <td className="px-3 py-3">{ps ? <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${ps.cls}`}>{ps.label}</span> : <span className="text-muted text-xs">—</span>}</td>}
+                        {col("jurisdiction")      && <td className={`${td} max-w-36 truncate`} title={jurisdiction}>{jurisdiction}</td>}
+                        {col("limitation_date")   && <td className={td}>{limitDate}</td>}
+                        {col("assigned_to")       && <td className={`${td} max-w-40 truncate`} title={assignedNames}>{assignedNames}</td>}
                         <td className="px-2 py-3 text-center" onClick={(e) => e.stopPropagation()}>
                           <button onClick={(e) => handleDownloadLitigation(e, appeal.id, appeal.client_org?.name ?? "litigation")} disabled={downloadingId === appeal.id} title="Download PDF Report" className="inline-flex items-center justify-center w-7 h-7 rounded hover:bg-page transition-colors text-muted hover:text-accent disabled:opacity-40">
                             {downloadingId === appeal.id ? (
@@ -761,37 +782,9 @@ export default function AppealsClient({
                           </button>
                         </td>
                       </tr>
-                      {/* ── Proceeding sub-rows ── */}
-                      {procs.map((proc, j) => {
-                        const ps = STATUS_DISPLAY[proc.status ?? "open"];
-                        const letter = String.fromCharCode(97 + j);
-                        const assignedNames = (proc.assigned_to_ids ?? [])
-                          .map(id => teamMembers.find(m => m.id === id)?.name)
-                          .filter(Boolean)
-                          .join(", ") || "—";
-                        const jurisdiction = proc.jurisdiction_city || proc.jurisdiction || "—";
-                        const limitDate = proc.to_be_completed_by
-                          ? new Date(proc.to_be_completed_by).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
-                          : "—";
-                        return (
-                          <tr key={proc.id} className="bg-accent-faint hover:bg-accent-light transition-colors cursor-pointer border-t border-dashed border-border" onClick={() => router.push(`/litigations/${appeal.id}`)}>
-                            <td className={`${tdSub} pl-7`}>{rowNum}.{letter}</td>
-                            {col("file_no")           && <td className={tdSub}>—</td>}
-                            {col("client_name")       && <td className={`${tdSub} max-w-60 truncate`} title={appeal.client_org?.name ?? "—"}>{appeal.client_org?.name ?? "—"}</td>}
-                            {col("act")               && <td className={`${tdSub} max-w-52 truncate`} title={appeal.act_regulation?.name ?? "—"}>{appeal.act_regulation?.name ?? "—"}</td>}
-                            {col("fy_ty")             && <td className={tdSub}>{appeal.financial_year?.name ?? "—"}</td>}
-                            {col("proceeding")        && <td className={`${tdSub} max-w-40 truncate`} title={proc.proceeding_type?.name ?? "—"}>{proc.proceeding_type?.name ?? "—"}</td>}
-                            {col("proceeding_status") && <td className="px-3 py-2.5">{ps ? <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${ps.cls}`}>{ps.label}</span> : <span className="text-muted text-xs">—</span>}</td>}
-                            {col("jurisdiction")      && <td className={`${tdSub} max-w-36 truncate`} title={jurisdiction}>{jurisdiction}</td>}
-                            {col("limitation_date")   && <td className={tdSub}>{limitDate}</td>}
-                            {col("assigned_to")       && <td className={`${tdSub} max-w-40 truncate`} title={assignedNames}>{assignedNames}</td>}
-                            <td />
-                          </tr>
-                        );
-                      })}
-                    </React.Fragment>
-                  );
-                })
+                    );
+                  });
+                })()
               )}
             </tbody>
           </table>

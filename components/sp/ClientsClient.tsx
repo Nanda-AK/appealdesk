@@ -19,6 +19,7 @@ interface Client {
   is_active: boolean;
   created_at: string;
   date_of_incorporation?: string | null;
+  file_number?: string | null;
   compliance_details?: ComplianceDetail[];
 }
 
@@ -382,7 +383,7 @@ export default function ClientsClient({
                   return (
                     <tr key={client.id} className="bg-white hover:bg-page transition-colors">
                       <td className="px-4 py-2.5 text-muted text-xs font-medium">{i + 1}</td>
-                      {col("file_no")               && <td className="px-4 py-2.5 text-muted text-xs">—</td>}
+                      {col("file_no")               && <td className="px-4 py-2.5 text-secondary text-xs font-mono">{client.file_number ?? "—"}</td>}
                       {col("client_name")           && <td className="px-4 py-2.5 font-medium text-heading">{client.name}</td>}
                       {col("business_type")         && <td className="px-4 py-2.5 text-secondary">{client.business_type ?? "—"}</td>}
                       {col("pan")                   && <td className="px-4 py-2.5 text-secondary font-mono text-xs">{pan}</td>}

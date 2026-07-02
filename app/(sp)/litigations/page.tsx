@@ -9,7 +9,7 @@ const APPEAL_SELECT = `
   act_regulation:master_records!act_regulation_id(id, name),
   financial_year:master_records!financial_year_id(id, name),
   assessment_year:master_records!assessment_year_id(id, name),
-  client_org:organizations!client_org_id(id, name),
+  client_org:organizations!client_org_id(id, name, file_number),
   proceedings(id, status, deleted_at, created_at, jurisdiction, jurisdiction_city, to_be_completed_by, assigned_to_ids, proceeding_type:master_records!proceeding_type_id(id, name))
 `;
 
