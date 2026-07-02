@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PER_PAGE_OPTIONS } from "@/lib/constants";
@@ -47,6 +47,7 @@ interface Template {
   file_type: string | null;
   file_size: number | null;
   created_at: string;
+  uploader: { first_name: string; last_name: string } | null;
 }
 
 interface ResourceFile {
@@ -69,6 +70,7 @@ interface Resource {
   author: string | null;
   created_at: string;
   resource_files: ResourceFile[];
+  uploader: { first_name: string; last_name: string } | null;
 }
 
 interface Act {
@@ -83,7 +85,139 @@ interface Props {
   acts: Act[];
   canEdit: boolean;
   canDelete: boolean;
+  userId: string;
 }
+
+// ─── Column visibility ────────────────────────────────────────────────────────
+const RES_COLUMNS = [
+  { key: "act",          label: "Act"          },
+  { key: "section_rule", label: "Section Rule"  },
+  { key: "description",  label: "Description"  },
+  { key: "author",       label: "Author"       },
+  { key: "uploaded_by",  label: "Uploaded by"  },
+  { key: "files",        label: "Files"        },
+  { key: "link",         label: "Link"         },
+] as const;
+
+const TPL_COLUMNS = [
+  { key: "name",        label: "Template Name" },
+  { key: "description", label: "Description"  },
+  { key: "uploaded_by", label: "Uploaded by"  },
+  { key: "files",       label: "Files"        },
+] as const;
+
+const FRM_COLUMNS = [
+  { key: "form_no",      label: "Form No."         },
+  { key: "description",  label: "Form Description" },
+  { key: "section_rule", label: "Section Rule No."  },
+  { key: "uploaded_by",  label: "Uploaded by"       },
+  { key: "files",        label: "Files"             },
+  { key: "link",         label: "Link"              },
+] as const;
+
+type ResColKey = (typeof RES_COLUMNS)[number]["key"];
+type TplColKey = (typeof TPL_COLUMNS)[number]["key"];
+type FrmColKey = (typeof FRM_COLUMNS)[number]["key"];
+const ALL_RES_KEYS = RES_COLUMNS.map(c => c.key) as ResColKey[];
+const ALL_TPL_KEYS = TPL_COLUMNS.map(c => c.key) as TplColKey[];
+const ALL_FRM_KEYS = FRM_COLUMNS.map(c => c.key) as FrmColKey[];
+
+function docStorageKey(tab: string, uid: string) { return `appealdesk_doc_${tab}_col_vis_${uid}`; }
+
+function loadCols<T extends string>(tab: string, uid: string, allKeys: T[]): Set<T> {
+  try {
+    const saved = localStorage.getItem(docStorageKey(tab, uid));
+    if (saved) {
+      const parsed = JSON.parse(saved) as T[];
+      return new Set(parsed.filter(k => allKeys.includes(k)));
+    }
+  } catch { /* */ }
+  return new Set(allKeys);
+}
+
+function saveCols<T extends string>(tab: string, uid: string, next: Set<T>) {
+  try { localStorage.setItem(docStorageKey(tab, uid), JSON.stringify([...next])); } catch { /* */ }
+}
+
+function ColMenu<T extends string>({
+  open, onClose, columns, visible, onToggle, onReset, menuRef,
+}: {
+  open: boolean;
+  onClose: () => void;
+  columns: readonly { key: T; label: string }[];
+  visible: Set<T>;
+  onToggle: (k: T) => void;
+  onReset: () => void;
+  menuRef: React.RefObject<HTMLDivElement | null>;
+}) {
+  useEffect(() => {
+    if (!open) return;
+    function h(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) onClose();
+    }
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, [open, onClose, menuRef]);
+
+  return (
+    <div ref={menuRef} className="relative">
+      <button onClick={() => onClose()} title="Column settings"
+        className={`inline-flex items-center justify-center w-9 h-9 border rounded-lg hover:bg-page transition ${open ? "border-primary text-primary bg-accent-light" : "border-accent text-accent"}`}
+      >
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 bg-white border border-border rounded-xl shadow-xl z-50 w-52 py-2">
+          <p className="px-3 pb-2 text-xs font-semibold text-heading border-b border-border mb-1">Column Visibility</p>
+          {columns.map(({ key, label }) => {
+            const checked = visible.has(key);
+            return (
+              <label key={key} className="flex items-center gap-2.5 px-3 py-1.5 hover:bg-page cursor-pointer select-none">
+                <div onClick={() => onToggle(key)} className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors cursor-pointer ${checked ? "bg-primary border-primary" : "border-border-strong"}`}>
+                  {checked && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                </div>
+                <span onClick={() => onToggle(key)} className="text-sm text-secondary flex-1">{label}</span>
+              </label>
+            );
+          })}
+          <div className="border-t border-border mt-1 px-3 pt-2">
+            <button onClick={onReset} className="text-xs text-accent hover:underline">Reset to default</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function uploaderName(u: { first_name: string; last_name: string } | null) {
+  if (!u) return "—";
+  return [u.first_name, u.last_name].filter(Boolean).join(" ") || "—";
+}
+
+// Download/View icon buttons
+const DL_ICON = (
+  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+  </svg>
+);
+const VIEW_ICON = (
+  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+  </svg>
+);
+const EDIT_ICON = (
+  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+  </svg>
+);
+const DEL_ICON = (
+  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+  </svg>
+);
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
@@ -317,9 +451,43 @@ const blankForm: FormInput = { rule_no: "", rule_heading: "", form_no: "", page_
 
 // ── Main Component ─────────────────────────────────────────────────────
 
-export default function DocumentsClient({ forms, templates, resources, acts, canEdit, canDelete }: Props) {
+export default function DocumentsClient({ forms, templates, resources, acts, canEdit, canDelete, userId }: Props) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"forms" | "templates" | "resources">("resources");
+
+  // Column visibility per tab
+  const [resCols, setResCols] = useState<Set<ResColKey>>(() => new Set(ALL_RES_KEYS));
+  const [tplCols, setTplCols] = useState<Set<TplColKey>>(() => new Set(ALL_TPL_KEYS));
+  const [frmCols, setFrmCols] = useState<Set<FrmColKey>>(() => new Set(ALL_FRM_KEYS));
+  const [resColOpen, setResColOpen] = useState(false);
+  const [tplColOpen, setTplColOpen] = useState(false);
+  const [frmColOpen, setFrmColOpen] = useState(false);
+  const resColRef = useRef<HTMLDivElement>(null);
+  const tplColRef = useRef<HTMLDivElement>(null);
+  const frmColRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!userId) return;
+    setResCols(loadCols("res", userId, ALL_RES_KEYS));
+    setTplCols(loadCols("tpl", userId, ALL_TPL_KEYS));
+    setFrmCols(loadCols("frm", userId, ALL_FRM_KEYS));
+  }, [userId]);
+
+  const rc = (k: ResColKey) => resCols.has(k);
+  const tc = (k: TplColKey) => tplCols.has(k);
+  const fc = (k: FrmColKey) => frmCols.has(k);
+
+  function toggleRes(k: ResColKey) { setResCols(p => { const n = new Set(p); n.has(k) ? n.delete(k) : n.add(k); saveCols("res", userId, n); return n; }); }
+  function toggleTpl(k: TplColKey) { setTplCols(p => { const n = new Set(p); n.has(k) ? n.delete(k) : n.add(k); saveCols("tpl", userId, n); return n; }); }
+  function toggleFrm(k: FrmColKey) { setFrmCols(p => { const n = new Set(p); n.has(k) ? n.delete(k) : n.add(k); saveCols("frm", userId, n); return n; }); }
+
+  function resetRes() { const s = new Set(ALL_RES_KEYS); setResCols(s); try { localStorage.removeItem(docStorageKey("res", userId)); } catch { /* */ } }
+  function resetTpl() { const s = new Set(ALL_TPL_KEYS); setTplCols(s); try { localStorage.removeItem(docStorageKey("tpl", userId)); } catch { /* */ } }
+  function resetFrm() { const s = new Set(ALL_FRM_KEYS); setFrmCols(s); try { localStorage.removeItem(docStorageKey("frm", userId)); } catch { /* */ } }
+
+  const resColCount = 1 + resCols.size + 1;
+  const tplColCount = 1 + tplCols.size + 1;
+  const frmColCount = 1 + frmCols.size + 1;
 
   // ── Form (IT Rules) state
   const [showFormModal, setShowFormModal] = useState(false);
@@ -688,86 +856,84 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
       {/* ── TAB: FORMS (Income Tax Rules) ── */}
       {activeTab === "forms" && (
         <div className="space-y-3">
-          {/* Search */}
-          <div className="relative max-w-sm">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-            </svg>
-            <input type="text" value={frmSearch} onChange={(e) => { setFrmSearch(e.target.value); setFrmPage(1); }}
-              placeholder="Search form no., description, rule no., uploaded on…"
-              className="w-full pl-9 pr-3 py-2 text-sm border border-accent rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary bg-white" />
+          {/* Search + column settings */}
+          <div className="flex items-center gap-3">
+            <div className="relative max-w-sm flex-1">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+              </svg>
+              <input type="text" value={frmSearch} onChange={(e) => { setFrmSearch(e.target.value); setFrmPage(1); }}
+                placeholder="Search form no., description, rule no.…"
+                className="w-full pl-9 pr-3 py-2 text-sm border border-accent rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary bg-white" />
+            </div>
+            <ColMenu open={frmColOpen} onClose={() => setFrmColOpen(v => !v)} columns={FRM_COLUMNS} visible={frmCols} onToggle={toggleFrm} onReset={resetFrm} menuRef={frmColRef} />
           </div>
           <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-nowrap">
                 <thead>
                   <tr className="bg-table-header border-b-2 border-table-header-border">
-                    <th className="text-center px-4 py-3 font-semibold text-heading w-10">#</th>
-                    <th className="text-center px-4 py-3 font-semibold text-heading w-20">Form No.</th>
-                    <th className="text-left px-4 py-3 font-semibold text-heading">Form Description</th>
-                    <th className="text-center px-4 py-3 font-semibold text-heading w-20">Rule No.</th>
-                    <th className="text-center px-4 py-3 font-semibold text-heading w-20">Section</th>
-                    <th className="text-center px-4 py-3 font-semibold text-heading w-28 whitespace-nowrap">Uploaded on</th>
-                    <th className="text-center px-4 py-3 font-semibold text-heading w-16">Files</th>
-                    <th className="text-center px-4 py-3 font-semibold text-heading w-24">Link</th>
-                    <th className="text-center px-4 py-3 font-semibold text-heading w-28">Actions</th>
+                    <th className="text-left px-4 py-3 font-semibold text-heading w-14">Sl. No.</th>
+                    {fc("form_no")      && <th className="text-left px-4 py-3 font-semibold text-heading w-24">Form No.</th>}
+                    {fc("description")  && <th className="text-left px-4 py-3 font-semibold text-heading">Form Description</th>}
+                    {fc("section_rule") && <th className="text-left px-4 py-3 font-semibold text-heading w-32">Section Rule No.</th>}
+                    {fc("uploaded_by")  && <th className="text-left px-4 py-3 font-semibold text-heading w-32">Uploaded by</th>}
+                    {fc("files")        && <th className="text-center px-4 py-3 font-semibold text-heading w-16">Files</th>}
+                    {fc("link")         && <th className="text-center px-4 py-3 font-semibold text-heading w-20">Link</th>}
+                    <th className="text-center px-4 py-3 font-semibold text-heading w-32">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {pagedForms.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="px-4 py-12 text-center text-secondary">
+                      <td colSpan={frmColCount} className="px-4 py-12 text-center text-secondary">
                         {frmSearch ? `No results for "${frmSearch}"` : (forms.length === 0 ? `No forms added yet.${canEdit ? " Click \"Add Form\" to get started." : ""}` : "No results.")}
                       </td>
                     </tr>
                   ) : (
-                    pagedForms.map((f, i) => (
-                      <tr
-                        key={f.id}
-                        onClick={() => canEdit && openEditForm(f)}
-                        className={`border-b border-border ${i % 2 === 0 ? "bg-white" : "bg-page"} hover:bg-accent-light transition-colors ${canEdit ? "cursor-pointer" : ""}`}
-                      >
-                        <td className="px-4 py-3 text-center text-muted text-xs">{frmFrom + i}</td>
-                        <td className="px-4 py-3 text-center text-secondary">{f.form_no || "—"}</td>
-                        <td className="px-4 py-3 text-secondary" title={f.rule_heading}>{f.rule_heading}</td>
-                        <td className="px-4 py-3 text-center text-secondary">{f.rule_no || "—"}</td>
-                        <td className="px-4 py-3 text-center text-secondary">{f.page_no || "—"}</td>
-                        <td className="px-4 py-3 text-center text-secondary whitespace-nowrap">{fmtDate(f.created_at)}</td>
-                        <td className="px-4 py-3 text-center">
-                          {(f.form_files ?? []).length === 0 ? (
-                            <span className="text-muted text-xs">—</span>
-                          ) : (
-                            <div className="inline-flex items-center gap-1.5 text-accent">
-                              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                              </svg>
-                              <span className="text-xs font-semibold">{(f.form_files ?? []).length}</span>
-                            </div>
+                    pagedForms.map((f, i) => {
+                      const firstFile = (f.form_files ?? [])[0];
+                      return (
+                        <tr
+                          key={f.id}
+                          onClick={() => canEdit && openEditForm(f)}
+                          className={`border-b border-border ${i % 2 === 0 ? "bg-white" : "bg-page"} hover:bg-accent-light transition-colors ${canEdit ? "cursor-pointer" : ""}`}
+                        >
+                          <td className="px-4 py-3 text-muted text-xs">{frmFrom + i}</td>
+                          {fc("form_no")      && <td className="px-4 py-3 text-secondary">{f.form_no || "—"}</td>}
+                          {fc("description")  && <td className="px-4 py-3 text-secondary max-w-xs truncate" title={f.rule_heading}>{f.rule_heading}</td>}
+                          {fc("section_rule") && <td className="px-4 py-3 text-secondary">{[f.rule_no, f.page_no].filter(Boolean).join(" / ") || "—"}</td>}
+                          {fc("uploaded_by")  && <td className="px-4 py-3 text-secondary">—</td>}
+                          {fc("files") && (
+                            <td className="px-4 py-3 text-center">
+                              {(f.form_files ?? []).length === 0 ? <span className="text-muted text-xs">—</span> : (
+                                <span className="inline-flex items-center gap-1 text-accent text-xs font-semibold">
+                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                                  {(f.form_files ?? []).length}
+                                </span>
+                              )}
+                            </td>
                           )}
-                        </td>
-                        <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
-                          {f.url
-                            ? <a href={f.url} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-accent hover:text-primary hover:underline">Click Here</a>
-                            : <span className="text-border-strong">—</span>}
-                        </td>
-                        <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center justify-center gap-0.5">
-                            {canEdit && (
-                              <button onClick={() => openEditForm(f)} title="Edit form"
-                                className="p-1.5 rounded hover:bg-surface-hover transition-colors text-accent hover:text-primary inline-flex">
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                              </button>
-                            )}
-                            {canDelete && (
-                              <button onClick={() => setConfirmDeleteForm(f)} title="Delete form"
-                                className="p-1.5 rounded hover:bg-red-50 transition-colors text-red-500 hover:text-red-700 inline-flex">
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
+                          {fc("link") && (
+                            <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                              {f.url ? <a href={f.url} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-accent hover:text-primary hover:underline">Link</a> : <span className="text-muted text-xs">—</span>}
+                            </td>
+                          )}
+                          <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-center gap-0.5">
+                              {firstFile && (
+                                <>
+                                  <a href={firstFile.file_url} download={firstFile.file_name} title="Download" onClick={(e) => e.stopPropagation()} className="p-1.5 rounded hover:bg-page transition-colors text-accent hover:text-primary inline-flex">{DL_ICON}</a>
+                                  <a href={firstFile.file_url} target="_blank" rel="noopener noreferrer" title="View" onClick={(e) => e.stopPropagation()} className="p-1.5 rounded hover:bg-page transition-colors text-accent hover:text-primary inline-flex">{VIEW_ICON}</a>
+                                </>
+                              )}
+                              {canEdit && <button onClick={(e) => { e.stopPropagation(); openEditForm(f); }} title="Edit" className="p-1.5 rounded hover:bg-page transition-colors text-accent hover:text-primary inline-flex">{EDIT_ICON}</button>}
+                              {canDelete && <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteForm(f); }} title="Delete" className="p-1.5 rounded hover:bg-red-50 transition-colors text-danger hover:text-red-700 inline-flex">{DEL_ICON}</button>}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
@@ -805,32 +971,35 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
       {/* ── TAB: TEMPLATES ── */}
       {activeTab === "templates" && (
         <div className="space-y-3">
-          {/* Search */}
-          <div className="relative max-w-sm">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-            </svg>
-            <input type="text" value={tplSearch} onChange={(e) => { setTplSearch(e.target.value); setTplPage(1); }}
-              placeholder="Search template name or description…"
-              className="w-full pl-9 pr-3 py-2 text-sm border border-accent rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary bg-white" />
+          {/* Search + column settings */}
+          <div className="flex items-center gap-3">
+            <div className="relative max-w-sm flex-1">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+              </svg>
+              <input type="text" value={tplSearch} onChange={(e) => { setTplSearch(e.target.value); setTplPage(1); }}
+                placeholder="Search template name or description…"
+                className="w-full pl-9 pr-3 py-2 text-sm border border-accent rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary bg-white" />
+            </div>
+            <ColMenu open={tplColOpen} onClose={() => setTplColOpen(v => !v)} columns={TPL_COLUMNS} visible={tplCols} onToggle={toggleTpl} onReset={resetTpl} menuRef={tplColRef} />
           </div>
           <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-nowrap">
                 <thead>
                   <tr className="bg-table-header border-b-2 border-table-header-border">
-                    <th className="text-center px-4 py-3 font-semibold text-heading w-10">#</th>
-                    <th className="text-left px-4 py-3 font-semibold text-heading w-72">Template Name</th>
-                    <th className="text-left px-4 py-3 font-semibold text-heading">Description</th>
-                    <th className="text-center px-4 py-3 font-semibold text-heading w-20">Size</th>
-                    <th className="text-center px-4 py-3 font-semibold text-heading w-28 whitespace-nowrap">Uploaded on</th>
-                    <th className="text-center px-4 py-3 font-semibold text-heading w-28">Actions</th>
+                    <th className="text-left px-4 py-3 font-semibold text-heading w-14">Sl. No.</th>
+                    {tc("name")        && <th className="text-left px-4 py-3 font-semibold text-heading w-72">Template Name</th>}
+                    {tc("description") && <th className="text-left px-4 py-3 font-semibold text-heading">Description</th>}
+                    {tc("uploaded_by") && <th className="text-left px-4 py-3 font-semibold text-heading w-36">Uploaded by</th>}
+                    {tc("files")       && <th className="text-center px-4 py-3 font-semibold text-heading w-16">Files</th>}
+                    <th className="text-center px-4 py-3 font-semibold text-heading w-36">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {pagedTemplates.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-4 py-12 text-center text-secondary">
+                      <td colSpan={tplColCount} className="px-4 py-12 text-center text-secondary">
                         {tplSearch ? `No results for "${tplSearch}"` : (templates.length === 0 ? `No templates uploaded yet.${canEdit ? " Click \"Upload Template\" to get started." : ""}` : "No results.")}
                       </td>
                     </tr>
@@ -838,36 +1007,32 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
                     pagedTemplates.map((t, i) => (
                       <tr
                         key={t.id}
-                        onClick={() => window.open(t.file_url, "_blank")}
-                        className={`border-b border-border last:border-0 ${i % 2 === 0 ? "bg-white" : "bg-page"} hover:bg-accent-light transition-colors cursor-pointer`}
+                        className={`border-b border-border last:border-0 ${i % 2 === 0 ? "bg-white" : "bg-page"} hover:bg-accent-light transition-colors`}
                       >
-                        <td className="px-4 py-3 text-center text-muted text-xs">{tplFrom + i}</td>
-                        <td className="px-4 py-3 text-secondary" title={t.name}>
-                          {t.name}
-                        </td>
-                        <td className="px-4 py-3 text-secondary truncate" title={t.description ?? ""}>{t.description ?? "—"}</td>
-                        <td className="px-4 py-3 text-center text-secondary">{fmtSize(t.file_size)}</td>
-                        <td className="px-4 py-3 text-center text-secondary whitespace-nowrap">{fmtDate(t.created_at)}</td>
+                        <td className="px-4 py-3 text-muted text-xs">{tplFrom + i}</td>
+                        {tc("name")        && <td className="px-4 py-3 text-secondary" title={t.name}>{t.name}</td>}
+                        {tc("description") && <td className="px-4 py-3 text-secondary max-w-xs truncate" title={t.description ?? ""}>{t.description ?? "—"}</td>}
+                        {tc("uploaded_by") && <td className="px-4 py-3 text-secondary">{uploaderName(t.uploader)}</td>}
+                        {tc("files") && (
+                          <td className="px-4 py-3 text-center">
+                            {t.file_url ? (
+                              <span className="inline-flex items-center gap-1 text-accent text-xs font-semibold">
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                                1
+                              </span>
+                            ) : <span className="text-muted text-xs">—</span>}
+                          </td>
+                        )}
                         <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center gap-0.5">
-                            <a href={t.file_url} target="_blank" rel="noopener noreferrer" title="Download"
-                              className="p-1.5 rounded hover:bg-surface-hover transition-colors text-accent hover:text-primary inline-flex">
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                              </svg>
-                            </a>
-                            {canEdit && (
-                              <button onClick={() => openEditTemplate(t)} title="Edit template"
-                                className="p-1.5 rounded hover:bg-surface-hover transition-colors text-accent hover:text-primary inline-flex">
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                              </button>
+                            {t.file_url && (
+                              <>
+                                <a href={t.file_url} download title="Download" className="p-1.5 rounded hover:bg-page transition-colors text-accent hover:text-primary inline-flex">{DL_ICON}</a>
+                                <a href={t.file_url} target="_blank" rel="noopener noreferrer" title="View" className="p-1.5 rounded hover:bg-page transition-colors text-accent hover:text-primary inline-flex">{VIEW_ICON}</a>
+                              </>
                             )}
-                            {canDelete && (
-                              <button onClick={() => setConfirmDeleteTpl(t)} title="Delete template"
-                                className="p-1.5 rounded hover:bg-red-50 transition-colors text-red-500 hover:text-red-700 inline-flex">
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                              </button>
-                            )}
+                            {canEdit && <button onClick={() => openEditTemplate(t)} title="Edit" className="p-1.5 rounded hover:bg-page transition-colors text-accent hover:text-primary inline-flex">{EDIT_ICON}</button>}
+                            {canDelete && <button onClick={() => setConfirmDeleteTpl(t)} title="Delete" className="p-1.5 rounded hover:bg-red-50 transition-colors text-danger hover:text-red-700 inline-flex">{DEL_ICON}</button>}
                           </div>
                         </td>
                       </tr>
@@ -909,78 +1074,84 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
       {/* ── TAB: RESOURCES ── */}
       {activeTab === "resources" && (
         <div className="space-y-3">
-          {/* Search */}
-          <div className="relative max-w-sm">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-            </svg>
-            <input type="text" value={resSearch} onChange={(e) => { setResSearch(e.target.value); setResPage(1); }}
-              placeholder="Search act, description, author, uploaded on…"
-              className="w-full pl-9 pr-3 py-2 text-sm border border-accent rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary bg-white" />
+          {/* Search + column settings */}
+          <div className="flex items-center gap-3">
+            <div className="relative max-w-sm flex-1">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+              </svg>
+              <input type="text" value={resSearch} onChange={(e) => { setResSearch(e.target.value); setResPage(1); }}
+                placeholder="Search act, description, author…"
+                className="w-full pl-9 pr-3 py-2 text-sm border border-accent rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary bg-white" />
+            </div>
+            <ColMenu open={resColOpen} onClose={() => setResColOpen(v => !v)} columns={RES_COLUMNS} visible={resCols} onToggle={toggleRes} onReset={resetRes} menuRef={resColRef} />
           </div>
           <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-sm text-nowrap">
                 <thead>
                   <tr className="bg-table-header border-b-2 border-table-header-border">
-                    <th className="text-center px-4 py-3 font-semibold text-heading w-10">#</th>
-                    <th className="text-left px-4 py-3 font-semibold text-heading w-72">Act</th>
-                    <th className="text-left px-4 py-3 font-semibold text-heading">Description</th>
-                    <th className="text-left px-4 py-3 font-semibold text-heading w-44">Author</th>
-                    <th className="text-center px-4 py-3 font-semibold text-heading w-28 whitespace-nowrap">Uploaded on</th>
-                    <th className="text-center px-4 py-3 font-semibold text-heading w-16">Files</th>
-                    <th className="text-center px-4 py-3 font-semibold text-heading w-28">Actions</th>
+                    <th className="text-left px-4 py-3 font-semibold text-heading w-14">Sl. No.</th>
+                    {rc("act")          && <th className="text-left px-4 py-3 font-semibold text-heading w-48">Act</th>}
+                    {rc("section_rule") && <th className="text-left px-4 py-3 font-semibold text-heading w-36">Section Rule</th>}
+                    {rc("description")  && <th className="text-left px-4 py-3 font-semibold text-heading">Description</th>}
+                    {rc("author")       && <th className="text-left px-4 py-3 font-semibold text-heading w-36">Author</th>}
+                    {rc("uploaded_by")  && <th className="text-left px-4 py-3 font-semibold text-heading w-36">Uploaded by</th>}
+                    {rc("files")        && <th className="text-center px-4 py-3 font-semibold text-heading w-16">Files</th>}
+                    {rc("link")         && <th className="text-center px-4 py-3 font-semibold text-heading w-20">Link</th>}
+                    <th className="text-center px-4 py-3 font-semibold text-heading w-36">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {pagedResources.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-4 py-12 text-center text-secondary">
+                      <td colSpan={resColCount} className="px-4 py-12 text-center text-secondary">
                         {resSearch ? `No results for "${resSearch}"` : (resources.length === 0 ? `No resources added yet.${canEdit ? " Click \"Add Resource\" to get started." : ""}` : "No results.")}
                       </td>
                     </tr>
                   ) : (
-                    pagedResources.map((r, i) => (
-                      <tr
-                        key={r.id}
-                        onClick={() => canEdit && openEditResource(r)}
-                        className={`border-b border-border last:border-0 ${canEdit ? "cursor-pointer" : ""} ${i % 2 === 0 ? "bg-white" : "bg-page"} hover:bg-accent-light transition-colors`}
-                      >
-                        <td className="px-4 py-3 text-center text-muted text-xs">{resFrom + i}</td>
-                        <td className="px-4 py-3 text-secondary truncate max-w-0" title={r.act?.name ?? ""}>{r.act?.name ?? "—"}</td>
-                        <td className="px-4 py-3 text-secondary truncate" title={r.description ?? ""}>{r.description}</td>
-                        <td className="px-4 py-3 text-secondary">{r.author ?? "—"}</td>
-                        <td className="px-4 py-3 text-center text-secondary whitespace-nowrap">{fmtDate(r.created_at)}</td>
-                        <td className="px-4 py-3 text-center">
-                          {(r.resource_files ?? []).length === 0 ? (
-                            <span className="text-muted text-xs">—</span>
-                          ) : (
-                            <div className="inline-flex items-center gap-1.5 text-accent">
-                              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                              </svg>
-                              <span className="text-xs font-semibold">{(r.resource_files ?? []).length}</span>
-                            </div>
+                    pagedResources.map((r, i) => {
+                      const firstFile = (r.resource_files ?? [])[0];
+                      return (
+                        <tr
+                          key={r.id}
+                          onClick={() => canEdit && openEditResource(r)}
+                          className={`border-b border-border last:border-0 ${canEdit ? "cursor-pointer" : ""} ${i % 2 === 0 ? "bg-white" : "bg-page"} hover:bg-accent-light transition-colors`}
+                        >
+                          <td className="px-4 py-3 text-muted text-xs">{resFrom + i}</td>
+                          {rc("act")          && <td className="px-4 py-3 text-secondary max-w-xs truncate" title={r.act?.name ?? ""}>{r.act?.name ?? "—"}</td>}
+                          {rc("section_rule") && <td className="px-4 py-3 text-secondary">{[r.section, r.rule].filter(Boolean).join(" / ") || "—"}</td>}
+                          {rc("description")  && <td className="px-4 py-3 text-secondary max-w-xs truncate" title={r.description ?? ""}>{r.description}</td>}
+                          {rc("author")       && <td className="px-4 py-3 text-secondary">{r.author ?? "—"}</td>}
+                          {rc("uploaded_by")  && <td className="px-4 py-3 text-secondary">{uploaderName(r.uploader)}</td>}
+                          {rc("files") && (
+                            <td className="px-4 py-3 text-center">
+                              {(r.resource_files ?? []).length === 0 ? <span className="text-muted text-xs">—</span> : (
+                                <span className="inline-flex items-center gap-1 text-accent text-xs font-semibold">
+                                  <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                                  {(r.resource_files ?? []).length}
+                                </span>
+                              )}
+                            </td>
                           )}
-                        </td>
-                        <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center justify-center gap-0.5">
-                            {canEdit && (
-                              <button onClick={() => openEditResource(r)} title="Edit resource"
-                                className="p-1.5 rounded hover:bg-surface-hover transition-colors text-accent hover:text-primary inline-flex">
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                              </button>
-                            )}
-                            {canDelete && (
-                              <button onClick={() => setConfirmDeleteRes(r)} title="Delete resource"
-                                className="p-1.5 rounded hover:bg-red-50 transition-colors text-red-500 hover:text-red-700 inline-flex">
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
+                          {rc("link") && (
+                            <td className="px-4 py-3 text-center"><span className="text-muted text-xs">—</span></td>
+                          )}
+                          <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-center gap-0.5">
+                              {firstFile && (
+                                <>
+                                  <a href={firstFile.file_url} download={firstFile.file_name} title="Download" onClick={(e) => e.stopPropagation()} className="p-1.5 rounded hover:bg-page transition-colors text-accent hover:text-primary inline-flex">{DL_ICON}</a>
+                                  <a href={firstFile.file_url} target="_blank" rel="noopener noreferrer" title="View" onClick={(e) => e.stopPropagation()} className="p-1.5 rounded hover:bg-page transition-colors text-accent hover:text-primary inline-flex">{VIEW_ICON}</a>
+                                </>
+                              )}
+                              {canEdit && <button onClick={(e) => { e.stopPropagation(); openEditResource(r); }} title="Edit" className="p-1.5 rounded hover:bg-page transition-colors text-accent hover:text-primary inline-flex">{EDIT_ICON}</button>}
+                              {canDelete && <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteRes(r); }} title="Delete" className="p-1.5 rounded hover:bg-red-50 transition-colors text-danger hover:text-red-700 inline-flex">{DEL_ICON}</button>}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>

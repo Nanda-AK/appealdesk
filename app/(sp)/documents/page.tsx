@@ -16,13 +16,13 @@ export default async function DocumentsPage() {
 
     supabase
       .from("templates")
-      .select("*")
+      .select("*, uploader:users!created_by(first_name, last_name)")
       .eq("service_provider_id", spId!)
       .order("created_at", { ascending: true }),
 
     supabase
       .from("resources")
-      .select("*, resource_files(*), act:master_records!act_id(id, name)")
+      .select("*, resource_files(*), act:master_records!act_id(id, name), uploader:users!created_by(first_name, last_name)")
       .eq("service_provider_id", spId!)
       .order("created_at", { ascending: true }),
 
@@ -52,6 +52,7 @@ export default async function DocumentsPage() {
         acts={(acts ?? []) as any}
         canEdit={canEdit}
         canDelete={canDelete}
+        userId={user?.id ?? ""}
       />
     </div>
   );
