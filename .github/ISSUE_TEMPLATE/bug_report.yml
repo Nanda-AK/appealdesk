@@ -6,91 +6,92 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to report this! Fill in the fields below — only the starred ones are required.
+        Thanks for taking the time to report a bug! Please fill out the details below — fields marked with * are required.
 
   - type: textarea
     id: description
     attributes:
-      label: "What happened? *"
-      description: Describe what went wrong in plain language.
-      placeholder: "Example: When I click Save on a proceeding, nothing happens and the page shows a red error."
+      label: What happened?
+      description: A clear and concise description of the bug.
+      placeholder: When I click "Save" on a proceeding, the page shows a red error and nothing is saved.
     validations:
       required: true
 
-  - type: dropdown
+  - type: checkboxes
     id: module
     attributes:
-      label: "Affected area(s) *"
-      description: Select every area where the issue occurs. You can pick more than one.
-      multiple: true
+      label: Affected Area(s)
+      description: Check all areas where the issue occurs.
       options:
-        - "Platform Portal — Dashboard"
-        - "Platform Portal — Service Providers (CA Firms)"
-        - "Platform Portal — Users"
-        - "Platform Portal — Admins"
-        - "Platform Portal — Masters (Acts / Financial Years / Assessment Years)"
-        - "Platform Portal — Documents"
-        - "Platform Portal — Audit Logs"
-        - "Platform Portal — Settings & Branding"
-        - "SP Portal — Dashboard"
-        - "SP Portal — Litigations / Appeals (List)"
-        - "SP Portal — Litigation Detail (Proceedings & Events)"
-        - "SP Portal — Demand / Amount Section"
-        - "SP Portal — Clients"
-        - "SP Portal — Team Users"
-        - "SP Portal — Client Users"
-        - "SP Portal — Documents (Forms / Templates / Resources)"
-        - "SP Portal — Masters"
-        - "SP Portal — Audit Logs"
-        - "SP Portal — Settings"
-        - "Authentication / Login / Invite / Password Reset"
-        - "Document Export (PDF / DOCX / XLSX)"
-        - "File Uploads / Storage"
-        - "Email Notifications"
-        - "Other"
+        - label: "Platform Portal — Dashboard"
+        - label: "Platform Portal — Service Providers (CA Firms)"
+        - label: "Platform Portal — Users"
+        - label: "Platform Portal — Admins"
+        - label: "Platform Portal — Masters (Acts / Financial Years / Assessment Years)"
+        - label: "Platform Portal — Documents"
+        - label: "Platform Portal — Audit Logs"
+        - label: "Platform Portal — Settings & Branding"
+        - label: "SP Portal — Dashboard"
+        - label: "SP Portal — Litigations / Appeals (List)"
+        - label: "SP Portal — Litigation Detail (Proceedings & Events)"
+        - label: "SP Portal — Demand Section"
+        - label: "SP Portal — Clients"
+        - label: "SP Portal — Team Users"
+        - label: "SP Portal — Client Users"
+        - label: "SP Portal — Documents (Forms / Templates / Resources)"
+        - label: "SP Portal — Masters"
+        - label: "SP Portal — Audit Logs"
+        - label: "SP Portal — Settings"
+        - label: "Authentication / Login / Invite / Password Reset"
+        - label: "Document Export (PDF / DOCX / XLSX)"
+        - label: "File Uploads / Storage"
+        - label: "Email Notifications"
+        - label: "Other"
     validations:
       required: true
 
   - type: textarea
     id: expected
     attributes:
-      label: What did you expect to happen?
-      description: Describe what should have happened instead.
+      label: Expected behavior
+      description: What did you expect to happen instead?
     validations:
       required: false
 
   - type: dropdown
     id: severity
     attributes:
-      label: How severe is this?
+      label: Severity
       options:
-        - Critical — completely blocks my work
-        - High — a key feature is broken
-        - Medium — partially broken, I can work around it
-        - Low — minor or cosmetic issue
+        - Critical (blocks core workflow / data loss)
+        - High (major feature broken)
+        - Medium (feature partially broken, workaround exists)
+        - Low (cosmetic / minor)
     validations:
       required: false
 
   - type: textarea
     id: logs
     attributes:
-      label: Screenshots or error messages
-      description: Attach a screenshot or paste any error text you see on screen.
+      label: Screenshots / logs / error messages
+      description: Paste any console errors, network tab errors, or attach screenshots. Very helpful for faster resolution.
     validations:
       required: false
 
   - type: textarea
     id: additional
     attributes:
-      label: Anything else?
-      description: Any other details that might help — which client/litigation it happened on, time of day, etc.
+      label: Additional context
+      description: Anything else worth mentioning — which client/litigation it happened on, when it started, related issues, etc.
     validations:
       required: false
 
   - type: checkboxes
     id: checks
     attributes:
-      label: Quick check
+      label: Checklist
       options:
-        - label: I searched existing issues to make sure this isn't already reported
+        - label: I searched existing issues to make sure this isn't a duplicate
+          required: false
+        - label: I can consistently reproduce this issue
           required: false
