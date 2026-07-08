@@ -6,102 +6,91 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to report a bug! Please fill out the details below as clearly as possible — it makes triage much faster.
+        Thanks for taking the time to report this! Fill in the fields below — only the starred ones are required.
 
   - type: textarea
     id: description
     attributes:
-      label: What happened?
-      description: A clear and concise description of the bug.
-      placeholder: When I click "Submit Appeal", the page crashes with a 500 error.
-    validations:
-      required: true
-
-  - type: textarea
-    id: expected
-    attributes:
-      label: Expected behavior
-      description: What did you expect to happen instead?
-    validations:
-      required: true
-
-  - type: textarea
-    id: steps
-    attributes:
-      label: Steps to reproduce
-      description: List the exact steps so we can reproduce the issue.
-      placeholder: |
-        1. Go to '...'
-        2. Click on '...'
-        3. Fill in '...'
-        4. See error
+      label: "What happened? *"
+      description: Describe what went wrong in plain language.
+      placeholder: "Example: When I click Save on a proceeding, nothing happens and the page shows a red error."
     validations:
       required: true
 
   - type: dropdown
     id: module
     attributes:
-      label: Affected area / module
-      description: Which part of AppealDesk does this affect?
+      label: "Affected area(s) *"
+      description: Select every area where the issue occurs. You can pick more than one.
+      multiple: true
       options:
-        - Appeals
-        - Litigation tracking
-        - Document generation (DOCX/PDF)
-        - Data import/export (XLSX)
-        - Authentication (Supabase)
-        - Dashboard / UI
-        - Database / Supabase backend
-        - Other
-    validations:
-      required: true
-
-  - type: dropdown
-    id: severity
-    attributes:
-      label: Severity
-      options:
-        - Critical (blocks core workflow / data loss)
-        - High (major feature broken)
-        - Medium (feature partially broken, workaround exists)
-        - Low (cosmetic / minor)
+        - "Platform Portal — Dashboard"
+        - "Platform Portal — Service Providers (CA Firms)"
+        - "Platform Portal — Users"
+        - "Platform Portal — Admins"
+        - "Platform Portal — Masters (Acts / Financial Years / Assessment Years)"
+        - "Platform Portal — Documents"
+        - "Platform Portal — Audit Logs"
+        - "Platform Portal — Settings & Branding"
+        - "SP Portal — Dashboard"
+        - "SP Portal — Litigations / Appeals (List)"
+        - "SP Portal — Litigation Detail (Proceedings & Events)"
+        - "SP Portal — Demand / Amount Section"
+        - "SP Portal — Clients"
+        - "SP Portal — Team Users"
+        - "SP Portal — Client Users"
+        - "SP Portal — Documents (Forms / Templates / Resources)"
+        - "SP Portal — Masters"
+        - "SP Portal — Audit Logs"
+        - "SP Portal — Settings"
+        - "Authentication / Login / Invite / Password Reset"
+        - "Document Export (PDF / DOCX / XLSX)"
+        - "File Uploads / Storage"
+        - "Email Notifications"
+        - "Other"
     validations:
       required: true
 
   - type: textarea
-    id: environment
+    id: expected
     attributes:
-      label: Environment
-      description: Browser, OS, and whether this happened locally or in production/staging.
-      placeholder: |
-        - Browser: Chrome 126
-        - OS: Windows 11
-        - Environment: Production
+      label: What did you expect to happen?
+      description: Describe what should have happened instead.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: How severe is this?
+      options:
+        - Critical — completely blocks my work
+        - High — a key feature is broken
+        - Medium — partially broken, I can work around it
+        - Low — minor or cosmetic issue
     validations:
       required: false
 
   - type: textarea
     id: logs
     attributes:
-      label: Screenshots / logs / error messages
-      description: Paste any console errors, network tab errors, or Supabase logs. Screenshots are very helpful.
-      render: shell
+      label: Screenshots or error messages
+      description: Attach a screenshot or paste any error text you see on screen.
     validations:
       required: false
 
   - type: textarea
     id: additional
     attributes:
-      label: Additional context
-      description: Anything else worth mentioning (recent deploys, related issues, etc.)
+      label: Anything else?
+      description: Any other details that might help — which client/litigation it happened on, time of day, etc.
     validations:
       required: false
 
   - type: checkboxes
     id: checks
     attributes:
-      label: Checklist
+      label: Quick check
       options:
-        - label: I searched existing issues to make sure this isn't a duplicate
-          required: true
-        - label: I can consistently reproduce this issue
+        - label: I searched existing issues to make sure this isn't already reported
           required: false

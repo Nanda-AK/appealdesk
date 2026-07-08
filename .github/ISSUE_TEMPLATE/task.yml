@@ -17,7 +17,7 @@ body:
       label: Acceptance criteria
       description: How do we know this task is complete?
       placeholder: |
-        - [ ] Supabase RLS policy updated for litigation table
+        - [ ] RLS policy updated for litigation table
         - [ ] Tested locally with two roles (SP + Platform admin)
     validations:
       required: true
@@ -25,17 +25,35 @@ body:
   - type: dropdown
     id: module
     attributes:
-      label: Affected area / module
+      label: Affected area(s)
+      description: Select every area this task touches. You can pick more than one.
+      multiple: true
       options:
-        - Appeals
-        - Litigation tracking
-        - Document generation (DOCX/PDF)
-        - Data import/export (XLSX)
-        - Authentication (Supabase)
-        - Dashboard / UI
-        - Database / Supabase backend
-        - DevOps / Config
-        - Other
+        - "Platform Portal — Dashboard"
+        - "Platform Portal — Service Providers (CA Firms)"
+        - "Platform Portal — Users"
+        - "Platform Portal — Admins"
+        - "Platform Portal — Masters (Acts / Financial Years / Assessment Years)"
+        - "Platform Portal — Documents"
+        - "Platform Portal — Audit Logs"
+        - "Platform Portal — Settings & Branding"
+        - "SP Portal — Dashboard"
+        - "SP Portal — Litigations / Appeals (List)"
+        - "SP Portal — Litigation Detail (Proceedings & Events)"
+        - "SP Portal — Demand / Amount Section"
+        - "SP Portal — Clients"
+        - "SP Portal — Team Users"
+        - "SP Portal — Client Users"
+        - "SP Portal — Documents (Forms / Templates / Resources)"
+        - "SP Portal — Masters"
+        - "SP Portal — Audit Logs"
+        - "SP Portal — Settings"
+        - "Authentication / Login / Invite / Password Reset"
+        - "Document Export (PDF / DOCX / XLSX)"
+        - "File Uploads / Storage"
+        - "Email Notifications"
+        - "DevOps / Config / Deployment"
+        - "Other"
     validations:
       required: true
 
