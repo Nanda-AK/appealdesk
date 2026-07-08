@@ -66,7 +66,7 @@ export default async function AppealsPage({
   if (filterActs.length)     appealsQuery = appealsQuery.in("act_regulation_id", filterActs);
   if (filterFYs.length)      appealsQuery = appealsQuery.in("financial_year_id", filterFYs);
   if (filterAYs.length)      appealsQuery = appealsQuery.in("assessment_year_id", filterAYs);
-  if (filterStatuses.length) appealsQuery = appealsQuery.in("status", filterStatuses);
+  // Status filter applied client-side on proceedings (not appeals)
   if (filterAssigned.length) appealsQuery = appealsQuery.in("assigned_to", filterAssigned);
 
   appealsQuery = appealsQuery.order("created_at", { ascending: sortAsc }).range(from, to);

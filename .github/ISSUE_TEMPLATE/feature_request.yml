@@ -1,0 +1,77 @@
+name: ✨ Feature Request
+description: Suggest a new feature or improvement for AppealDesk
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an improvement! Please give as much detail as you can so we can scope this properly.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the gap or pain point this feature addresses.
+      placeholder: Currently, Service Providers can't bulk-export litigation status reports, so they have to check each case manually.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe what you'd like to see built.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: module
+    attributes:
+      label: Affected area / module
+      options:
+        - Appeals
+        - Litigation tracking
+        - Document generation (DOCX/PDF)
+        - Data import/export (XLSX)
+        - Authentication (Supabase)
+        - Dashboard / UI
+        - Database / Supabase backend
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any other approaches or workarounds you've thought about.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - High (needed soon / blocking a workflow)
+        - Medium (would meaningfully improve things)
+        - Low (nice to have)
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Mockups, related issues, or links to similar features elsewhere.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues to make sure this isn't a duplicate
+          required: true

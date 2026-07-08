@@ -735,6 +735,7 @@ export default function AppealsClient({
                   appeals.forEach(appeal => {
                     const procs = [...(appeal.proceedings ?? [])]
                       .filter(p => !p.deleted_at)
+                      .filter(p => !currentStatuses.length || currentStatuses.includes(p.status ?? "open"))
                       .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
                     procs.forEach(proc => flatRows.push({ appeal, proc }));
                   });

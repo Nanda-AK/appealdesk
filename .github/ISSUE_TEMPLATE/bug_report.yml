@@ -1,0 +1,107 @@
+name: 🐛 Bug Report
+description: Report something that's broken or not working as expected in AppealDesk
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the details below as clearly as possible — it makes triage much faster.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear and concise description of the bug.
+      placeholder: When I click "Submit Appeal", the page crashes with a 500 error.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: List the exact steps so we can reproduce the issue.
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. Fill in '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: dropdown
+    id: module
+    attributes:
+      label: Affected area / module
+      description: Which part of AppealDesk does this affect?
+      options:
+        - Appeals
+        - Litigation tracking
+        - Document generation (DOCX/PDF)
+        - Data import/export (XLSX)
+        - Authentication (Supabase)
+        - Dashboard / UI
+        - Database / Supabase backend
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Critical (blocks core workflow / data loss)
+        - High (major feature broken)
+        - Medium (feature partially broken, workaround exists)
+        - Low (cosmetic / minor)
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Browser, OS, and whether this happened locally or in production/staging.
+      placeholder: |
+        - Browser: Chrome 126
+        - OS: Windows 11
+        - Environment: Production
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Screenshots / logs / error messages
+      description: Paste any console errors, network tab errors, or Supabase logs. Screenshots are very helpful.
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Anything else worth mentioning (recent deploys, related issues, etc.)
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues to make sure this isn't a duplicate
+          required: true
+        - label: I can consistently reproduce this issue
+          required: false

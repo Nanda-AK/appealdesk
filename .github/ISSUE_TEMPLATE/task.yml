@@ -1,0 +1,58 @@
+name: 📋 Task
+description: A general task, chore, or piece of work to track (refactor, config change, cleanup, etc.)
+title: "[Task]: "
+labels: ["task"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What needs to be done?
+      description: Describe the task clearly.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: How do we know this task is complete?
+      placeholder: |
+        - [ ] Supabase RLS policy updated for litigation table
+        - [ ] Tested locally with two roles (SP + Platform admin)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: module
+    attributes:
+      label: Affected area / module
+      options:
+        - Appeals
+        - Litigation tracking
+        - Document generation (DOCX/PDF)
+        - Data import/export (XLSX)
+        - Authentication (Supabase)
+        - Dashboard / UI
+        - Database / Supabase backend
+        - DevOps / Config
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+    validations:
+      required: false
