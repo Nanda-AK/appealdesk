@@ -1740,15 +1740,18 @@ function ProceedingFormFields({
 function DemandIssuesEditor({
   issues,
   onChange,
-  mainEvents = [],
+  mainEvents,
 }: {
   issues: DraftDemandIssue[];
   onChange: (issues: DraftDemandIssue[]) => void;
   mainEvents?: AppEvent[];
 }) {
+  const [deleteConfirmIdx, setDeleteConfirmIdx] = useState<number | null>(null);
   const cInp =
     "w-full px-1.5 py-1 text-xs border border-accent rounded focus:outline-none focus:ring-1 focus:ring-primary";
   const cNum = `${cInp} text-right`;
+  const cInpTall =
+    "w-full px-1.5 py-1.5 text-xs border border-accent rounded focus:outline-none focus:ring-1 focus:ring-primary";
 
   const isEditMode = mainEvents !== undefined;
   const activeMainEvents = (mainEvents ?? [])
@@ -1790,11 +1793,23 @@ function DemandIssuesEditor({
   if (isEditMode && activeMainEvents.length === 0) {
     return (
       <div className="py-10 flex flex-col items-center gap-2 text-center">
-        <svg className="w-8 h-8 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+        <svg
+          className="w-8 h-8 text-muted"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={1.5}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
+          />
         </svg>
         <p className="text-sm font-medium text-heading">No main events found</p>
-        <p className="text-xs text-muted">Add main events to this proceeding before entering demand amounts.</p>
+        <p className="text-xs text-muted">
+          Add main events to this proceeding before entering demand amounts.
+        </p>
       </div>
     );
   }
@@ -1823,27 +1838,38 @@ function DemandIssuesEditor({
       </div>
       {issues.length > 0 && (
         <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full text-xs border-collapse" style={{ tableLayout: "fixed" }}>
+          <table
+            className="w-full text-xs border-collapse"
+            style={{ tableLayout: "fixed" }}
+          >
             <thead>
               <tr className="bg-table-header text-left">
                 <th className="px-2 py-2 font-semibold text-heading w-8">#</th>
-                <th className="px-2 py-2 font-semibold text-heading w-[150px]">
-                  Notice No
+                <th className="px-2 py-2 font-semibold text-heading w-[130px]">
+                  Notice No & Date
+                </th>
+                <th className="px-2 py-2 font-semibold text-heading min-w-[220px] ">
+                  Description of the Issue
                 </th>
                 <th className="px-2 py-2 font-semibold text-heading w-[110px]">
-                  Notice Date
+                  Type
                 </th>
-                <th className="px-2 py-2 font-semibold text-heading">
-                  Description of Issue
-                </th>
-                <th className="px-2 py-2 font-semibold text-heading w-[110px]">Type</th>
-                <th className="px-2 py-2 font-semibold text-heading text-right" style={{ width: amtColPx }}>
+                <th
+                  className="px-2 py-2 font-semibold text-heading text-right"
+                  style={{ width: amtColPx }}
+                >
                   Demanded (₹)
                 </th>
-                <th className="px-2 py-2 font-semibold text-heading text-right" style={{ width: amtColPx }}>
+                <th
+                  className="px-2 py-2 font-semibold text-heading text-right"
+                  style={{ width: amtColPx }}
+                >
                   Acceptable (₹)
                 </th>
-                <th className="px-2 py-2 font-semibold text-heading text-right" style={{ width: amtColPx }}>
+                <th
+                  className="px-2 py-2 font-semibold text-heading text-right"
+                  style={{ width: amtColPx }}
+                >
                   Disputed (₹)
                 </th>
                 <th className="w-7"></th>
@@ -1890,88 +1916,90 @@ function DemandIssuesEditor({
                               >
                                 {i + 1}
                               </td>
-                              <td
-                                rowSpan={3}
-                                className="px-2 py-1.5 align-top"
-                              >
-                                {isEditMode ? (
-                                  <select
-                                    value={iss.notice_no}
-                                    onChange={(e) =>
-                                      onChange(
-                                        issues.map((x, idx) =>
-                                          idx === i
-                                            ? { ...x, notice_no: e.target.value }
-                                            : x,
-                                        ),
-                                      )
-                                    }
-                                    className={cInp}
-                                  >
-                                    <option value="">— Select ME —</option>
-                                    {meOptions.map((opt) => (
-                                      <option key={opt.id} value={opt.label}>
-                                        {opt.label}
-                                      </option>
-                                    ))}
-                                  </select>
-                                ) : (
+                              <td rowSpan={3} className="relative">
+                                <div className="absolute inset-0 flex flex-col justify-start gap-6 px-2 py-1.5">
+                                  {isEditMode ? (
+                                    <select
+                                      value={iss.notice_no}
+                                      onChange={(e) =>
+                                        onChange(
+                                          issues.map((x, idx) =>
+                                            idx === i
+                                              ? {
+                                                  ...x,
+                                                  notice_no: e.target.value,
+                                                }
+                                              : x,
+                                          ),
+                                        )
+                                      }
+                                      className={cInpTall}
+                                    >
+                                      <option value="">— Select ME —</option>
+                                      {meOptions.map((opt) => (
+                                        <option key={opt.id} value={opt.label}>
+                                          {opt.label}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  ) : (
+                                    <input
+                                      value={iss.notice_no}
+                                      onChange={(e) =>
+                                        onChange(
+                                          issues.map((x, idx) =>
+                                            idx === i
+                                              ? {
+                                                  ...x,
+                                                  notice_no: e.target.value,
+                                                }
+                                              : x,
+                                          ),
+                                        )
+                                      }
+                                      className={cInpTall}
+                                      placeholder="Notice No."
+                                    />
+                                  )}
                                   <input
-                                    value={iss.notice_no}
+                                    type="date"
+                                    value={iss.notice_date}
                                     onChange={(e) =>
                                       onChange(
                                         issues.map((x, idx) =>
                                           idx === i
-                                            ? { ...x, notice_no: e.target.value }
+                                            ? {
+                                                ...x,
+                                                notice_date: e.target.value,
+                                              }
                                             : x,
                                         ),
                                       )
                                     }
-                                    className={cInp}
-                                    placeholder="Notice No."
+                                    className={cInpTall}
                                   />
-                                )}
+                                </div>
                               </td>
-                              <td rowSpan={3} className="px-2 py-1.5 align-top">
-                                <input
-                                  type="date"
-                                  value={iss.notice_date}
-                                  onChange={(e) =>
-                                    onChange(
-                                      issues.map((x, idx) =>
-                                        idx === i
-                                          ? {
-                                              ...x,
-                                              notice_date: e.target.value,
-                                            }
-                                          : x,
-                                      ),
-                                    )
-                                  }
-                                  className={cInp}
-                                />
-                              </td>
-                              <td
-                                rowSpan={3}
-                                className="px-2 py-1.5 align-top min-w-[140px]"
-                              >
-                                <input
-                                  value={iss.description}
-                                  onChange={(e) =>
-                                    onChange(
-                                      issues.map((x, idx) =>
-                                        idx === i
-                                          ? {
-                                              ...x,
-                                              description: e.target.value,
-                                            }
-                                          : x,
-                                      ),
-                                    )
-                                  }
-                                  className={cInp}
-                                  placeholder="Description…"
-                                />
+                              <td rowSpan={3} className="relative">
+                                <div className="absolute inset-0 px-2 py-1.5">
+                                  <textarea
+                                    value={iss.description}
+                                    onChange={(e) =>
+                                      onChange(
+                                        issues.map((x, idx) =>
+                                          idx === i
+                                            ? {
+                                                ...x,
+                                                description: e.target.value,
+                                              }
+                                            : x,
+                                        ),
+                                      )
+                                    }
+                                    className={`${cInp} resize-none w-full h-full`}
+                                    placeholder="Description…"
+                                  />
+                                </div>
                               </td>
                             </>
                           )}
@@ -2052,9 +2080,7 @@ function DemandIssuesEditor({
                             >
                               <button
                                 type="button"
-                                onClick={() =>
-                                  onChange(issues.filter((_, idx) => idx !== i))
-                                }
+                                onClick={() => setDeleteConfirmIdx(i)}
                                 title="Remove"
                                 className="text-red-400 hover:text-red-600 p-0.5 rounded transition-colors"
                               >
@@ -2079,18 +2105,18 @@ function DemandIssuesEditor({
                     })}
                     <tr className="border-t border-border bg-surface-hover">
                       <td
-                        colSpan={5}
+                        colSpan={4}
                         className="px-2 py-1 text-right font-semibold text-heading"
                       >
                         Total
                       </td>
-                      <td className="px-2 py-1 text-right font-semibold text-heading">
+                      <td className="px-3 py-1 text-right font-semibold text-heading">
                         {fmtInr(issueTotals.demanded)}
                       </td>
-                      <td className="px-2 py-1 text-right font-semibold text-heading">
+                      <td className="px-3 py-1 text-right font-semibold text-heading">
                         {fmtInr(issueTotals.acceptable)}
                       </td>
-                      <td className="px-2 py-1 text-right font-semibold text-heading">
+                      <td className="px-3 py-1 text-right font-semibold text-heading">
                         {fmtInr(issueTotals.demanded - issueTotals.acceptable)}
                       </td>
                       <td></td>
@@ -2103,18 +2129,18 @@ function DemandIssuesEditor({
               <tfoot>
                 <tr className="border-t-2 border-border-strong bg-accent-tint">
                   <td
-                    colSpan={5}
+                    colSpan={4}
                     className="px-2 py-1.5 text-right font-bold text-heading"
                   >
                     Grand Total
                   </td>
-                  <td className="px-2 py-1.5 text-right font-bold text-heading">
+                  <td className="px-3 py-1.5 text-right font-bold text-heading">
                     {fmtInr(totals.demanded)}
                   </td>
-                  <td className="px-2 py-1.5 text-right font-bold text-heading">
+                  <td className="px-3 py-1.5 text-right font-bold text-heading">
                     {fmtInr(totals.acceptable)}
                   </td>
-                  <td className="px-2 py-1.5 text-right font-bold text-heading">
+                  <td className="px-3 py-1.5 text-right font-bold text-heading">
                     {fmtInr(totals.demanded - totals.acceptable)}
                   </td>
                   <td></td>
@@ -2149,6 +2175,39 @@ function DemandIssuesEditor({
         </svg>
         Add Issue
       </button>
+
+      {deleteConfirmIdx !== null && (
+        <div className="absolute inset-0 bg-black/30 flex items-center justify-center z-10 rounded-xl">
+          <div className="bg-white rounded-xl shadow-xl border border-border p-6 w-full max-w-sm mx-4">
+            <h3 className="text-base font-semibold text-heading mb-2">
+              Remove Demand Issue?
+            </h3>
+            <p className="text-sm text-secondary mb-5">
+              Issue #{deleteConfirmIdx + 1} will be removed. This cannot be
+              undone after saving.
+            </p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmIdx(null)}
+                className="flex-1 px-4 py-2 text-sm border border-border rounded-lg text-heading hover:bg-page transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onChange(issues.filter((_, idx) => idx !== deleteConfirmIdx));
+                  setDeleteConfirmIdx(null);
+                }}
+                className="flex-1 px-4 py-2 text-sm bg-danger hover:bg-red-700 text-white rounded-lg font-medium transition"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -2196,14 +2255,11 @@ function DemandIssuesReadOnly({ issues }: { issues: DemandIssue[] }) {
           <thead>
             <tr className="bg-table-header text-left">
               <th className="px-2 py-2 font-semibold text-heading w-8">#</th>
-              <th className="px-2 py-2 font-semibold text-heading">
-                Notice No
+              <th className="px-2 py-2 font-semibold text-heading w-[130px]">
+                Notice No / Date
               </th>
-              <th className="px-2 py-2 font-semibold text-heading">
-                Notice Date
-              </th>
-              <th className="px-2 py-2 font-semibold text-heading">
-                Description of Issue
+              <th className="px-2 py-2 font-semibold text-heading min-w-[220px]">
+                Description of the Issue
               </th>
               <th className="px-2 py-2 font-semibold text-heading">Type</th>
               <th className="px-2 py-2 font-semibold text-heading text-right">
@@ -2259,17 +2315,16 @@ function DemandIssuesReadOnly({ issues }: { issues: DemandIssue[] }) {
                             rowSpan={3}
                             className="px-2 py-1.5 align-top text-secondary"
                           >
-                            {iss.notice_no || "—"}
-                          </td>
-                          <td
-                            rowSpan={3}
-                            className="px-2 py-1.5 align-top text-secondary whitespace-nowrap"
-                          >
-                            {iss.notice_date
-                              ? new Date(iss.notice_date).toLocaleDateString(
-                                  "en-IN",
-                                )
-                              : "—"}
+                            <div className="flex flex-col gap-0.5">
+                              <span>{iss.notice_no || "—"}</span>
+                              <span className="text-muted text-xs">
+                                {iss.notice_date
+                                  ? new Date(
+                                      iss.notice_date,
+                                    ).toLocaleDateString("en-IN")
+                                  : "—"}
+                              </span>
+                            </div>
                           </td>
                           <td
                             rowSpan={3}
@@ -2295,7 +2350,7 @@ function DemandIssuesReadOnly({ issues }: { issues: DemandIssue[] }) {
                   ))}
                   <tr className="border-t border-border bg-surface-hover">
                     <td
-                      colSpan={5}
+                      colSpan={4}
                       className="px-2 py-1 text-right font-semibold text-heading"
                     >
                       Total
@@ -2318,7 +2373,7 @@ function DemandIssuesReadOnly({ issues }: { issues: DemandIssue[] }) {
             <tfoot>
               <tr className="border-t-2 border-border-strong bg-accent-tint">
                 <td
-                  colSpan={5}
+                  colSpan={4}
                   className="px-2 py-1.5 text-right font-bold text-heading"
                 >
                   Grand Total
@@ -3036,6 +3091,7 @@ export default function AppealDetailClient({
     DraftDemandIssue[]
   >([]);
   const editProcContactsInitRef = useRef<ProceedingContact[]>([]);
+  const editProcDemandInitRef = useRef<DraftDemandIssue[]>([]);
 
   async function openEditProc(proc: Proceeding) {
     const initValues: ProceedingInput = {
@@ -3057,6 +3113,8 @@ export default function AppealDetailClient({
     editProcInitRef.current = initValues;
     const initContacts = proc.contacts ?? [];
     editProcContactsInitRef.current = initContacts;
+    editProcDemandInitRef.current = [];
+    setEditProcDemandIssues([]);
     setEditProc(proc);
     setEditProcValues(initValues);
     setEditProcContacts(initContacts);
@@ -3064,8 +3122,11 @@ export default function AppealDetailClient({
     setEditProcError(null);
     try {
       const existing = await getDemandIssues(proc.id);
-      setEditProcDemandIssues(existing.map(toDraftIssue));
+      const drafts = existing.map(toDraftIssue);
+      editProcDemandInitRef.current = drafts;
+      setEditProcDemandIssues(drafts);
     } catch {
+      editProcDemandInitRef.current = [];
       setEditProcDemandIssues([]);
     }
   }
@@ -3519,7 +3580,8 @@ export default function AppealDetailClient({
       JSON.stringify(editProcInitRef.current) ||
       JSON.stringify(editProcContacts) !==
         JSON.stringify(editProcContactsInitRef.current) ||
-      editProcDemandIssues.length > 0);
+      JSON.stringify(editProcDemandIssues) !==
+        JSON.stringify(editProcDemandInitRef.current));
   const addProcIsDirty =
     showAddProc &&
     (addProcPendingFiles.length > 0 ||
@@ -4191,7 +4253,12 @@ export default function AppealDetailClient({
                             <path
                               strokeLinecap="round"
                               strokeLinejoin="round"
-                              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                              d="M6 3h12M6 8h12M6 13l8.5 8"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M6 13h3c3.866 0 7-3.134 7-7"
                             />
                           </svg>
                         </button>
@@ -5102,7 +5169,10 @@ export default function AppealDetailClient({
           isDirty={editProcIsDirty}
           size="lg"
         >
-          <form onSubmit={handleSaveProc} className="flex flex-col flex-1 overflow-hidden">
+          <form
+            onSubmit={handleSaveProc}
+            className="flex flex-col flex-1 overflow-hidden"
+          >
             {/* Tab strip — fixed, never scrolls */}
             <div className="flex border-b border-border px-6 shrink-0">
               {(["details", "contacts", "amount"] as const).map((tab) => (
@@ -5116,6 +5186,19 @@ export default function AppealDetailClient({
                     "Proceeding Details"
                   ) : tab === "contacts" ? (
                     <span className="inline-flex items-center gap-1.5">
+                      <svg
+                        className="w-3.5 h-3.5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                        />
+                      </svg>
                       Contacts
                       {editProcContacts.length > 0 && (
                         <span className="inline-flex items-center justify-center w-4 h-4 text-xs bg-accent-light text-accent rounded-full font-semibold">
@@ -5124,7 +5207,27 @@ export default function AppealDetailClient({
                       )}
                     </span>
                   ) : (
-                    "Demand"
+                    <span className="inline-flex items-center gap-1">
+                      <svg
+                        className="w-3.5 h-3.5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M6 3h12M6 8h12M6 13l8.5 8"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M6 13h3c3.866 0 7-3.134 7-7"
+                        />
+                      </svg>
+                      Demand
+                    </span>
                   )}
                 </button>
               ))}
@@ -5213,7 +5316,10 @@ export default function AppealDetailClient({
           isDirty={addProcIsDirty}
           size="lg"
         >
-          <form onSubmit={handleAddProc} className="flex flex-col flex-1 overflow-hidden">
+          <form
+            onSubmit={handleAddProc}
+            className="flex flex-col flex-1 overflow-hidden"
+          >
             {/* Tab strip — fixed, never scrolls */}
             <div className="flex border-b border-border px-6 shrink-0">
               {(["details", "contacts", "amount"] as const).map((tab) => (
@@ -5227,6 +5333,19 @@ export default function AppealDetailClient({
                     "Proceeding Details"
                   ) : tab === "contacts" ? (
                     <span className="inline-flex items-center gap-1.5">
+                      <svg
+                        className="w-3.5 h-3.5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                        />
+                      </svg>
                       Contacts
                       {addProcContacts.length > 0 && (
                         <span className="inline-flex items-center justify-center w-4 h-4 text-xs bg-accent-light text-accent rounded-full font-semibold">
@@ -5235,7 +5354,27 @@ export default function AppealDetailClient({
                       )}
                     </span>
                   ) : (
-                    "Demand"
+                    <span className="inline-flex items-center gap-1">
+                      <svg
+                        className="w-3.5 h-3.5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M6 3h12M6 8h12M6 13l8.5 8"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M6 13h3c3.866 0 7-3.134 7-7"
+                        />
+                      </svg>
+                      Demand
+                    </span>
                   )}
                 </button>
               ))}
@@ -5551,7 +5690,8 @@ export default function AppealDetailClient({
                         <option value="">— None (unlinked) —</option>
                         {mainEvents.map((m, mIdx) => (
                           <option key={m.id} value={m.id}>
-                            #ME{mainEvents.length - mIdx} — {getEventLabel(m.category, m.details)}
+                            #ME{mainEvents.length - mIdx} —{" "}
+                            {getEventLabel(m.category, m.details)}
                             {m.event_notice_number
                               ? ` (Order #${m.event_notice_number})`
                               : ""}
