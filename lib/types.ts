@@ -299,10 +299,13 @@ export interface DemandIssue {
   description: string;
   tax_demanded: number;
   tax_acceptable: number;
+  tax_dropped: number;
   interest_demanded: number;
   interest_acceptable: number;
+  interest_dropped: number;
   penalty_demanded: number;
   penalty_acceptable: number;
+  penalty_dropped: number;
   sort_order: number;
   created_at: string;
 }

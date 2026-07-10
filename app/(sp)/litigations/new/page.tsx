@@ -4,9 +4,16 @@ import AppealForm from "@/components/sp/AppealForm";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-export default async function NewAppealPage() {
+export default async function NewAppealPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   const user = await getCurrentUser();
   if (!user || !["sp_admin", "sp_staff"].includes(user.role)) redirect("/litigations");
+
+  const params = await searchParams;
+  const defaultClientId = typeof params.client === "string" ? params.client : undefined;
 
   const supabase = await createClient();
   const spId = user.service_provider_id ?? user.org_id;
@@ -73,6 +80,7 @@ export default async function NewAppealPage() {
         teamMembers={teamMembers ?? []}
         mastersByType={mastersByType}
         clientUsersByOrg={clientUsersByOrg}
+        defaultClientId={defaultClientId}
       />
     </div>
   );

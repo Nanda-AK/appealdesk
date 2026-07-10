@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/user";
 import { revalidatePath } from "next/cache";
 import { logAction } from "@/lib/audit";
 import type { DemandIssue, DemandIssueInput } from "@/lib/types";
+import { computeDemandTotals, type DemandTotals } from "@/lib/demand";
 
 export async function getDemandIssues(proceedingId: string): Promise<DemandIssue[]> {
   const user = await getCurrentUser();
@@ -21,6 +22,35 @@ export async function getDemandIssues(proceedingId: string): Promise<DemandIssue
 
   if (error) throw new Error(error.message);
   return (data ?? []) as DemandIssue[];
+}
+
+// Bulk-fetch demand totals across many proceedings in one query, for
+// aggregate/summary views (e.g. the Proceedings section) that would
+// otherwise need one getDemandIssues() call per proceeding.
+export async function getBulkDemandTotals(
+  proceedingIds: string[]
+): Promise<Record<string, DemandTotals>> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+  if (proceedingIds.length === 0) return {};
+
+  const supabase = await createServiceClient();
+  const { data, error } = await supabase
+    .from("proceeding_demand_issues")
+    .select("*")
+    .eq("service_provider_id", user.service_provider_id!)
+    .in("proceeding_id", proceedingIds);
+
+  if (error) throw new Error(error.message);
+
+  const grouped = new Map<string, DemandIssue[]>();
+  ((data ?? []) as DemandIssue[]).forEach((iss) => {
+    grouped.set(iss.proceeding_id, [...(grouped.get(iss.proceeding_id) ?? []), iss]);
+  });
+
+  return Object.fromEntries(
+    proceedingIds.map((id) => [id, computeDemandTotals(grouped.get(id) ?? [])])
+  );
 }
 
 export async function saveDemandIssues(

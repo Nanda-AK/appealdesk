@@ -3,8 +3,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { PER_PAGE_OPTIONS } from "@/lib/constants";
+import { PER_PAGE_OPTIONS, LITIGATION_TYPES } from "@/lib/constants";
 import { exportLitigationsReport, getLitigationReport } from "@/app/(sp)/litigations/actions";
+import { MultiSelect } from "@/components/ui/MultiSelect";
 
 interface AppealProceeding {
   id: string;
@@ -24,6 +25,7 @@ interface Appeal {
   financial_year: { id: string; name: string } | null;
   assessment_year: { id: string; name: string } | null;
   status: string | null;
+  litigation_type: string | null;
   created_at: string;
   client_org: { id: string; name: string; file_number: string | null } | null;
   proceedings?: AppealProceeding[];
@@ -40,6 +42,7 @@ const ALL_COLUMNS = [
   { key: "client_name",       label: "Client Name"       },
   { key: "act",               label: "Act"               },
   { key: "fy_ty",             label: "FY/TY"             },
+  { key: "litigation_type",   label: "Litigation Type"   },
   { key: "proceeding",        label: "Proceeding"        },
   { key: "proceeding_status", label: "Proceeding Status" },
   { key: "jurisdiction",      label: "Jurisdiction"      },
@@ -69,6 +72,7 @@ interface Props {
   currentAYs: string[];
   currentStatuses: string[];
   currentAssigned: string[];
+  currentLitigationTypes: string[];
   currentSortDir: string;
   userId: string;
 }
@@ -83,221 +87,14 @@ const STATUS_OPTIONS: NamedRecord[] = [
   { id: "closed", name: "Closed" },
 ];
 
+const LITIGATION_TYPE_OPTIONS: NamedRecord[] = LITIGATION_TYPES.map((t) => ({ id: t, name: t }));
+
 function pageNumbers(current: number, total: number): (number | "...")[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
   if (current <= 4) return [1, 2, 3, 4, 5, "...", total];
   if (current >= total - 3)
     return [1, "...", total - 4, total - 3, total - 2, total - 1, total];
   return [1, "...", current - 1, current, current + 1, "...", total];
-}
-
-// Multi-select dropdown with checkboxes and optional search.
-// Selections are buffered locally and applied (pushed to URL) when the dropdown closes.
-function MultiSelect({
-  options,
-  values,
-  onChange,
-  placeholder,
-  searchable = true,
-}: {
-  options: NamedRecord[];
-  values: string[];
-  onChange: (ids: string[]) => void;
-  placeholder: string;
-  searchable?: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const [pending, setPending] = useState<string[]>([]);
-  const [query, setQuery] = useState("");
-  const containerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  // Ref so the click-outside handler always sees the latest pending without restating the effect
-  const pendingRef = useRef<string[]>([]);
-
-  function openDropdown() {
-    const copy = [...values];
-    setPending(copy);
-    pendingRef.current = copy;
-    setQuery("");
-    setOpen(true);
-    if (searchable) setTimeout(() => inputRef.current?.focus(), 0);
-  }
-
-  function applyAndClose() {
-    onChange(pendingRef.current);
-    setOpen(false);
-    setQuery("");
-  }
-
-  useEffect(() => {
-    if (!open) return;
-    function handler(e: MouseEvent) {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
-      ) {
-        applyAndClose();
-      }
-    }
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  function toggle(id: string) {
-    setPending((prev) => {
-      const next = prev.includes(id)
-        ? prev.filter((x) => x !== id)
-        : [...prev, id];
-      pendingRef.current = next;
-      return next;
-    });
-  }
-
-  const filtered =
-    searchable && query
-      ? options.filter((o) =>
-          o.name.toLowerCase().includes(query.toLowerCase()),
-        )
-      : options;
-
-  // Trigger label
-  let triggerText: string;
-  if (values.length === 0) triggerText = placeholder;
-  else if (values.length === 1)
-    triggerText = options.find((o) => o.id === values[0])?.name ?? "1 selected";
-  else triggerText = `${values.length} selected`;
-
-  const hasValue = values.length > 0;
-  const isMulti = values.length > 1;
-
-  return (
-    <div ref={containerRef} className="relative">
-      {/* Trigger */}
-      <div
-        className="flex items-center gap-1.5 px-2.5 py-2 text-sm border border-accent rounded-lg bg-white cursor-pointer min-w-25 max-w-32.5 h-9.5 select-none"
-        onClick={() => (open ? applyAndClose() : openDropdown())}
-      >
-        <span
-          className={`flex-1 truncate ${
-            !hasValue
-              ? "text-muted"
-              : isMulti
-                ? "font-medium text-primary"
-                : "text-heading"
-          }`}
-        >
-          {triggerText}
-        </span>
-        {hasValue ? (
-          <button
-            onMouseDown={(e) => {
-              e.stopPropagation();
-              onChange([]);
-            }}
-            className="text-muted hover:text-heading shrink-0 text-base leading-none"
-          >
-            ×
-          </button>
-        ) : (
-          <svg
-            className="w-3.5 h-3.5 shrink-0 text-muted"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
-        )}
-      </div>
-
-      {/* Dropdown */}
-      {open && (
-        <div className="absolute top-full left-0 mt-1 bg-white border border-border rounded-lg shadow-lg z-50 w-60 max-h-64 flex flex-col">
-          {searchable && (
-            <div className="p-2 border-b border-surface-hover shrink-0">
-              <input
-                ref={inputRef}
-                className="w-full px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-accent"
-                placeholder="Search…"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
-            </div>
-          )}
-          {pending.length > 0 && (
-            <div className="px-3 py-1.5 border-b border-surface-hover flex items-center justify-between shrink-0">
-              <span className="text-xs text-secondary">
-                {pending.length} selected
-              </span>
-              <button
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  setPending([]);
-                  pendingRef.current = [];
-                }}
-                className="text-xs text-accent hover:underline"
-              >
-                Clear
-              </button>
-            </div>
-          )}
-          <div className="overflow-y-auto flex-1 py-1">
-            {filtered.length === 0 ? (
-              <div className="px-3 py-2 text-sm text-muted">No matches</div>
-            ) : (
-              filtered.map((o) => {
-                const isChecked = pending.includes(o.id);
-                return (
-                  <button
-                    key={o.id}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      toggle(o.id);
-                    }}
-                    className={`w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-page ${isChecked ? "bg-accent-light" : ""}`}
-                  >
-                    <div
-                      className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors ${
-                        isChecked
-                          ? "bg-primary border-primary"
-                          : "border-border-strong"
-                      }`}
-                    >
-                      {isChecked && (
-                        <svg
-                          className="w-2.5 h-2.5 text-white"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={3}
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
-                      )}
-                    </div>
-                    <span
-                      className={`text-sm flex-1 truncate ${isChecked ? "font-medium text-heading" : "text-secondary"}`}
-                    >
-                      {o.name}
-                    </span>
-                  </button>
-                );
-              })
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
 }
 
 // @CodeScene(disable:"Complex Method")
@@ -318,6 +115,7 @@ export default function AppealsClient({
   currentAYs,
   currentStatuses,
   currentAssigned,
+  currentLitigationTypes,
   currentSortDir,
   userId,
 }: Props) {
@@ -409,6 +207,7 @@ export default function AppealsClient({
         filterAYs: currentAYs,
         filterStatuses: currentStatuses,
         filterAssigned: currentAssigned,
+        filterLitigationTypes: currentLitigationTypes,
       });
       const dateStamp = new Date().toISOString().slice(0, 10);
       if (format === "excel") {
@@ -457,6 +256,7 @@ export default function AppealsClient({
       ay: currentAYs.join(","),
       status: currentStatuses.join(","),
       assigned: currentAssigned.join(","),
+      litigation_type: currentLitigationTypes.join(","),
       sort_dir: currentSortDir,
       page: String(page),
       per_page: String(perPage),
@@ -487,7 +287,8 @@ export default function AppealsClient({
     currentFYs.length > 0 ||
     currentAYs.length > 0 ||
     currentStatuses.length > 0 ||
-    currentAssigned.length > 0;
+    currentAssigned.length > 0 ||
+    currentLitigationTypes.length > 0;
 
   const totalPages = Math.ceil(totalCount / perPage);
   const rowOffset = (page - 1) * perPage;
@@ -572,6 +373,13 @@ export default function AppealsClient({
           values={currentAssigned}
           onChange={(ids) => setMultiFilter("assigned", ids)}
           placeholder="All Assigned"
+        />
+        <MultiSelect
+          options={LITIGATION_TYPE_OPTIONS}
+          values={currentLitigationTypes}
+          onChange={(ids) => setMultiFilter("litigation_type", ids)}
+          placeholder="All Litigation Types"
+          searchable={false}
         />
 
         {/* Sort direction */}
@@ -706,6 +514,7 @@ export default function AppealsClient({
                 {col("client_name")       && <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap">Client Name</th>}
                 {col("act")               && <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap">Act</th>}
                 {col("fy_ty")             && <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap w-24">FY/TY</th>}
+                {col("litigation_type")   && <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap">Litigation Type</th>}
                 {col("proceeding")        && <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap">Proceeding</th>}
                 {col("proceeding_status") && <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap w-28">Proceeding Status</th>}
                 {col("jurisdiction")      && <th className="text-left px-3 py-3 font-semibold text-heading whitespace-nowrap">Jurisdiction</th>}
@@ -767,6 +576,7 @@ export default function AppealsClient({
                         {col("client_name")       && <td className={`${td} max-w-60 truncate`} title={appeal.client_org?.name ?? "—"}>{appeal.client_org?.name ?? "—"}</td>}
                         {col("act")               && <td className={`${td} max-w-52 truncate`} title={appeal.act_regulation?.name ?? "—"}>{appeal.act_regulation?.name ?? "—"}</td>}
                         {col("fy_ty")             && <td className={td}>{appeal.financial_year?.name ?? "—"}</td>}
+                        {col("litigation_type")   && <td className={`${td} max-w-44 truncate`} title={appeal.litigation_type ?? "—"}>{appeal.litigation_type ?? "—"}</td>}
                         {col("proceeding")        && <td className={`${td} max-w-40 truncate`} title={proc.proceeding_type?.name ?? "—"}>{proc.proceeding_type?.name ?? "—"}</td>}
                         {col("proceeding_status") && <td className="px-3 py-3">{ps ? <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${ps.cls}`}>{ps.label}</span> : <span className="text-muted text-xs">—</span>}</td>}
                         {col("jurisdiction")      && <td className={`${td} max-w-36 truncate`} title={jurisdiction}>{jurisdiction}</td>}
