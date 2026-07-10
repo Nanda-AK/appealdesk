@@ -56,6 +56,7 @@ import {
 import { getDemandIssues, saveDemandIssues } from "@/app/(sp)/litigations/demand-actions";
 import type { DemandIssue, DemandIssueInput } from "@/lib/types";
 import { PendingAttachments } from "@/components/sp/PendingAttachments";
+import { LITIGATION_TYPES } from "@/lib/constants";
 
 // ─── AY helpers (mirrors AppealForm.tsx) ─────────────────────────
 function deriveAYName(fyName: string): string {
@@ -138,6 +139,7 @@ interface Appeal {
   financial_year: { id: string; name: string } | null;
   assessment_year: { id: string; name: string } | null;
   status: string | null;
+  litigation_type: string | null;
   client_org: { id: string; name: string } | null;
   proceedings: Proceeding[];
 }
@@ -156,10 +158,13 @@ interface DraftDemandIssue {
   description: string;
   tax_demanded: string;
   tax_acceptable: string;
+  tax_dropped: string;
   interest_demanded: string;
   interest_acceptable: string;
+  interest_dropped: string;
   penalty_demanded: string;
   penalty_acceptable: string;
+  penalty_dropped: string;
 }
 type DemandTypeKey = "tax" | "interest" | "penalty";
 const DEMAND_TYPES: { key: DemandTypeKey; label: string }[] = [
@@ -168,23 +173,23 @@ const DEMAND_TYPES: { key: DemandTypeKey; label: string }[] = [
   { key: "penalty", label: "Penalty demand" },
 ];
 function blankDraftIssue(): DraftDemandIssue {
-  return { notice_no: "", notice_date: "", description: "", tax_demanded: "0", tax_acceptable: "0", interest_demanded: "0", interest_acceptable: "0", penalty_demanded: "0", penalty_acceptable: "0" };
+  return { notice_no: "", notice_date: "", description: "", tax_demanded: "0", tax_acceptable: "0", tax_dropped: "0", interest_demanded: "0", interest_acceptable: "0", interest_dropped: "0", penalty_demanded: "0", penalty_acceptable: "0", penalty_dropped: "0" };
 }
 function toDraftIssue(iss: DemandIssue): DraftDemandIssue {
-  return { notice_no: iss.notice_no, notice_date: iss.notice_date ?? "", description: iss.description, tax_demanded: iss.tax_demanded.toString(), tax_acceptable: iss.tax_acceptable.toString(), interest_demanded: iss.interest_demanded.toString(), interest_acceptable: iss.interest_acceptable.toString(), penalty_demanded: iss.penalty_demanded.toString(), penalty_acceptable: iss.penalty_acceptable.toString() };
+  return { notice_no: iss.notice_no, notice_date: iss.notice_date ?? "", description: iss.description, tax_demanded: iss.tax_demanded.toString(), tax_acceptable: iss.tax_acceptable.toString(), tax_dropped: (iss.tax_dropped ?? 0).toString(), interest_demanded: iss.interest_demanded.toString(), interest_acceptable: iss.interest_acceptable.toString(), interest_dropped: (iss.interest_dropped ?? 0).toString(), penalty_demanded: iss.penalty_demanded.toString(), penalty_acceptable: iss.penalty_acceptable.toString(), penalty_dropped: (iss.penalty_dropped ?? 0).toString() };
 }
 function fromDraftIssue(draft: DraftDemandIssue, sortOrder: number): DemandIssueInput {
-  return { notice_no: draft.notice_no, notice_date: draft.notice_date || null, description: draft.description, tax_demanded: parseFloat(draft.tax_demanded) || 0, tax_acceptable: parseFloat(draft.tax_acceptable) || 0, interest_demanded: parseFloat(draft.interest_demanded) || 0, interest_acceptable: parseFloat(draft.interest_acceptable) || 0, penalty_demanded: parseFloat(draft.penalty_demanded) || 0, penalty_acceptable: parseFloat(draft.penalty_acceptable) || 0, sort_order: sortOrder };
+  return { notice_no: draft.notice_no, notice_date: draft.notice_date || null, description: draft.description, tax_demanded: parseFloat(draft.tax_demanded) || 0, tax_acceptable: parseFloat(draft.tax_acceptable) || 0, tax_dropped: parseFloat(draft.tax_dropped) || 0, interest_demanded: parseFloat(draft.interest_demanded) || 0, interest_acceptable: parseFloat(draft.interest_acceptable) || 0, interest_dropped: parseFloat(draft.interest_dropped) || 0, penalty_demanded: parseFloat(draft.penalty_demanded) || 0, penalty_acceptable: parseFloat(draft.penalty_acceptable) || 0, penalty_dropped: parseFloat(draft.penalty_dropped) || 0, sort_order: sortOrder };
 }
-function getDraftAmount(iss: DraftDemandIssue, key: DemandTypeKey, field: "demanded" | "acceptable"): string {
-  if (key === "tax") return field === "demanded" ? iss.tax_demanded : iss.tax_acceptable;
-  if (key === "interest") return field === "demanded" ? iss.interest_demanded : iss.interest_acceptable;
-  return field === "demanded" ? iss.penalty_demanded : iss.penalty_acceptable;
+function getDraftAmount(iss: DraftDemandIssue, key: DemandTypeKey, field: "demanded" | "acceptable" | "dropped"): string {
+  if (key === "tax") return field === "demanded" ? iss.tax_demanded : field === "acceptable" ? iss.tax_acceptable : iss.tax_dropped;
+  if (key === "interest") return field === "demanded" ? iss.interest_demanded : field === "acceptable" ? iss.interest_acceptable : iss.interest_dropped;
+  return field === "demanded" ? iss.penalty_demanded : field === "acceptable" ? iss.penalty_acceptable : iss.penalty_dropped;
 }
-function setDraftAmount(iss: DraftDemandIssue, key: DemandTypeKey, field: "demanded" | "acceptable", val: string): DraftDemandIssue {
-  if (key === "tax") return field === "demanded" ? { ...iss, tax_demanded: val } : { ...iss, tax_acceptable: val };
-  if (key === "interest") return field === "demanded" ? { ...iss, interest_demanded: val } : { ...iss, interest_acceptable: val };
-  return field === "demanded" ? { ...iss, penalty_demanded: val } : { ...iss, penalty_acceptable: val };
+function setDraftAmount(iss: DraftDemandIssue, key: DemandTypeKey, field: "demanded" | "acceptable" | "dropped", val: string): DraftDemandIssue {
+  if (key === "tax") return field === "demanded" ? { ...iss, tax_demanded: val } : field === "acceptable" ? { ...iss, tax_acceptable: val } : { ...iss, tax_dropped: val };
+  if (key === "interest") return field === "demanded" ? { ...iss, interest_demanded: val } : field === "acceptable" ? { ...iss, interest_acceptable: val } : { ...iss, interest_dropped: val };
+  return field === "demanded" ? { ...iss, penalty_demanded: val } : field === "acceptable" ? { ...iss, penalty_acceptable: val } : { ...iss, penalty_dropped: val };
 }
 function fmtInr(n: number): string { return n.toLocaleString("en-IN", { maximumFractionDigits: 2 }); }
 
@@ -1670,13 +1675,23 @@ function DemandIssuesEditor({ issues, onChange }: {
   const cInp = "w-full px-1.5 py-1 text-xs border border-accent rounded focus:outline-none focus:ring-1 focus:ring-primary";
   const cNum = `${cInp} text-right`;
   const totals = issues.reduce(
-    (acc, iss) => { acc.demanded += (parseFloat(iss.tax_demanded)||0)+(parseFloat(iss.interest_demanded)||0)+(parseFloat(iss.penalty_demanded)||0); acc.acceptable += (parseFloat(iss.tax_acceptable)||0)+(parseFloat(iss.interest_acceptable)||0)+(parseFloat(iss.penalty_acceptable)||0); return acc; },
-    { demanded: 0, acceptable: 0 }
+    (acc, iss) => {
+      acc.proposed += (parseFloat(iss.tax_demanded)||0)+(parseFloat(iss.interest_demanded)||0)+(parseFloat(iss.penalty_demanded)||0);
+      acc.accepted += (parseFloat(iss.tax_acceptable)||0)+(parseFloat(iss.interest_acceptable)||0)+(parseFloat(iss.penalty_acceptable)||0);
+      acc.dropped += (parseFloat(iss.tax_dropped)||0)+(parseFloat(iss.interest_dropped)||0)+(parseFloat(iss.penalty_dropped)||0);
+      return acc;
+    },
+    { proposed: 0, accepted: 0, dropped: 0 }
   );
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-3 gap-3">
-        {[{ label: "Total Amount Demanded", value: totals.demanded }, { label: "Total Amount Acceptable", value: totals.acceptable }, { label: "Total Amount Disputed", value: totals.demanded - totals.acceptable }].map(({ label, value }) => (
+      <div className="grid grid-cols-4 gap-3">
+        {[
+          { label: "Total Amount Proposed", value: totals.proposed },
+          { label: "Total Amount Dropped", value: totals.dropped },
+          { label: "Total Amount Accepted", value: totals.accepted },
+          { label: "Total Amount Dispute", value: totals.proposed - totals.accepted - totals.dropped },
+        ].map(({ label, value }) => (
           <div key={label} className="bg-accent-tint border border-border rounded-lg px-3 py-2.5">
             <p className="text-xs text-muted mb-0.5">{label}</p>
             <p className="text-sm font-semibold text-heading">₹{fmtInr(value)}</p>
@@ -1693,21 +1708,27 @@ function DemandIssuesEditor({ issues, onChange }: {
                 <th className="px-2 py-2 font-semibold text-heading">Notice Date</th>
                 <th className="px-2 py-2 font-semibold text-heading">Description of Issue</th>
                 <th className="px-2 py-2 font-semibold text-heading">Type</th>
-                <th className="px-2 py-2 font-semibold text-heading text-right">Demanded (₹)</th>
-                <th className="px-2 py-2 font-semibold text-heading text-right">Acceptable (₹)</th>
-                <th className="px-2 py-2 font-semibold text-heading text-right">Disputed (₹)</th>
+                <th className="px-2 py-2 font-semibold text-heading text-right">Proposed (₹)</th>
+                <th className="px-2 py-2 font-semibold text-heading text-right">Dropped (₹)</th>
+                <th className="px-2 py-2 font-semibold text-heading text-right">Accepted (₹)</th>
+                <th className="px-2 py-2 font-semibold text-heading text-right">Dispute (₹)</th>
                 <th className="w-7"></th>
               </tr>
             </thead>
             <tbody>
               {issues.map((iss, i) => {
-                const issueTotals = { demanded: (parseFloat(iss.tax_demanded)||0)+(parseFloat(iss.interest_demanded)||0)+(parseFloat(iss.penalty_demanded)||0), acceptable: (parseFloat(iss.tax_acceptable)||0)+(parseFloat(iss.interest_acceptable)||0)+(parseFloat(iss.penalty_acceptable)||0) };
+                const issueTotals = {
+                  proposed: (parseFloat(iss.tax_demanded)||0)+(parseFloat(iss.interest_demanded)||0)+(parseFloat(iss.penalty_demanded)||0),
+                  accepted: (parseFloat(iss.tax_acceptable)||0)+(parseFloat(iss.interest_acceptable)||0)+(parseFloat(iss.penalty_acceptable)||0),
+                  dropped: (parseFloat(iss.tax_dropped)||0)+(parseFloat(iss.interest_dropped)||0)+(parseFloat(iss.penalty_dropped)||0),
+                };
                 return (
                   <React.Fragment key={i}>
                     {DEMAND_TYPES.map((type, ti) => {
-                      const demanded = getDraftAmount(iss, type.key, "demanded");
-                      const acceptable = getDraftAmount(iss, type.key, "acceptable");
-                      const disputed = (parseFloat(demanded)||0)-(parseFloat(acceptable)||0);
+                      const proposed = getDraftAmount(iss, type.key, "demanded");
+                      const accepted = getDraftAmount(iss, type.key, "acceptable");
+                      const dropped = getDraftAmount(iss, type.key, "dropped");
+                      const dispute = (parseFloat(proposed)||0)-(parseFloat(accepted)||0)-(parseFloat(dropped)||0);
                       return (
                         <tr key={`${i}-${type.key}`} className="border-t border-border">
                           {ti === 0 && (
@@ -1719,18 +1740,20 @@ function DemandIssuesEditor({ issues, onChange }: {
                             </>
                           )}
                           <td className="px-2 py-1.5 text-secondary whitespace-nowrap">{type.label}</td>
-                          <td className="px-2 py-1.5"><input type="number" min="0" step="1" value={demanded} onChange={e => onChange(issues.map((x,idx)=>idx===i?setDraftAmount(x,type.key,"demanded",e.target.value):x))} className={cNum} /></td>
-                          <td className="px-2 py-1.5"><input type="number" min="0" step="1" value={acceptable} onChange={e => onChange(issues.map((x,idx)=>idx===i?setDraftAmount(x,type.key,"acceptable",e.target.value):x))} className={cNum} /></td>
-                          <td className="px-2 py-1.5 text-right text-secondary">{fmtInr(disputed)}</td>
+                          <td className="px-2 py-1.5"><input type="number" min="0" step="1" value={proposed} onChange={e => onChange(issues.map((x,idx)=>idx===i?setDraftAmount(x,type.key,"demanded",e.target.value):x))} className={cNum} /></td>
+                          <td className="px-2 py-1.5"><input type="number" min="0" step="1" value={dropped} onChange={e => onChange(issues.map((x,idx)=>idx===i?setDraftAmount(x,type.key,"dropped",e.target.value):x))} className={cNum} /></td>
+                          <td className="px-2 py-1.5"><input type="number" min="0" step="1" value={accepted} onChange={e => onChange(issues.map((x,idx)=>idx===i?setDraftAmount(x,type.key,"acceptable",e.target.value):x))} className={cNum} /></td>
+                          <td className="px-2 py-1.5 text-right text-secondary">{fmtInr(dispute)}</td>
                           {ti === 0 && <td rowSpan={3} className="px-2 py-1.5 align-top text-center"><button type="button" onClick={() => onChange(issues.filter((_,idx)=>idx!==i))} title="Remove" className="text-red-400 hover:text-red-600 p-0.5 rounded transition-colors"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button></td>}
                         </tr>
                       );
                     })}
                     <tr className="border-t border-border bg-surface-hover">
                       <td colSpan={4} className="px-2 py-1 text-right font-semibold text-heading">Total</td>
-                      <td className="px-2 py-1 text-right font-semibold text-heading">{fmtInr(issueTotals.demanded)}</td>
-                      <td className="px-2 py-1 text-right font-semibold text-heading">{fmtInr(issueTotals.acceptable)}</td>
-                      <td className="px-2 py-1 text-right font-semibold text-heading">{fmtInr(issueTotals.demanded-issueTotals.acceptable)}</td>
+                      <td className="px-2 py-1 text-right font-semibold text-heading">{fmtInr(issueTotals.proposed)}</td>
+                      <td className="px-2 py-1 text-right font-semibold text-heading">{fmtInr(issueTotals.dropped)}</td>
+                      <td className="px-2 py-1 text-right font-semibold text-heading">{fmtInr(issueTotals.accepted)}</td>
+                      <td className="px-2 py-1 text-right font-semibold text-heading">{fmtInr(issueTotals.proposed-issueTotals.accepted-issueTotals.dropped)}</td>
                       <td></td>
                     </tr>
                   </React.Fragment>
@@ -1741,9 +1764,10 @@ function DemandIssuesEditor({ issues, onChange }: {
               <tfoot>
                 <tr className="border-t-2 border-border-strong bg-accent-tint">
                   <td colSpan={4} className="px-2 py-1.5 text-right font-bold text-heading">Grand Total</td>
-                  <td className="px-2 py-1.5 text-right font-bold text-heading">{fmtInr(totals.demanded)}</td>
-                  <td className="px-2 py-1.5 text-right font-bold text-heading">{fmtInr(totals.acceptable)}</td>
-                  <td className="px-2 py-1.5 text-right font-bold text-heading">{fmtInr(totals.demanded-totals.acceptable)}</td>
+                  <td className="px-2 py-1.5 text-right font-bold text-heading">{fmtInr(totals.proposed)}</td>
+                  <td className="px-2 py-1.5 text-right font-bold text-heading">{fmtInr(totals.dropped)}</td>
+                  <td className="px-2 py-1.5 text-right font-bold text-heading">{fmtInr(totals.accepted)}</td>
+                  <td className="px-2 py-1.5 text-right font-bold text-heading">{fmtInr(totals.proposed-totals.accepted-totals.dropped)}</td>
                   <td></td>
                 </tr>
               </tfoot>
@@ -1762,12 +1786,25 @@ function DemandIssuesEditor({ issues, onChange }: {
 
 // ─── Demand Issues Read-Only (inline accordion Amount section) ──────
 function DemandIssuesReadOnly({ issues }: { issues: DemandIssue[] }) {
-  const totals = issues.reduce((acc, iss) => { acc.demanded += iss.tax_demanded+iss.interest_demanded+iss.penalty_demanded; acc.acceptable += iss.tax_acceptable+iss.interest_acceptable+iss.penalty_acceptable; return acc; }, { demanded: 0, acceptable: 0 });
+  const totals = issues.reduce(
+    (acc, iss) => {
+      acc.proposed += iss.tax_demanded+iss.interest_demanded+iss.penalty_demanded;
+      acc.accepted += iss.tax_acceptable+iss.interest_acceptable+iss.penalty_acceptable;
+      acc.dropped += (iss.tax_dropped??0)+(iss.interest_dropped??0)+(iss.penalty_dropped??0);
+      return acc;
+    },
+    { proposed: 0, accepted: 0, dropped: 0 }
+  );
   if (issues.length === 0) return <p className="text-xs text-muted py-2">No demand amounts recorded.</p>;
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-3 gap-3">
-        {[{ label: "Total Amount Demanded", value: totals.demanded }, { label: "Total Amount Acceptable", value: totals.acceptable }, { label: "Total Amount Disputed", value: totals.demanded-totals.acceptable }].map(({ label, value }) => (
+      <div className="grid grid-cols-4 gap-3">
+        {[
+          { label: "Total Amount Proposed", value: totals.proposed },
+          { label: "Total Amount Dropped", value: totals.dropped },
+          { label: "Total Amount Accepted", value: totals.accepted },
+          { label: "Total Amount Dispute", value: totals.proposed-totals.accepted-totals.dropped },
+        ].map(({ label, value }) => (
           <div key={label} className="bg-white border border-border rounded-lg px-3 py-2.5">
             <p className="text-xs text-muted mb-0.5">{label}</p>
             <p className="text-sm font-semibold text-heading">₹{fmtInr(value)}</p>
@@ -1783,31 +1820,38 @@ function DemandIssuesReadOnly({ issues }: { issues: DemandIssue[] }) {
               <th className="px-2 py-2 font-semibold text-heading">Notice Date</th>
               <th className="px-2 py-2 font-semibold text-heading">Description of Issue</th>
               <th className="px-2 py-2 font-semibold text-heading">Type</th>
-              <th className="px-2 py-2 font-semibold text-heading text-right">Demanded (₹)</th>
-              <th className="px-2 py-2 font-semibold text-heading text-right">Acceptable (₹)</th>
-              <th className="px-2 py-2 font-semibold text-heading text-right">Disputed (₹)</th>
+              <th className="px-2 py-2 font-semibold text-heading text-right">Proposed (₹)</th>
+              <th className="px-2 py-2 font-semibold text-heading text-right">Dropped (₹)</th>
+              <th className="px-2 py-2 font-semibold text-heading text-right">Accepted (₹)</th>
+              <th className="px-2 py-2 font-semibold text-heading text-right">Dispute (₹)</th>
             </tr>
           </thead>
           <tbody>
             {issues.map((iss, i) => {
-              const rows = [{ label: "Tax demand", demanded: iss.tax_demanded, acceptable: iss.tax_acceptable }, { label: "Interest demand", demanded: iss.interest_demanded, acceptable: iss.interest_acceptable }, { label: "Penalty demand", demanded: iss.penalty_demanded, acceptable: iss.penalty_acceptable }];
-              const issueTotals = rows.reduce((a, r) => ({ demanded: a.demanded+r.demanded, acceptable: a.acceptable+r.acceptable }), { demanded: 0, acceptable: 0 });
+              const rows = [
+                { label: "Tax demand", proposed: iss.tax_demanded, accepted: iss.tax_acceptable, dropped: iss.tax_dropped??0 },
+                { label: "Interest demand", proposed: iss.interest_demanded, accepted: iss.interest_acceptable, dropped: iss.interest_dropped??0 },
+                { label: "Penalty demand", proposed: iss.penalty_demanded, accepted: iss.penalty_acceptable, dropped: iss.penalty_dropped??0 },
+              ];
+              const issueTotals = rows.reduce((a, r) => ({ proposed: a.proposed+r.proposed, accepted: a.accepted+r.accepted, dropped: a.dropped+r.dropped }), { proposed: 0, accepted: 0, dropped: 0 });
               return (
                 <React.Fragment key={iss.id}>
                   {rows.map((row, ri) => (
                     <tr key={`${i}-${ri}`} className="border-t border-border">
                       {ri === 0 && (<><td rowSpan={3} className="px-2 py-1.5 text-center text-muted align-top">{i+1}</td><td rowSpan={3} className="px-2 py-1.5 align-top text-secondary">{iss.notice_no||"—"}</td><td rowSpan={3} className="px-2 py-1.5 align-top text-secondary whitespace-nowrap">{iss.notice_date?new Date(iss.notice_date).toLocaleDateString("en-IN"):"—"}</td><td rowSpan={3} className="px-2 py-1.5 align-top text-secondary">{iss.description||"—"}</td></>)}
                       <td className="px-2 py-1.5 text-secondary whitespace-nowrap">{row.label}</td>
-                      <td className="px-2 py-1.5 text-right text-secondary">{fmtInr(row.demanded)}</td>
-                      <td className="px-2 py-1.5 text-right text-secondary">{fmtInr(row.acceptable)}</td>
-                      <td className="px-2 py-1.5 text-right text-secondary">{fmtInr(row.demanded-row.acceptable)}</td>
+                      <td className="px-2 py-1.5 text-right text-secondary">{fmtInr(row.proposed)}</td>
+                      <td className="px-2 py-1.5 text-right text-secondary">{fmtInr(row.dropped)}</td>
+                      <td className="px-2 py-1.5 text-right text-secondary">{fmtInr(row.accepted)}</td>
+                      <td className="px-2 py-1.5 text-right text-secondary">{fmtInr(row.proposed-row.accepted-row.dropped)}</td>
                     </tr>
                   ))}
                   <tr className="border-t border-border bg-surface-hover">
                     <td colSpan={4} className="px-2 py-1 text-right font-semibold text-heading">Total</td>
-                    <td className="px-2 py-1 text-right font-semibold text-heading">{fmtInr(issueTotals.demanded)}</td>
-                    <td className="px-2 py-1 text-right font-semibold text-heading">{fmtInr(issueTotals.acceptable)}</td>
-                    <td className="px-2 py-1 text-right font-semibold text-heading">{fmtInr(issueTotals.demanded-issueTotals.acceptable)}</td>
+                    <td className="px-2 py-1 text-right font-semibold text-heading">{fmtInr(issueTotals.proposed)}</td>
+                    <td className="px-2 py-1 text-right font-semibold text-heading">{fmtInr(issueTotals.dropped)}</td>
+                    <td className="px-2 py-1 text-right font-semibold text-heading">{fmtInr(issueTotals.accepted)}</td>
+                    <td className="px-2 py-1 text-right font-semibold text-heading">{fmtInr(issueTotals.proposed-issueTotals.accepted-issueTotals.dropped)}</td>
                   </tr>
                 </React.Fragment>
               );
@@ -1817,9 +1861,10 @@ function DemandIssuesReadOnly({ issues }: { issues: DemandIssue[] }) {
             <tfoot>
               <tr className="border-t-2 border-border-strong bg-accent-tint">
                 <td colSpan={4} className="px-2 py-1.5 text-right font-bold text-heading">Grand Total</td>
-                <td className="px-2 py-1.5 text-right font-bold text-heading">{fmtInr(totals.demanded)}</td>
-                <td className="px-2 py-1.5 text-right font-bold text-heading">{fmtInr(totals.acceptable)}</td>
-                <td className="px-2 py-1.5 text-right font-bold text-heading">{fmtInr(totals.demanded-totals.acceptable)}</td>
+                <td className="px-2 py-1.5 text-right font-bold text-heading">{fmtInr(totals.proposed)}</td>
+                <td className="px-2 py-1.5 text-right font-bold text-heading">{fmtInr(totals.dropped)}</td>
+                <td className="px-2 py-1.5 text-right font-bold text-heading">{fmtInr(totals.accepted)}</td>
+                <td className="px-2 py-1.5 text-right font-bold text-heading">{fmtInr(totals.proposed-totals.accepted-totals.dropped)}</td>
               </tr>
             </tfoot>
           )}
@@ -1853,7 +1898,7 @@ function Modal({ title, onClose, isDirty, size = "md", children }: {
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-      <div className={`bg-white rounded-xl shadow-xl border border-border w-full ${size === "lg" ? "max-w-5xl h-[88vh]" : "max-w-2xl max-h-[90vh]"} flex flex-col`}>
+      <div className={`bg-white rounded-xl shadow-xl border border-border w-full ${size === "lg" ? "max-w-7xl h-[92vh]" : "max-w-2xl max-h-[90vh]"} flex flex-col`}>
         <div className="px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
           <h3 className="text-base font-semibold text-heading">{title}</h3>
           <button
@@ -2334,6 +2379,9 @@ export default function AppealDetailClient({
   const [editAppealStatus, setEditAppealStatus] = useState(
     appeal.status ?? "open",
   );
+  const [editLitigationType, setEditLitigationType] = useState(
+    appeal.litigation_type ?? "",
+  );
   const [appealSaving, setAppealSaving] = useState(false);
   const [appealError, setAppealError] = useState<string | null>(null);
 
@@ -2408,6 +2456,7 @@ export default function AppealDetailClient({
         assessment_year_id: editAY,
         act_regulation_id: editAct,
         status: editAppealStatus,
+        litigation_type: editLitigationType || undefined,
       });
       setShowEditAppeal(false);
       router.refresh();
@@ -2430,10 +2479,28 @@ export default function AppealDetailClient({
         assessment_year_id: appeal.assessment_year?.id,
         act_regulation_id: appeal.act_regulation?.id,
         status: newStatus,
+        litigation_type: appeal.litigation_type ?? undefined,
       });
       router.refresh();
     } finally {
       setInlineSaving((s) => ({ ...s, appeal_status: false }));
+    }
+  }
+
+  async function handleAppealLitigationTypeInline(newType: string) {
+    setInlineSaving((s) => ({ ...s, appeal_litigation_type: true }));
+    try {
+      await updateAppeal(appeal.id, {
+        client_org_id: appeal.client_org?.id ?? "",
+        financial_year_id: appeal.financial_year?.id,
+        assessment_year_id: appeal.assessment_year?.id,
+        act_regulation_id: appeal.act_regulation?.id,
+        status: appeal.status ?? "open",
+        litigation_type: newType || undefined,
+      });
+      router.refresh();
+    } finally {
+      setInlineSaving((s) => ({ ...s, appeal_litigation_type: false }));
     }
   }
 
@@ -2945,7 +3012,8 @@ export default function AppealDetailClient({
     editFY !== (appeal.financial_year?.id ?? "") ||
     editAY !== (appeal.assessment_year?.id ?? "") ||
     editAct !== (appeal.act_regulation?.id ?? "") ||
-    editAppealStatus !== (appeal.status ?? "open")
+    editAppealStatus !== (appeal.status ?? "open") ||
+    editLitigationType !== (appeal.litigation_type ?? "")
   );
   const editProcIsDirty = !!editProc && (
     JSON.stringify(editProcValues) !== JSON.stringify(editProcInitRef.current) ||
@@ -3141,6 +3209,53 @@ export default function AppealDetailClient({
                 })()
               )}
             </div>
+            <div>
+              <p
+                className="text-xs mb-0.5 text-white/70"
+                style={{ textShadow: "0 0 8px rgba(0,0,0,0.7)" }}
+              >
+                Litigation Type
+              </p>
+              {canEdit ? (
+                <div
+                  className="relative inline-flex items-center"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <select
+                    value={appeal.litigation_type ?? ""}
+                    disabled={inlineSaving.appeal_litigation_type}
+                    onChange={(e) => handleAppealLitigationTypeInline(e.target.value)}
+                    className="appearance-none bg-transparent border border-white/30 rounded-full pl-2.5 pr-7 py-0.5 text-sm font-semibold cursor-pointer focus:outline-none focus:border-white/50 disabled:opacity-50 text-white/90 max-w-52 truncate"
+                  >
+                    <option value="" className="text-secondary bg-white font-normal">
+                      — Not set —
+                    </option>
+                    {LITIGATION_TYPES.map((t) => (
+                      <option key={t} value={t} className="text-heading bg-white font-normal">
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                  <svg
+                    className="pointer-events-none absolute right-2 w-3 h-3 text-white/40 shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2.5}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </div>
+              ) : (
+                <span className="text-sm font-semibold text-white/90">
+                  {appeal.litigation_type ?? "—"}
+                </span>
+              )}
+            </div>
             {canEdit && (
               <div className="flex items-center gap-0.5">
                 <button
@@ -3150,6 +3265,7 @@ export default function AppealDetailClient({
                     setEditAY(appeal.assessment_year?.id ?? "");
                     setEditAct(appeal.act_regulation?.id ?? "");
                     setEditAppealStatus(appeal.status ?? "open");
+                    setEditLitigationType(appeal.litigation_type ?? "");
                     setAppealError(null);
                     setShowEditAppeal(true);
                   }}
@@ -4454,6 +4570,20 @@ export default function AppealDetailClient({
                 >
                   <option value="open">Open</option>
                   <option value="closed">Closed</option>
+                </select>
+              </Field>
+              <Field label="Litigation Type">
+                <select
+                  value={editLitigationType}
+                  onChange={(e) => setEditLitigationType(e.target.value)}
+                  className={inp}
+                >
+                  <option value="">— Not set —</option>
+                  {LITIGATION_TYPES.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
                 </select>
               </Field>
             </div>

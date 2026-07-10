@@ -5,6 +5,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/user";
 import { revalidatePath } from "next/cache";
 import { logAction } from "@/lib/audit";
+import { LITIGATION_TYPES } from "@/lib/constants";
 
 export interface AppealInput {
   client_org_id: string;
@@ -12,6 +13,17 @@ export interface AppealInput {
   assessment_year_id?: string;
   act_regulation_id?: string;
   status?: string;
+  litigation_type?: string;
+}
+
+function assertValidLitigationType(value: string | undefined, required: boolean) {
+  if (!value) {
+    if (required) throw new Error("Litigation Type is required.");
+    return;
+  }
+  if (!(LITIGATION_TYPES as readonly string[]).includes(value)) {
+    throw new Error("Invalid Litigation Type.");
+  }
 }
 
 export interface ProceedingContact {
@@ -109,6 +121,7 @@ export async function createAppeal(appeal: AppealInput, proceeding: ProceedingIn
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
   spOnly(user.role);
+  assertValidLitigationType(appeal.litigation_type, true);
   const spId = user.service_provider_id ?? user.org_id;
   const supabase = await createServiceClient();
 
@@ -121,6 +134,7 @@ export async function createAppeal(appeal: AppealInput, proceeding: ProceedingIn
       assessment_year_id: appeal.assessment_year_id || null,
       act_regulation_id: appeal.act_regulation_id || null,
       status: appeal.status || "open",
+      litigation_type: appeal.litigation_type || null,
       created_by: user.id,
     })
     .select("id")
@@ -147,6 +161,7 @@ export async function updateAppeal(appealId: string, appeal: AppealInput): Promi
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
   spOnly(user.role);
+  assertValidLitigationType(appeal.litigation_type, false);
   const supabase = await createServiceClient();
 
   const { error } = await supabase
@@ -157,6 +172,7 @@ export async function updateAppeal(appealId: string, appeal: AppealInput): Promi
       assessment_year_id: appeal.assessment_year_id || null,
       act_regulation_id: appeal.act_regulation_id || null,
       status: appeal.status || "open",
+      litigation_type: appeal.litigation_type || null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", appealId);
@@ -491,6 +507,7 @@ export interface LitigationReportFilters {
   filterAYs:      string[];
   filterStatuses: string[];
   filterAssigned: string[];
+  filterLitigationTypes: string[];
 }
 
 export interface ReportAppeal {
@@ -598,6 +615,7 @@ export async function exportLitigationsReport(
   if (filters.filterAYs.length)      q = q.in("assessment_year_id", filters.filterAYs);
   if (filters.filterStatuses.length) q = q.in("status", filters.filterStatuses);
   if (filters.filterAssigned.length) q = q.in("assigned_to", filters.filterAssigned);
+  if (filters.filterLitigationTypes.length) q = q.in("litigation_type", filters.filterLitigationTypes);
 
   const { data: rawAppeals, error: aErr } = await q;
   if (aErr) throw new Error(aErr.message);

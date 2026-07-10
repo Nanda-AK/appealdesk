@@ -5,7 +5,7 @@ import AppealsClient from "@/components/sp/AppealsClient";
 import { PER_PAGE_OPTIONS, DEFAULT_PER_PAGE } from "@/lib/constants";
 
 const APPEAL_SELECT = `
-  id, status, created_at,
+  id, status, litigation_type, created_at,
   act_regulation:master_records!act_regulation_id(id, name),
   financial_year:master_records!financial_year_id(id, name),
   assessment_year:master_records!assessment_year_id(id, name),
@@ -49,6 +49,7 @@ export default async function AppealsPage({
   const filterAYs       = parseMulti(params.ay);
   const filterStatuses  = parseMulti(params.status);
   const filterAssigned  = parseMulti(params.assigned);
+  const filterLitigationTypes = parseMulti(params.litigation_type);
   const sortAsc = (params.sort_dir as string) === "asc";
 
   const from = (page - 1) * perPage;
@@ -68,6 +69,7 @@ export default async function AppealsPage({
   if (filterAYs.length)      appealsQuery = appealsQuery.in("assessment_year_id", filterAYs);
   if (filterStatuses.length) appealsQuery = appealsQuery.in("status", filterStatuses);
   if (filterAssigned.length) appealsQuery = appealsQuery.in("assigned_to", filterAssigned);
+  if (filterLitigationTypes.length) appealsQuery = appealsQuery.in("litigation_type", filterLitigationTypes);
 
   appealsQuery = appealsQuery.order("created_at", { ascending: sortAsc }).range(from, to);
 
@@ -111,6 +113,7 @@ export default async function AppealsPage({
         currentAYs={filterAYs}
         currentStatuses={filterStatuses}
         currentAssigned={filterAssigned}
+        currentLitigationTypes={filterLitigationTypes}
         currentSortDir={sortAsc ? "asc" : "desc"}
         userId={user?.id ?? ""}
       />

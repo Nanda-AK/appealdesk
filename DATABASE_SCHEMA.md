@@ -93,6 +93,7 @@ appeals
 ├── financial_year_id   uuid → master_records
 ├── assessment_year_id  uuid → master_records
 ├── status              text NOT NULL    DEFAULT 'open'
+├── litigation_type     text             (fixed 6-value list, app-enforced, nullable)
 ├── created_by          uuid NOT NULL → users
 ├── deleted_at          timestamptz
 └── created_at / updated_at  timestamptz

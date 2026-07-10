@@ -9,6 +9,7 @@ function sanitizeFileName(name: string): string {
 }
 import { createClient } from "@/lib/supabase/client";
 import { PendingAttachments } from "@/components/sp/PendingAttachments";
+import { LITIGATION_TYPES } from "@/lib/constants";
 
 /** Derives AY name from FY name: "2020-21" → "2021-22" */
 function deriveAYName(fyName: string): string {
@@ -43,6 +44,7 @@ interface Props {
   teamMembers: { id: string; first_name: string; last_name: string }[];
   mastersByType: Record<string, MasterItem[]>;
   clientUsersByOrg: Record<string, { id: string; first_name: string; last_name: string }[]>;
+  defaultClientId?: string;
 }
 
 const inp = "w-full px-3 py-2 text-sm border border-accent rounded-lg focus:outline-none focus:ring-1 focus:ring-primary";
@@ -112,15 +114,16 @@ function Field({ label, required, children }: { label: string; required?: boolea
   );
 }
 
-export default function AppealForm({ clients, teamMembers, mastersByType, clientUsersByOrg }: Props) {
+export default function AppealForm({ clients, teamMembers, mastersByType, clientUsersByOrg, defaultClientId }: Props) {
   const router = useRouter();
 
   // All master-linked fields store UUIDs (master_records.id)
-  const [clientOrgId, setClientOrgId] = useState("");
+  const [clientOrgId, setClientOrgId] = useState(defaultClientId ?? "");
   const [financialYearId, setFinancialYearId] = useState("");
   const [assessmentYearId, setAssessmentYearId] = useState("");
   const [actRegulationId, setActRegulationId] = useState("");
   const [appealStatus, setAppealStatus] = useState("open");
+  const [litigationType, setLitigationType] = useState("");
 
   const [proceedingTypeId, setProceedingTypeId] = useState("");
   const [authorityType, setAuthorityType] = useState("");
@@ -180,6 +183,7 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!clientOrgId) { setError("Client is required."); return; }
+    if (!litigationType) { setError("Litigation Type is required."); return; }
     setSaving(true);
     setError(null);
     try {
@@ -189,6 +193,7 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
         assessment_year_id: assessmentYearId || undefined,
         act_regulation_id: actRegulationId || undefined,
         status: appealStatus,
+        litigation_type: litigationType,
       };
       const proc: ProceedingInput = {
         proceeding_type_id: proceedingTypeId || undefined,
@@ -266,6 +271,12 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
             <select value={appealStatus} onChange={(e) => setAppealStatus(e.target.value)} className={inp}>
               <option value="open">Open</option>
               <option value="closed">Closed</option>
+            </select>
+          </Field>
+          <Field label="Litigation Type" required>
+            <select value={litigationType} onChange={(e) => setLitigationType(e.target.value)} className={inp}>
+              <option value="">Select…</option>
+              {LITIGATION_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
           </Field>
         </div>
