@@ -9,7 +9,6 @@ function sanitizeFileName(name: string): string {
 }
 import { createClient } from "@/lib/supabase/client";
 import { PendingAttachments } from "@/components/sp/PendingAttachments";
-import { LITIGATION_TYPES } from "@/lib/constants";
 
 /** Derives AY name from FY name: "2020-21" → "2021-22" */
 function deriveAYName(fyName: string): string {
@@ -123,7 +122,7 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
   const [assessmentYearId, setAssessmentYearId] = useState("");
   const [actRegulationId, setActRegulationId] = useState("");
   const [appealStatus, setAppealStatus] = useState("open");
-  const [litigationType, setLitigationType] = useState("");
+  const [litigationTypeId, setLitigationTypeId] = useState("");
 
   const [proceedingTypeId, setProceedingTypeId] = useState("");
   const [authorityType, setAuthorityType] = useState("");
@@ -163,11 +162,17 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
     ? (mastersByType["proceeding_type"] ?? []).filter(m => m.parent_id === actRegulationId)
     : [];
 
+  // Litigation Types filtered to children of the selected act
+  const availableLitigationTypes = actRegulationId
+    ? (mastersByType["litigation_type"] ?? []).filter(m => m.parent_id === actRegulationId)
+    : [];
+
   function handleActChange(actId: string) {
     setActRegulationId(actId);
     setProceedingTypeId("");
     setFinancialYearId("");
     setAssessmentYearId("");
+    setLitigationTypeId("");
   }
 
   function handleFYChange(fyId: string) {
@@ -183,7 +188,10 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!clientOrgId) { setError("Client is required."); return; }
-    if (!litigationType) { setError("Litigation Type is required."); return; }
+    if (!litigationTypeId && availableLitigationTypes.length > 0) {
+      setError("Litigation Type is required.");
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -193,7 +201,7 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
         assessment_year_id: assessmentYearId || undefined,
         act_regulation_id: actRegulationId || undefined,
         status: appealStatus,
-        litigation_type: litigationType,
+        litigation_type_id: litigationTypeId || undefined,
       };
       const proc: ProceedingInput = {
         proceeding_type_id: proceedingTypeId || undefined,
@@ -273,10 +281,23 @@ export default function AppealForm({ clients, teamMembers, mastersByType, client
               <option value="closed">Closed</option>
             </select>
           </Field>
-          <Field label="Litigation Type" required>
-            <select value={litigationType} onChange={(e) => setLitigationType(e.target.value)} className={inp}>
-              <option value="">Select…</option>
-              {LITIGATION_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+          <Field label="Litigation Type" required={availableLitigationTypes.length > 0}>
+            <select
+              value={litigationTypeId}
+              onChange={(e) => setLitigationTypeId(e.target.value)}
+              className={inp}
+              disabled={!actRegulationId || availableLitigationTypes.length === 0}
+            >
+              <option value="">
+                {!actRegulationId
+                  ? "Select Act first"
+                  : availableLitigationTypes.length === 0
+                    ? "No litigation types configured for this Act"
+                    : "Select…"}
+              </option>
+              {availableLitigationTypes.map((m) => (
+                <option key={m.id} value={m.id}>{m.name}</option>
+              ))}
             </select>
           </Field>
         </div>

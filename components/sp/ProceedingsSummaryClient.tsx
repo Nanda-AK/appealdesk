@@ -144,7 +144,7 @@ export default function ProceedingsSummaryClient({
                 <th className="th-std text-right">IT</th>
                 <th className="th-std text-right">GST</th>
                 <th className="th-std text-right">Others</th>
-                <th className="th-std text-right">Proposed Demand</th>
+                <th className="th-std text-right">Proposed</th>
                 <th className="th-std text-right">Dropped</th>
                 <th className="th-std text-right">Accepted</th>
                 <th className="th-std text-right">Disputed</th>

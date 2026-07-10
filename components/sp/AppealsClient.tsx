@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { PER_PAGE_OPTIONS, LITIGATION_TYPES } from "@/lib/constants";
+import { PER_PAGE_OPTIONS } from "@/lib/constants";
 import { exportLitigationsReport, getLitigationReport } from "@/app/(sp)/litigations/actions";
 import { MultiSelect } from "@/components/ui/MultiSelect";
 
@@ -25,7 +25,7 @@ interface Appeal {
   financial_year: { id: string; name: string } | null;
   assessment_year: { id: string; name: string } | null;
   status: string | null;
-  litigation_type: string | null;
+  litigation_type: { id: string; name: string } | null;
   created_at: string;
   client_org: { id: string; name: string; file_number: string | null } | null;
   proceedings?: AppealProceeding[];
@@ -65,6 +65,7 @@ interface Props {
   acts: NamedRecord[];
   financialYears: NamedRecord[];
   assessmentYears: NamedRecord[];
+  litigationTypeOptions: NamedRecord[];
   teamMembers: NamedRecord[];
   canEdit: boolean;
   totalCount: number;
@@ -91,8 +92,6 @@ const STATUS_OPTIONS: NamedRecord[] = [
   { id: "closed", name: "Closed" },
 ];
 
-const LITIGATION_TYPE_OPTIONS: NamedRecord[] = LITIGATION_TYPES.map((t) => ({ id: t, name: t }));
-
 function pageNumbers(current: number, total: number): (number | "...")[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
   if (current <= 4) return [1, 2, 3, 4, 5, "...", total];
@@ -108,6 +107,7 @@ export default function AppealsClient({
   acts,
   financialYears,
   assessmentYears,
+  litigationTypeOptions,
   teamMembers,
   canEdit,
   totalCount,
@@ -380,7 +380,7 @@ export default function AppealsClient({
           placeholder="All Assigned"
         />
         <MultiSelect
-          options={LITIGATION_TYPE_OPTIONS}
+          options={litigationTypeOptions}
           values={currentLitigationTypes}
           onChange={(ids) => setMultiFilter("litigation_type", ids)}
           placeholder="All Litigation Types"
@@ -582,7 +582,7 @@ export default function AppealsClient({
                         {col("client_name")       && <td className={`${td} max-w-60 truncate`} title={appeal.client_org?.name ?? "—"}>{appeal.client_org?.name ?? "—"}</td>}
                         {col("act")               && <td className={`${td} max-w-52 truncate`} title={appeal.act_regulation?.name ?? "—"}>{appeal.act_regulation?.name ?? "—"}</td>}
                         {col("fy_ty")             && <td className={td}>{appeal.financial_year?.name ?? "—"}</td>}
-                        {col("litigation_type")   && <td className={`${td} max-w-44 truncate`} title={appeal.litigation_type ?? "—"}>{appeal.litigation_type ?? "—"}</td>}
+                        {col("litigation_type")   && <td className={`${td} max-w-44 truncate`} title={appeal.litigation_type?.name ?? "—"}>{appeal.litigation_type?.name ?? "—"}</td>}
                         {col("proceeding")        && <td className={`${td} max-w-40 truncate`} title={proc.proceeding_type?.name ?? "—"}>{proc.proceeding_type?.name ?? "—"}</td>}
                         {col("proceeding_status") && <td className="px-3 py-3">{ps ? <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${ps.cls}`}>{ps.label}</span> : <span className="text-muted text-xs">—</span>}</td>}
                         {col("jurisdiction")      && <td className={`${td} max-w-36 truncate`} title={jurisdiction}>{jurisdiction}</td>}

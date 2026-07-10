@@ -71,8 +71,14 @@ export default function MastersClient({ records, userRole }: Props) {
   const [newActName, setNewActName] = useState("");
   const [addingUnderActId, setAddingUnderActId] = useState<string | null>(null);
   const [newProcName, setNewProcName] = useState("");
+  const [addingLitTypeUnderActId, setAddingLitTypeUnderActId] = useState<string | null>(null);
+  const [newLitTypeName, setNewLitTypeName] = useState("");
   const [actSaving, setActSaving] = useState(false);
   const [actError, setActError] = useState<string | null>(null);
+  // Which sub-tab (Proceeding / Litigation Type) is showing inside each expanded act
+  const [actChildTab, setActChildTab] = useState<
+    Record<string, "proceeding_type" | "litigation_type">
+  >({});
 
   // Inline edit state (shared)
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -161,6 +167,16 @@ export default function MastersClient({ records, userRole }: Props) {
       },
       {} as Record<string, MasterRecord[]>,
     );
+  const litTypesByAct = records
+    .filter((r) => r.type === "litigation_type" && r.parent_id)
+    .reduce(
+      (acc, r) => {
+        if (!acc[r.parent_id!]) acc[r.parent_id!] = [];
+        acc[r.parent_id!].push(r);
+        return acc;
+      },
+      {} as Record<string, MasterRecord[]>,
+    );
 
   async function handleAddAct(e: React.FormEvent) {
     e.preventDefault();
@@ -198,6 +214,26 @@ export default function MastersClient({ records, userRole }: Props) {
     }
   }
 
+  async function handleAddLitigationType(e: React.FormEvent, actId: string) {
+    e.preventDefault();
+    if (!newLitTypeName.trim()) return;
+    setActSaving(true);
+    setActError(null);
+    try {
+      await createChildMasterRecord(
+        newLitTypeName.trim(),
+        "litigation_type",
+        actId,
+      );
+      setNewLitTypeName("");
+      setAddingLitTypeUnderActId(null);
+    } catch (err) {
+      setActError(err instanceof Error ? err.message : "Failed.");
+    } finally {
+      setActSaving(false);
+    }
+  }
+
   // ─── Toggle (with confirm modal) ─────────────────────────────────────────
   async function handleToggleConfirm() {
     if (!toggleConfirm) return;
@@ -226,6 +262,452 @@ export default function MastersClient({ records, userRole }: Props) {
   }
 
   const allTabs = [...FLAT_TABS, { key: ACTS_TAB, label: "Acts" }];
+
+  // ─── Acts tree renderer — single "Acts" tab, each act expands to a small
+  // Proceeding / Litigation Type sub-tab switcher (one list visible at a time).
+  function renderActsTree() {
+    return (
+      <div className="space-y-3">
+        {actError && <p className="text-xs text-red-600">{actError}</p>}
+
+        {acts.map((act) => {
+          const procs = (procsByAct[act.id] ?? []).sort(
+            (a, b) => a.sort_order - b.sort_order,
+          );
+          const litTypes = (litTypesByAct[act.id] ?? []).sort(
+            (a, b) => a.sort_order - b.sort_order,
+          );
+          const isExpanded = expandedActs.has(act.id);
+          const selectedChildType = actChildTab[act.id] ?? "proceeding_type";
+          const isProc = selectedChildType === "proceeding_type";
+          const children = isProc ? procs : litTypes;
+          const childLabel = isProc ? "Proceeding" : "Litigation Type";
+          const childLabelLower = childLabel.toLowerCase();
+          const addingUnderId = isProc ? addingUnderActId : addingLitTypeUnderActId;
+          const setAddingUnderId = isProc ? setAddingUnderActId : setAddingLitTypeUnderActId;
+          const newChildName = isProc ? newProcName : newLitTypeName;
+          const setNewChildName = isProc ? setNewProcName : setNewLitTypeName;
+          const handleAddChild = isProc ? handleAddProceeding : handleAddLitigationType;
+          const placeholder = isProc
+            ? "Proceeding name, e.g. Assessment u/s 143(2)"
+            : "Litigation type name, e.g. Scrutiny Proceedings";
+
+          return (
+            <div
+              key={act.id}
+              className="bg-white border border-border rounded-xl shadow-sm overflow-hidden"
+            >
+              {/* Act header */}
+              <div className="flex items-center gap-3 px-5 py-4 bg-page border-b border-border">
+                <button
+                  onClick={() =>
+                    setExpandedActs((prev) => {
+                      const s = new Set(prev);
+                      if (s.has(act.id)) {
+                        s.delete(act.id);
+                      } else {
+                        s.add(act.id);
+                      }
+                      return s;
+                    })
+                  }
+                  className="text-secondary hover:text-heading transition flex-shrink-0"
+                >
+                  <svg
+                    className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-90" : ""}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </button>
+
+                <div className="flex-1 min-w-0">
+                  {editingId === act.id ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        className={`${inp} flex-1`}
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") saveEdit(act.id);
+                          if (e.key === "Escape") setEditingId(null);
+                        }}
+                      />
+                      <button
+                        onClick={() => saveEdit(act.id)}
+                        disabled={editSaving}
+                        className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => setEditingId(null)}
+                        className="text-xs text-muted hover:underline"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-heading">
+                        {act.name}
+                      </span>
+                      <span
+                        className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${act.is_active ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"}`}
+                      >
+                        {act.is_active ? "Active" : "Inactive"}
+                      </span>
+                      <span className="text-xs text-muted">
+                        {procs.length} proceeding
+                        {procs.length !== 1 ? "s" : ""} · {litTypes.length} litigation type
+                        {litTypes.length !== 1 ? "s" : ""}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {editingId !== act.id && (
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    <button
+                      onClick={() => startEdit(act.id, act.name)}
+                      title="Edit"
+                      className="p-1.5 rounded hover:bg-surface-hover transition-colors text-accent hover:text-primary inline-flex"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() =>
+                        setToggleConfirm({
+                          id: act.id,
+                          name: act.name,
+                          activate: !act.is_active,
+                        })
+                      }
+                      disabled={toggling === act.id}
+                      title={act.is_active ? "Deactivate" : "Activate"}
+                      className={`p-1.5 rounded hover:bg-surface-hover transition-colors disabled:opacity-50 inline-flex ${act.is_active ? "text-amber-500 hover:text-amber-700" : "text-green-600 hover:text-green-800"}`}
+                    >
+                      {act.is_active ? (
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+                          />
+                        </svg>
+                      ) : (
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      )}
+                    </button>
+                    {/* Acts can only be deleted when they have no proceedings or litigation types */}
+                    {canDelete && procs.length === 0 && litTypes.length === 0 && (
+                      <button
+                        onClick={() => {
+                          setDeleteError(null);
+                          setConfirmDelete({ id: act.id, name: act.name });
+                        }}
+                        title="Delete act"
+                        className="p-1.5 rounded hover:bg-red-50 transition-colors text-red-400 hover:text-red-600 inline-flex"
+                      >
+                        <TrashIcon className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Children list */}
+              {isExpanded && (
+                <div>
+                  {/* Proceeding / Litigation Type sub-tab switcher */}
+                  <div className="flex items-center justify-between gap-2 px-6 pt-3 pb-1 border-b border-surface-hover">
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() =>
+                          setActChildTab((prev) => ({ ...prev, [act.id]: "proceeding_type" }))
+                        }
+                        className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${isProc ? "bg-primary text-white" : "text-secondary hover:text-heading hover:bg-page"}`}
+                      >
+                        Proceeding ({procs.length})
+                      </button>
+                      <button
+                        onClick={() =>
+                          setActChildTab((prev) => ({ ...prev, [act.id]: "litigation_type" }))
+                        }
+                        className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${!isProc ? "bg-primary text-white" : "text-secondary hover:text-heading hover:bg-page"}`}
+                      >
+                        Litigation Type ({litTypes.length})
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setAddingUnderId(act.id);
+                        setNewChildName("");
+                      }}
+                      className="text-xs font-medium text-accent hover:text-primary px-2 py-1 shrink-0"
+                    >
+                      + Add {childLabel}
+                    </button>
+                  </div>
+
+                  {children.length === 0 && addingUnderId !== act.id && (
+                    <p className="px-6 py-4 text-sm text-muted italic">
+                      No {childLabelLower}s yet. Add one above.
+                    </p>
+                  )}
+
+                  {children.map((child, i) => (
+                    <div
+                      key={child.id}
+                      className={`flex items-center gap-3 px-6 py-3 border-b border-surface-hover ${i % 2 === 1 ? "bg-stripe" : ""} hover:bg-page transition-colors`}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-table-header-border shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        {editingId === child.id ? (
+                          <div className="flex items-center gap-2">
+                            <input
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              className={`${inp} flex-1`}
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") saveEdit(child.id);
+                                if (e.key === "Escape") setEditingId(null);
+                              }}
+                            />
+                            <button
+                              onClick={() => saveEdit(child.id)}
+                              disabled={editSaving}
+                              className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => setEditingId(null)}
+                              className="text-xs text-muted hover:underline"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-heading">
+                            {child.name}
+                          </span>
+                        )}
+                      </div>
+                      <span
+                        className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium shrink-0 ${child.is_active ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"}`}
+                      >
+                        {child.is_active ? "Active" : "Inactive"}
+                      </span>
+                      {editingId !== child.id && (
+                        <div className="flex items-center gap-0.5 shrink-0">
+                          <button
+                            onClick={() => startEdit(child.id, child.name)}
+                            title="Edit"
+                            className="p-1.5 rounded hover:bg-surface-hover transition-colors text-accent hover:text-primary inline-flex"
+                          >
+                            <svg
+                              className="w-3.5 h-3.5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth={2}
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                              />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() =>
+                              setToggleConfirm({
+                                id: child.id,
+                                name: child.name,
+                                activate: !child.is_active,
+                              })
+                            }
+                            disabled={toggling === child.id}
+                            title={child.is_active ? "Deactivate" : "Activate"}
+                            className={`p-1.5 rounded hover:bg-surface-hover transition-colors disabled:opacity-50 inline-flex ${child.is_active ? "text-amber-500 hover:text-amber-700" : "text-green-600 hover:text-green-800"}`}
+                          >
+                            {child.is_active ? (
+                              <svg
+                                className="w-3.5 h-3.5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+                                />
+                              </svg>
+                            ) : (
+                              <svg
+                                className="w-3.5 h-3.5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
+                              </svg>
+                            )}
+                          </button>
+                          {canDelete && (
+                            <button
+                              onClick={() => {
+                                setDeleteError(null);
+                                setConfirmDelete({
+                                  id: child.id,
+                                  name: child.name,
+                                });
+                              }}
+                              title="Delete"
+                              className="p-1.5 rounded hover:bg-red-50 transition-colors text-red-400 hover:text-red-600 inline-flex"
+                            >
+                              <TrashIcon className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
+                  {/* Add child inline form */}
+                  {addingUnderId === act.id && (
+                    <form
+                      onSubmit={(e) => handleAddChild(e, act.id)}
+                      className="flex items-center gap-2 px-6 py-3 bg-accent-light border-b border-border"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
+                      <input
+                        value={newChildName}
+                        onChange={(e) => setNewChildName(e.target.value)}
+                        placeholder={placeholder}
+                        className={`${inp} flex-1`}
+                        autoFocus
+                      />
+                      <button
+                        type="submit"
+                        disabled={actSaving || !newChildName.trim()}
+                        className="px-3 py-1.5 text-xs bg-primary text-white rounded-lg font-medium disabled:opacity-50"
+                      >
+                        {actSaving ? "Adding…" : "Add"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAddingUnderId(null)}
+                        className="text-xs text-muted hover:text-secondary"
+                      >
+                        Cancel
+                      </button>
+                    </form>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {/* Add new Act */}
+        <div className="bg-white border border-border rounded-xl shadow-sm p-4">
+          {addingActForm ? (
+            <form onSubmit={handleAddAct} className="flex items-center gap-2">
+              <input
+                value={newActName}
+                onChange={(e) => setNewActName(e.target.value)}
+                placeholder="Act / Regulation name, e.g. The Customs Act, 1962"
+                className={`${inp} flex-1`}
+                autoFocus
+              />
+              <button
+                type="submit"
+                disabled={actSaving || !newActName.trim()}
+                className="px-4 py-2 text-sm bg-primary text-white rounded-lg font-medium disabled:opacity-50"
+              >
+                {actSaving ? "Adding…" : "Add Act"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setAddingActForm(false)}
+                className="text-sm text-muted hover:text-secondary"
+              >
+                Cancel
+              </button>
+            </form>
+          ) : (
+            <button
+              onClick={() => setAddingActForm(true)}
+              className="inline-flex items-center gap-2 text-sm font-medium text-accent hover:text-primary transition"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              Add New Act / Regulation
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -489,410 +971,8 @@ export default function MastersClient({ records, userRole }: Props) {
         </div>
       )}
 
-      {/* ── Acts & Proceedings tree ──────────────────────────────────────────── */}
-      {activeTab === ACTS_TAB && (
-        <div className="space-y-3">
-          {actError && <p className="text-xs text-red-600">{actError}</p>}
-
-          {acts.map((act) => {
-            const procs = (procsByAct[act.id] ?? []).sort(
-              (a, b) => a.sort_order - b.sort_order,
-            );
-            const isExpanded = expandedActs.has(act.id);
-
-            return (
-              <div
-                key={act.id}
-                className="bg-white border border-border rounded-xl shadow-sm overflow-hidden"
-              >
-                {/* Act header */}
-                <div className="flex items-center gap-3 px-5 py-4 bg-page border-b border-border">
-                  <button
-                    onClick={() =>
-                      setExpandedActs((prev) => {
-                        const s = new Set(prev);
-                        if (s.has(act.id)) {
-                          s.delete(act.id);
-                        } else {
-                          s.add(act.id);
-                        }
-                        return s;
-                      })
-                    }
-                    className="text-secondary hover:text-heading transition flex-shrink-0"
-                  >
-                    <svg
-                      className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-90" : ""}`}
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </button>
-
-                  <div className="flex-1 min-w-0">
-                    {editingId === act.id ? (
-                      <div className="flex items-center gap-2">
-                        <input
-                          value={editValue}
-                          onChange={(e) => setEditValue(e.target.value)}
-                          className={`${inp} flex-1`}
-                          autoFocus
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") saveEdit(act.id);
-                            if (e.key === "Escape") setEditingId(null);
-                          }}
-                        />
-                        <button
-                          onClick={() => saveEdit(act.id)}
-                          disabled={editSaving}
-                          className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
-                        >
-                          Save
-                        </button>
-                        <button
-                          onClick={() => setEditingId(null)}
-                          className="text-xs text-muted hover:underline"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-heading">
-                          {act.name}
-                        </span>
-                        <span
-                          className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${act.is_active ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"}`}
-                        >
-                          {act.is_active ? "Active" : "Inactive"}
-                        </span>
-                        <span className="text-xs text-muted">
-                          {procs.length} proceeding
-                          {procs.length !== 1 ? "s" : ""}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {editingId !== act.id && (
-                    <div className="flex items-center gap-0.5 shrink-0">
-                      <button
-                        onClick={() => {
-                          setAddingUnderActId(act.id);
-                          setNewProcName("");
-                          setExpandedActs((prev) => new Set(prev).add(act.id));
-                        }}
-                        className="text-xs font-medium text-accent hover:text-primary px-2 py-1"
-                      >
-                        + Add Proceeding
-                      </button>
-                      <button
-                        onClick={() => startEdit(act.id, act.name)}
-                        title="Edit"
-                        className="p-1.5 rounded hover:bg-surface-hover transition-colors text-accent hover:text-primary inline-flex"
-                      >
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={2}
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                          />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() =>
-                          setToggleConfirm({
-                            id: act.id,
-                            name: act.name,
-                            activate: !act.is_active,
-                          })
-                        }
-                        disabled={toggling === act.id}
-                        title={act.is_active ? "Deactivate" : "Activate"}
-                        className={`p-1.5 rounded hover:bg-surface-hover transition-colors disabled:opacity-50 inline-flex ${act.is_active ? "text-amber-500 hover:text-amber-700" : "text-green-600 hover:text-green-800"}`}
-                      >
-                        {act.is_active ? (
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
-                            />
-                          </svg>
-                        ) : (
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                          </svg>
-                        )}
-                      </button>
-                      {/* Acts can only be deleted when they have no proceedings */}
-                      {canDelete && procs.length === 0 && (
-                        <button
-                          onClick={() => {
-                            setDeleteError(null);
-                            setConfirmDelete({ id: act.id, name: act.name });
-                          }}
-                          title="Delete act"
-                          className="p-1.5 rounded hover:bg-red-50 transition-colors text-red-400 hover:text-red-600 inline-flex"
-                        >
-                          <TrashIcon className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Proceedings list */}
-                {isExpanded && (
-                  <div>
-                    {procs.length === 0 && addingUnderActId !== act.id && (
-                      <p className="px-6 py-4 text-sm text-muted italic">
-                        No proceedings yet. Add one above.
-                      </p>
-                    )}
-
-                    {procs.map((proc, i) => (
-                      <div
-                        key={proc.id}
-                        className={`flex items-center gap-3 px-6 py-3 border-b border-surface-hover ${i % 2 === 1 ? "bg-stripe" : ""} hover:bg-page transition-colors`}
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-table-header-border shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          {editingId === proc.id ? (
-                            <div className="flex items-center gap-2">
-                              <input
-                                value={editValue}
-                                onChange={(e) => setEditValue(e.target.value)}
-                                className={`${inp} flex-1`}
-                                autoFocus
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") saveEdit(proc.id);
-                                  if (e.key === "Escape") setEditingId(null);
-                                }}
-                              />
-                              <button
-                                onClick={() => saveEdit(proc.id)}
-                                disabled={editSaving}
-                                className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
-                              >
-                                Save
-                              </button>
-                              <button
-                                onClick={() => setEditingId(null)}
-                                className="text-xs text-muted hover:underline"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          ) : (
-                            <span className="text-sm text-heading">
-                              {proc.name}
-                            </span>
-                          )}
-                        </div>
-                        <span
-                          className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium shrink-0 ${proc.is_active ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"}`}
-                        >
-                          {proc.is_active ? "Active" : "Inactive"}
-                        </span>
-                        {editingId !== proc.id && (
-                          <div className="flex items-center gap-0.5 shrink-0">
-                            <button
-                              onClick={() => startEdit(proc.id, proc.name)}
-                              title="Edit"
-                              className="p-1.5 rounded hover:bg-surface-hover transition-colors text-accent hover:text-primary inline-flex"
-                            >
-                              <svg
-                                className="w-3.5 h-3.5"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                                strokeWidth={2}
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={() =>
-                                setToggleConfirm({
-                                  id: proc.id,
-                                  name: proc.name,
-                                  activate: !proc.is_active,
-                                })
-                              }
-                              disabled={toggling === proc.id}
-                              title={proc.is_active ? "Deactivate" : "Activate"}
-                              className={`p-1.5 rounded hover:bg-surface-hover transition-colors disabled:opacity-50 inline-flex ${proc.is_active ? "text-amber-500 hover:text-amber-700" : "text-green-600 hover:text-green-800"}`}
-                            >
-                              {proc.is_active ? (
-                                <svg
-                                  className="w-3.5 h-3.5"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                  strokeWidth={2}
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
-                                  />
-                                </svg>
-                              ) : (
-                                <svg
-                                  className="w-3.5 h-3.5"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                  strokeWidth={2}
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                                  />
-                                </svg>
-                              )}
-                            </button>
-                            {canDelete && (
-                              <button
-                                onClick={() => {
-                                  setDeleteError(null);
-                                  setConfirmDelete({
-                                    id: proc.id,
-                                    name: proc.name,
-                                  });
-                                }}
-                                title="Delete"
-                                className="p-1.5 rounded hover:bg-red-50 transition-colors text-red-400 hover:text-red-600 inline-flex"
-                              >
-                                <TrashIcon className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-
-                    {/* Add proceeding inline form */}
-                    {addingUnderActId === act.id && (
-                      <form
-                        onSubmit={(e) => handleAddProceeding(e, act.id)}
-                        className="flex items-center gap-2 px-6 py-3 bg-accent-light border-b border-border"
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
-                        <input
-                          value={newProcName}
-                          onChange={(e) => setNewProcName(e.target.value)}
-                          placeholder="Proceeding name, e.g. Assessment u/s 143(2)"
-                          className={`${inp} flex-1`}
-                          autoFocus
-                        />
-                        <button
-                          type="submit"
-                          disabled={actSaving || !newProcName.trim()}
-                          className="px-3 py-1.5 text-xs bg-primary text-white rounded-lg font-medium disabled:opacity-50"
-                        >
-                          {actSaving ? "Adding…" : "Add"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setAddingUnderActId(null)}
-                          className="text-xs text-muted hover:text-secondary"
-                        >
-                          Cancel
-                        </button>
-                      </form>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-
-          {/* Add new Act */}
-          <div className="bg-white border border-border rounded-xl shadow-sm p-4">
-            {addingActForm ? (
-              <form onSubmit={handleAddAct} className="flex items-center gap-2">
-                <input
-                  value={newActName}
-                  onChange={(e) => setNewActName(e.target.value)}
-                  placeholder="Act / Regulation name, e.g. The Customs Act, 1962"
-                  className={`${inp} flex-1`}
-                  autoFocus
-                />
-                <button
-                  type="submit"
-                  disabled={actSaving || !newActName.trim()}
-                  className="px-4 py-2 text-sm bg-primary text-white rounded-lg font-medium disabled:opacity-50"
-                >
-                  {actSaving ? "Adding…" : "Add Act"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAddingActForm(false)}
-                  className="text-sm text-muted hover:text-secondary"
-                >
-                  Cancel
-                </button>
-              </form>
-            ) : (
-              <button
-                onClick={() => setAddingActForm(true)}
-                className="inline-flex items-center gap-2 text-sm font-medium text-accent hover:text-primary transition"
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-                Add New Act / Regulation
-              </button>
-            )}
-          </div>
-        </div>
-      )}
+      {/* ── Acts tab: each act expands to a Proceeding / Litigation Type switcher ─ */}
+      {activeTab === ACTS_TAB && renderActsTree()}
 
       {/* ── Toggle Confirm Modal ─────────────────────────────────────────────── */}
       {toggleConfirm && (

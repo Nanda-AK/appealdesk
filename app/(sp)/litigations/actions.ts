@@ -5,7 +5,6 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/user";
 import { revalidatePath } from "next/cache";
 import { logAction } from "@/lib/audit";
-import { LITIGATION_TYPES } from "@/lib/constants";
 
 export interface AppealInput {
   client_org_id: string;
@@ -13,16 +12,34 @@ export interface AppealInput {
   assessment_year_id?: string;
   act_regulation_id?: string;
   status?: string;
-  litigation_type?: string;
+  litigation_type_id?: string;
 }
 
-function assertValidLitigationType(value: string | undefined, required: boolean) {
-  if (!value) {
+// Litigation Type is now master-data-driven (nested under an Act, same as
+// Proceeding Type) — a client-submitted id can't be trusted blindly since
+// createServiceClient() bypasses RLS, so this independently verifies the id
+// exists, is active, and belongs to the Act being submitted.
+async function assertValidLitigationTypeId(
+  supabase: Awaited<ReturnType<typeof createServiceClient>>,
+  id: string | undefined,
+  actRegulationId: string | undefined,
+  required: boolean,
+) {
+  if (!id) {
     if (required) throw new Error("Litigation Type is required.");
     return;
   }
-  if (!(LITIGATION_TYPES as readonly string[]).includes(value)) {
+  const { data } = await supabase
+    .from("master_records")
+    .select("id, parent_id, is_active, deleted_at")
+    .eq("id", id)
+    .eq("type", "litigation_type")
+    .maybeSingle();
+  if (!data || !data.is_active || data.deleted_at) {
     throw new Error("Invalid Litigation Type.");
+  }
+  if (actRegulationId && data.parent_id !== actRegulationId) {
+    throw new Error("Litigation Type does not belong to the selected Act.");
   }
 }
 
@@ -121,9 +138,9 @@ export async function createAppeal(appeal: AppealInput, proceeding: ProceedingIn
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
   spOnly(user.role);
-  assertValidLitigationType(appeal.litigation_type, true);
   const spId = user.service_provider_id ?? user.org_id;
   const supabase = await createServiceClient();
+  await assertValidLitigationTypeId(supabase, appeal.litigation_type_id, appeal.act_regulation_id, true);
 
   const { data: newAppeal, error: aErr } = await supabase
     .from("appeals")
@@ -134,7 +151,7 @@ export async function createAppeal(appeal: AppealInput, proceeding: ProceedingIn
       assessment_year_id: appeal.assessment_year_id || null,
       act_regulation_id: appeal.act_regulation_id || null,
       status: appeal.status || "open",
-      litigation_type: appeal.litigation_type || null,
+      litigation_type_id: appeal.litigation_type_id || null,
       created_by: user.id,
     })
     .select("id")
@@ -161,8 +178,8 @@ export async function updateAppeal(appealId: string, appeal: AppealInput): Promi
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
   spOnly(user.role);
-  assertValidLitigationType(appeal.litigation_type, false);
   const supabase = await createServiceClient();
+  await assertValidLitigationTypeId(supabase, appeal.litigation_type_id, appeal.act_regulation_id, false);
 
   const { error } = await supabase
     .from("appeals")
@@ -172,7 +189,7 @@ export async function updateAppeal(appealId: string, appeal: AppealInput): Promi
       assessment_year_id: appeal.assessment_year_id || null,
       act_regulation_id: appeal.act_regulation_id || null,
       status: appeal.status || "open",
-      litigation_type: appeal.litigation_type || null,
+      litigation_type_id: appeal.litigation_type_id || null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", appealId);
@@ -615,7 +632,7 @@ export async function exportLitigationsReport(
   if (filters.filterAYs.length)      q = q.in("assessment_year_id", filters.filterAYs);
   if (filters.filterStatuses.length) q = q.in("status", filters.filterStatuses);
   if (filters.filterAssigned.length) q = q.in("assigned_to", filters.filterAssigned);
-  if (filters.filterLitigationTypes.length) q = q.in("litigation_type", filters.filterLitigationTypes);
+  if (filters.filterLitigationTypes.length) q = q.in("litigation_type_id", filters.filterLitigationTypes);
 
   const { data: rawAppeals, error: aErr } = await q;
   if (aErr) throw new Error(aErr.message);

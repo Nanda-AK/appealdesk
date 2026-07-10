@@ -37,6 +37,9 @@ export default function SpMastersClient({ records }: Props) {
   const [search, setSearch] = useState("");
   const [sortAsc, setSortAsc] = useState(true);
   const [expandedActs, setExpandedActs] = useState<Set<string>>(new Set());
+  const [actChildTab, setActChildTab] = useState<
+    Record<string, "proceeding_type" | "litigation_type">
+  >({});
 
   const q = search.toLowerCase();
   const isFYorAY = activeTab === "financial_year" || activeTab === "assessment_year";
@@ -49,6 +52,13 @@ export default function SpMastersClient({ records }: Props) {
   const acts = records.filter(r => r.type === "act_regulation").sort((a, b) => a.sort_order - b.sort_order);
   const procsByAct = records
     .filter(r => r.type === "proceeding_type" && r.parent_id)
+    .reduce((acc, r) => {
+      if (!acc[r.parent_id!]) acc[r.parent_id!] = [];
+      acc[r.parent_id!].push(r);
+      return acc;
+    }, {} as Record<string, MasterRecord[]>);
+  const litTypesByAct = records
+    .filter(r => r.type === "litigation_type" && r.parent_id)
     .reduce((acc, r) => {
       if (!acc[r.parent_id!]) acc[r.parent_id!] = [];
       acc[r.parent_id!].push(r);
@@ -142,7 +152,12 @@ export default function SpMastersClient({ records }: Props) {
                 <tr><td colSpan={3} className="px-4 py-10 text-center text-secondary">No acts configured.</td></tr>
               ) : acts.map((act, actIdx) => {
                 const procs = (procsByAct[act.id] ?? []).sort((a, b) => a.sort_order - b.sort_order);
+                const litTypes = (litTypesByAct[act.id] ?? []).sort((a, b) => a.sort_order - b.sort_order);
                 const isExpanded = expandedActs.has(act.id);
+                const selectedChildType = actChildTab[act.id] ?? "proceeding_type";
+                const isProc = selectedChildType === "proceeding_type";
+                const children = isProc ? procs : litTypes;
+                const childLabel = isProc ? "proceeding" : "litigation type";
                 return (
                   <React.Fragment key={act.id}>
                     {/* Act row */}
@@ -154,29 +169,57 @@ export default function SpMastersClient({ records }: Props) {
                             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                           </svg>
                           <span className="font-semibold text-heading">{act.name}</span>
-                          <span className="text-xs text-muted">({procs.length} proceeding{procs.length !== 1 ? "s" : ""})</span>
+                          <span className="text-xs text-muted">({procs.length} proceeding{procs.length !== 1 ? "s" : ""} · {litTypes.length} litigation type{litTypes.length !== 1 ? "s" : ""})</span>
                         </div>
                       </td>
                       <td className="px-4 py-3"><StatusBadge active={act.is_active} /></td>
                     </tr>
 
-                    {/* Proceeding sub-rows */}
-                    {isExpanded && procs.map((proc, procIdx) => (
-                      <tr key={proc.id} className={`${procIdx % 2 === 0 ? "bg-white" : "bg-stripe"}`}>
-                        <td className="px-4 py-2.5 text-muted text-xs pl-8">{actIdx + 1}.{String.fromCharCode(97 + procIdx)}</td>
+                    {/* Proceeding / Litigation Type sub-tab switcher */}
+                    {isExpanded && (
+                      <tr className="bg-white">
+                        <td colSpan={3} className="px-4 pt-2 pb-1 pl-14">
+                          <div className="flex gap-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActChildTab((prev) => ({ ...prev, [act.id]: "proceeding_type" }));
+                              }}
+                              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${isProc ? "bg-primary text-white" : "text-secondary hover:text-heading hover:bg-page"}`}
+                            >
+                              Proceeding ({procs.length})
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActChildTab((prev) => ({ ...prev, [act.id]: "litigation_type" }));
+                              }}
+                              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${!isProc ? "bg-primary text-white" : "text-secondary hover:text-heading hover:bg-page"}`}
+                            >
+                              Litigation Type ({litTypes.length})
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+
+                    {/* Selected sub-tab's rows */}
+                    {isExpanded && children.map((child, childIdx) => (
+                      <tr key={child.id} className={`${childIdx % 2 === 0 ? "bg-white" : "bg-stripe"}`}>
+                        <td className="px-4 py-2.5 text-muted text-xs pl-8">{actIdx + 1}.{String.fromCharCode(97 + childIdx)}</td>
                         <td className="px-4 py-2.5">
                           <div className="flex items-center gap-2 pl-5">
                             <span className="w-1 h-1 rounded-full bg-border-strong flex-shrink-0" />
-                            <span className="text-secondary">{proc.name}</span>
+                            <span className="text-secondary">{child.name}</span>
                           </div>
                         </td>
-                        <td className="px-4 py-2.5"><StatusBadge active={proc.is_active} /></td>
+                        <td className="px-4 py-2.5"><StatusBadge active={child.is_active} /></td>
                       </tr>
                     ))}
 
-                    {isExpanded && procs.length === 0 && (
+                    {isExpanded && children.length === 0 && (
                       <tr className="bg-white">
-                        <td colSpan={3} className="px-4 py-3 pl-14 text-xs text-muted italic">No proceedings configured.</td>
+                        <td colSpan={3} className="px-4 py-3 pl-14 text-xs text-muted italic">No {childLabel}s configured.</td>
                       </tr>
                     )}
                   </React.Fragment>

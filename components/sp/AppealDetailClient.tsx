@@ -69,7 +69,6 @@ import {
 } from "@/app/(sp)/litigations/demand-actions";
 import type { DemandIssue, DemandIssueInput } from "@/lib/types";
 import { PendingAttachments } from "@/components/sp/PendingAttachments";
-import { LITIGATION_TYPES } from "@/lib/constants";
 
 // ─── AY helpers (mirrors AppealForm.tsx) ─────────────────────────
 function deriveAYName(fyName: string): string {
@@ -152,7 +151,7 @@ interface Appeal {
   financial_year: { id: string; name: string } | null;
   assessment_year: { id: string; name: string } | null;
   status: string | null;
-  litigation_type: string | null;
+  litigation_type: { id: string; name: string } | null;
   client_org: { id: string; name: string } | null;
   proceedings: Proceeding[];
 }
@@ -3037,8 +3036,8 @@ export default function AppealDetailClient({
   const [editAppealStatus, setEditAppealStatus] = useState(
     appeal.status ?? "open",
   );
-  const [editLitigationType, setEditLitigationType] = useState(
-    appeal.litigation_type ?? "",
+  const [editLitigationTypeId, setEditLitigationTypeId] = useState(
+    appeal.litigation_type?.id ?? "",
   );
   const [appealSaving, setAppealSaving] = useState(false);
   const [appealError, setAppealError] = useState<string | null>(null);
@@ -3072,11 +3071,15 @@ export default function AppealDetailClient({
     mastersByType["financial_year"] ?? [],
     editActName,
   );
+  const editAvailableLitigationTypes = editAct
+    ? (mastersByType["litigation_type"] ?? []).filter((m) => m.parent_id === editAct)
+    : [];
 
   function handleEditActChange(actId: string) {
     setEditAct(actId);
     setEditFY("");
     setEditAY("");
+    setEditLitigationTypeId("");
   }
 
   function handleEditFYChange(fyId: string) {
@@ -3114,7 +3117,7 @@ export default function AppealDetailClient({
         assessment_year_id: editAY,
         act_regulation_id: editAct,
         status: editAppealStatus,
-        litigation_type: editLitigationType || undefined,
+        litigation_type_id: editLitigationTypeId || undefined,
       });
       setShowEditAppeal(false);
       router.refresh();
@@ -3137,7 +3140,7 @@ export default function AppealDetailClient({
         assessment_year_id: appeal.assessment_year?.id,
         act_regulation_id: appeal.act_regulation?.id,
         status: newStatus,
-        litigation_type: appeal.litigation_type ?? undefined,
+        litigation_type_id: appeal.litigation_type?.id ?? undefined,
       });
       router.refresh();
     } finally {
@@ -3145,7 +3148,7 @@ export default function AppealDetailClient({
     }
   }
 
-  async function handleAppealLitigationTypeInline(newType: string) {
+  async function handleAppealLitigationTypeInline(newTypeId: string) {
     setInlineSaving((s) => ({ ...s, appeal_litigation_type: true }));
     try {
       await updateAppeal(appeal.id, {
@@ -3154,7 +3157,7 @@ export default function AppealDetailClient({
         assessment_year_id: appeal.assessment_year?.id,
         act_regulation_id: appeal.act_regulation?.id,
         status: appeal.status ?? "open",
-        litigation_type: newType || undefined,
+        litigation_type_id: newTypeId || undefined,
       });
       router.refresh();
     } finally {
@@ -3716,7 +3719,7 @@ export default function AppealDetailClient({
       editAY !== (appeal.assessment_year?.id ?? "") ||
       editAct !== (appeal.act_regulation?.id ?? "") ||
       editAppealStatus !== (appeal.status ?? "open") ||
-      editLitigationType !== (appeal.litigation_type ?? ""));
+      editLitigationTypeId !== (appeal.litigation_type?.id ?? ""));
   const editProcIsDirty =
     !!editProc &&
     (JSON.stringify(editProcValues) !==
@@ -3945,7 +3948,7 @@ export default function AppealDetailClient({
                 onClick={(e) => e.stopPropagation()}
               >
                 <select
-                  value={appeal.litigation_type ?? ""}
+                  value={appeal.litigation_type?.id ?? ""}
                   disabled={inlineSaving.appeal_litigation_type}
                   onChange={(e) => handleAppealLitigationTypeInline(e.target.value)}
                   className="appearance-none bg-transparent border border-white/30 rounded-full pl-2.5 pr-7 py-0.5 text-sm font-semibold cursor-pointer focus:outline-none focus:border-white/50 disabled:opacity-50 text-white/90 max-w-48 truncate"
@@ -3953,11 +3956,13 @@ export default function AppealDetailClient({
                   <option value="" className="text-secondary bg-white font-normal">
                     — Not set —
                   </option>
-                  {LITIGATION_TYPES.map((t) => (
-                    <option key={t} value={t} className="text-heading bg-white font-normal">
-                      {t}
-                    </option>
-                  ))}
+                  {(mastersByType["litigation_type"] ?? [])
+                    .filter((m) => m.parent_id === appeal.act_regulation?.id)
+                    .map((m) => (
+                      <option key={m.id} value={m.id} className="text-heading bg-white font-normal">
+                        {m.name}
+                      </option>
+                    ))}
                 </select>
                 <svg
                   className="pointer-events-none absolute right-2 w-3 h-3 text-white/40 shrink-0"
@@ -3975,7 +3980,7 @@ export default function AppealDetailClient({
               </div>
             ) : (
               <span className="text-sm font-semibold text-white/90">
-                {appeal.litigation_type ?? "—"}
+                {appeal.litigation_type?.name ?? "—"}
               </span>
             )}
           </div>
@@ -3989,7 +3994,7 @@ export default function AppealDetailClient({
                   setEditAY(appeal.assessment_year?.id ?? "");
                   setEditAct(appeal.act_regulation?.id ?? "");
                   setEditAppealStatus(appeal.status ?? "open");
-                  setEditLitigationType(appeal.litigation_type ?? "");
+                  setEditLitigationTypeId(appeal.litigation_type?.id ?? "");
                   setAppealError(null);
                   setShowEditAppeal(true);
                 }}
@@ -5329,14 +5334,21 @@ export default function AppealDetailClient({
               </Field>
               <Field label="Litigation Type">
                 <select
-                  value={editLitigationType}
-                  onChange={(e) => setEditLitigationType(e.target.value)}
+                  value={editLitigationTypeId}
+                  onChange={(e) => setEditLitigationTypeId(e.target.value)}
                   className={inp}
+                  disabled={!editAct || editAvailableLitigationTypes.length === 0}
                 >
-                  <option value="">— Not set —</option>
-                  {LITIGATION_TYPES.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
+                  <option value="">
+                    {!editAct
+                      ? "Select Act first"
+                      : editAvailableLitigationTypes.length === 0
+                        ? "No litigation types configured for this Act"
+                        : "— Not set —"}
+                  </option>
+                  {editAvailableLitigationTypes.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
                     </option>
                   ))}
                 </select>

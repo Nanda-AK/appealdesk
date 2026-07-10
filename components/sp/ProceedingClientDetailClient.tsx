@@ -9,6 +9,7 @@ import ProceedingsSummaryTable, { type SummaryByCategory } from "@/components/sp
 interface CaseAppeal {
   id: string;
   status: string | null;
+  litigation_type: { id: string; name: string } | null;
   act_regulation: { id: string; name: string } | null;
   financial_year: { id: string; name: string } | null;
 }
@@ -163,6 +164,7 @@ export default function ProceedingClientDetailClient({
                 <th className="th-std">#</th>
                 <th className="th-std">Act</th>
                 <th className="th-std">FY/TY</th>
+                <th className="th-std">Litigation Type</th>
                 <th className="th-std">Proceeding</th>
                 <th className="th-std">Status</th>
                 <th className="th-std">Jurisdiction</th>
@@ -176,7 +178,7 @@ export default function ProceedingClientDetailClient({
             <tbody>
               {activeCaseRows.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="td-std text-center text-muted py-8">
+                  <td colSpan={12} className="td-std text-center text-muted py-8">
                     No proceedings match the current filters.
                   </td>
                 </tr>
@@ -202,6 +204,9 @@ export default function ProceedingClientDetailClient({
                         {appeal.act_regulation?.name ?? "—"}
                       </td>
                       <td className="td-std">{appeal.financial_year?.name ?? "—"}</td>
+                      <td className="td-std max-w-44 truncate" title={appeal.litigation_type?.name ?? "—"}>
+                        {appeal.litigation_type?.name ?? "—"}
+                      </td>
                       <td className="td-std max-w-40 truncate" title={proc.proceeding_type?.name ?? "—"}>
                         {proc.proceeding_type?.name ?? "—"}
                       </td>

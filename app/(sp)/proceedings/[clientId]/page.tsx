@@ -79,6 +79,7 @@ export default async function ProceedingClientPage({
       id, status, created_at,
       act_regulation:master_records!act_regulation_id(id, name),
       financial_year:master_records!financial_year_id(id, name),
+      litigation_type:master_records!litigation_type_id(id, name),
       proceedings(id, status, deleted_at, created_at, jurisdiction, jurisdiction_city,
                   to_be_completed_by, possible_outcome,
                   proceeding_type:master_records!proceeding_type_id(id, name))

@@ -5,10 +5,11 @@ import AppealsClient from "@/components/sp/AppealsClient";
 import { PER_PAGE_OPTIONS, DEFAULT_PER_PAGE } from "@/lib/constants";
 
 const APPEAL_SELECT = `
-  id, status, litigation_type, created_at,
+  id, status, created_at,
   act_regulation:master_records!act_regulation_id(id, name),
   financial_year:master_records!financial_year_id(id, name),
   assessment_year:master_records!assessment_year_id(id, name),
+  litigation_type:master_records!litigation_type_id(id, name),
   client_org:organizations!client_org_id(id, name, file_number),
   proceedings(id, status, deleted_at, created_at, jurisdiction, jurisdiction_city, to_be_completed_by, assigned_to_ids, proceeding_type:master_records!proceeding_type_id(id, name))
 `;
@@ -69,7 +70,7 @@ export default async function AppealsPage({
   if (filterAYs.length)      appealsQuery = appealsQuery.in("assessment_year_id", filterAYs);
   // Status filter applied client-side on proceedings (not appeals)
   if (filterAssigned.length) appealsQuery = appealsQuery.in("assigned_to", filterAssigned);
-  if (filterLitigationTypes.length) appealsQuery = appealsQuery.in("litigation_type", filterLitigationTypes);
+  if (filterLitigationTypes.length) appealsQuery = appealsQuery.in("litigation_type_id", filterLitigationTypes);
 
   appealsQuery = appealsQuery.order("created_at", { ascending: sortAsc }).range(from, to);
 
@@ -79,6 +80,7 @@ export default async function AppealsPage({
     { data: actRows },
     { data: fyRows },
     { data: ayRows },
+    { data: litTypeRows },
     { data: userRows },
   ] = await Promise.all([
     appealsQuery,
@@ -86,6 +88,7 @@ export default async function AppealsPage({
     supabase.from("appeals").select("act_regulation:master_records!act_regulation_id(id, name)").eq("service_provider_id", spId!).not("act_regulation_id", "is", null).is("deleted_at", null),
     supabase.from("appeals").select("financial_year:master_records!financial_year_id(id, name)").eq("service_provider_id", spId!).not("financial_year_id", "is", null).is("deleted_at", null),
     supabase.from("appeals").select("assessment_year:master_records!assessment_year_id(id, name)").eq("service_provider_id", spId!).not("assessment_year_id", "is", null).is("deleted_at", null),
+    supabase.from("appeals").select("litigation_type:master_records!litigation_type_id(id, name)").eq("service_provider_id", spId!).not("litigation_type_id", "is", null).is("deleted_at", null),
     supabase.from("users").select("id, first_name, last_name").eq("org_id", spId!).in("role", ["sp_admin", "sp_staff"]).eq("is_active", true).is("deleted_at", null).order("first_name"),
   ]);
 
@@ -102,6 +105,7 @@ export default async function AppealsPage({
         acts={dedupeRecords(actRows, "act_regulation")}
         financialYears={dedupeRecords(fyRows, "financial_year")}
         assessmentYears={dedupeRecords(ayRows, "assessment_year")}
+        litigationTypeOptions={dedupeRecords(litTypeRows, "litigation_type")}
         teamMembers={teamMembers}
         canEdit={user?.role === "sp_admin" || user?.role === "sp_staff"}
         totalCount={count ?? 0}
