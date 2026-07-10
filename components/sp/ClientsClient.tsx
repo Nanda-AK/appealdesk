@@ -31,7 +31,6 @@ interface NamedRecord {
 // ─── Column visibility ────────────────────────────────────────────────────────
 const ALL_COLUMNS = [
   { key: "file_no",              label: "File No."              },
-  { key: "client_name",          label: "Client Name"           },
   { key: "business_type",        label: "Business Type"         },
   { key: "pan",                  label: "PAN"                   },
   { key: "date_of_incorporation", label: "Date of Incorporation" },
@@ -188,7 +187,7 @@ export default function ClientsClient({
   const [visibleCols, setVisibleCols] = useState<Set<ColKey> | null>(null);
   const effectiveCols = visibleCols ?? new Set<ColKey>(ALL_COL_KEYS);
   const col = (key: ColKey) => effectiveCols.has(key);
-  const visibleColCount = 1 + effectiveCols.size + 1; // Sl.No + visible + Actions
+  const visibleColCount = 3 + effectiveCols.size; // Sl.No + Name (fixed) + visible + Actions
 
   const [colMenuOpen, setColMenuOpen] = useState(false);
   const colMenuRef = useRef<HTMLDivElement>(null);
@@ -360,7 +359,7 @@ export default function ClientsClient({
               <tr className="bg-table-header border-b-2 border-table-header-border">
                 <th className="text-left px-4 py-3 font-semibold text-heading whitespace-nowrap w-16">Sl. No.</th>
                 {col("file_no")               && <th className="text-left px-4 py-3 font-semibold text-heading whitespace-nowrap w-24">File No.</th>}
-                {col("client_name")           && <th className="text-left px-4 py-3 font-semibold text-heading whitespace-nowrap">Client Name</th>}
+                <th className="text-left px-4 py-3 font-semibold text-heading whitespace-nowrap">Client Name</th>
                 {col("business_type")         && <th className="text-left px-4 py-3 font-semibold text-heading whitespace-nowrap">Business Type</th>}
                 {col("pan")                   && <th className="text-left px-4 py-3 font-semibold text-heading whitespace-nowrap">PAN</th>}
                 {col("date_of_incorporation") && <th className="text-left px-4 py-3 font-semibold text-heading whitespace-nowrap">Date of Incorporation</th>}
@@ -384,7 +383,7 @@ export default function ClientsClient({
                     <tr key={client.id} className="bg-white hover:bg-page transition-colors">
                       <td className="px-4 py-2.5 text-muted text-xs font-medium">{i + 1}</td>
                       {col("file_no")               && <td className="px-4 py-2.5 text-secondary text-xs font-mono">{client.file_number ?? "—"}</td>}
-                      {col("client_name")           && <td className="px-4 py-2.5 font-medium text-heading">{client.name}</td>}
+                      <td className="px-4 py-2.5 font-medium text-heading">{client.name}</td>
                       {col("business_type")         && <td className="px-4 py-2.5 text-secondary">{client.business_type ?? "—"}</td>}
                       {col("pan")                   && <td className="px-4 py-2.5 text-secondary font-mono text-xs">{pan}</td>}
                       {col("date_of_incorporation") && <td className="px-4 py-2.5 text-secondary text-sm">{doi}</td>}

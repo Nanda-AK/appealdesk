@@ -28,7 +28,6 @@ interface NamedRecord { id: string; name: string; }
 
 // ─── Column definitions — separate per tab ────────────────────────────────────
 const TEAM_COLUMNS = [
-  { key: "name",        label: "Name"        },
   { key: "email_id",    label: "Email ID"    },
   { key: "mobile_no",   label: "Mobile No."  },
   { key: "role",        label: "Role"        },
@@ -37,7 +36,6 @@ const TEAM_COLUMNS = [
 ] as const;
 
 const CLIENT_COLUMNS = [
-  { key: "name",        label: "Name of the User"   },
   { key: "client_name", label: "Name of the Client" },
   { key: "email_id",    label: "Email ID"            },
   { key: "mobile_no",   label: "Mobile No."          },
@@ -267,10 +265,10 @@ export default function UsersClient({
     }
   }
 
-  // Visible col count for colSpan (Sl.No + visible + Actions)
+  // Visible col count for colSpan (Sl.No + Name (fixed) + visible + Actions)
   const visibleColCount = currentTab === "team"
-    ? 1 + effectiveTeam.size   + 1
-    : 1 + effectiveClient.size + 1;
+    ? 3 + effectiveTeam.size
+    : 3 + effectiveClient.size;
 
   useEffect(() => {
     if (!colMenuOpen) return;
@@ -440,7 +438,7 @@ export default function UsersClient({
                 <th className="text-left px-4 py-3 font-semibold text-heading whitespace-nowrap w-16">Sl. No.</th>
                 {currentTab === "team" ? (
                   <>
-                    {teamCol("name")        && <th className="text-left px-4 py-3 font-semibold text-heading whitespace-nowrap">Name</th>}
+                    <th className="text-left px-4 py-3 font-semibold text-heading whitespace-nowrap">Name</th>
                     {teamCol("email_id")    && <th className="text-left px-4 py-3 font-semibold text-heading whitespace-nowrap">Email ID</th>}
                     {teamCol("mobile_no")   && <th className="text-left px-4 py-3 font-semibold text-heading whitespace-nowrap">Mobile No.</th>}
                     {teamCol("role")        && <th className="text-left px-4 py-3 font-semibold text-heading whitespace-nowrap">Role</th>}
@@ -449,7 +447,7 @@ export default function UsersClient({
                   </>
                 ) : (
                   <>
-                    {clientCol("name")        && <th className="text-left px-4 py-3 font-semibold text-heading whitespace-nowrap">Name of the User</th>}
+                    <th className="text-left px-4 py-3 font-semibold text-heading whitespace-nowrap">Name of the User</th>
                     {clientCol("client_name") && <th className="text-left px-4 py-3 font-semibold text-heading whitespace-nowrap">Name of the Client</th>}
                     {clientCol("email_id")    && <th className="text-left px-4 py-3 font-semibold text-heading whitespace-nowrap">Email ID</th>}
                     {clientCol("mobile_no")   && <th className="text-left px-4 py-3 font-semibold text-heading whitespace-nowrap">Mobile No.</th>}
@@ -475,11 +473,9 @@ export default function UsersClient({
                       <td className="px-4 py-2.5 text-muted text-xs font-medium">{i + 1}</td>
                       {currentTab === "team" ? (
                         <>
-                          {teamCol("name") && (
-                            <td className="px-4 py-2.5 font-medium text-heading">
-                              {fullName(u)}{u.id === currentUserId && <span className="ml-1.5 text-xs text-muted">(you)</span>}
-                            </td>
-                          )}
+                          <td className="px-4 py-2.5 font-medium text-heading">
+                            {fullName(u)}{u.id === currentUserId && <span className="ml-1.5 text-xs text-muted">(you)</span>}
+                          </td>
                           {teamCol("email_id")    && <td className="px-4 py-2.5 text-secondary">{u.email}</td>}
                           {teamCol("mobile_no")   && <td className="px-4 py-2.5 text-secondary font-mono text-xs">{mobile}</td>}
                           {teamCol("role") && (
@@ -496,11 +492,9 @@ export default function UsersClient({
                         </>
                       ) : (
                         <>
-                          {clientCol("name") && (
-                            <td className="px-4 py-2.5 font-medium text-heading">
-                              {fullName(u)}{u.id === currentUserId && <span className="ml-1.5 text-xs text-muted">(you)</span>}
-                            </td>
-                          )}
+                          <td className="px-4 py-2.5 font-medium text-heading">
+                            {fullName(u)}{u.id === currentUserId && <span className="ml-1.5 text-xs text-muted">(you)</span>}
+                          </td>
                           {clientCol("client_name") && <td className="px-4 py-2.5 text-secondary">{u.organization?.name ?? "—"}</td>}
                           {clientCol("email_id")    && <td className="px-4 py-2.5 text-secondary">{u.email}</td>}
                           {clientCol("mobile_no")   && <td className="px-4 py-2.5 text-secondary font-mono text-xs">{mobile}</td>}

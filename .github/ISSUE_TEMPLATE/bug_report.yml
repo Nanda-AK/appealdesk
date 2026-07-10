@@ -1,0 +1,95 @@
+name: 🐛 Bug Report
+description: Report something that's broken or not working as expected in AppealDesk
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the details below — fields marked with * are required.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear and concise description of the bug.
+      placeholder: When I click "Save" on a proceeding, the page shows a red error and nothing is saved.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: module
+    attributes:
+      label: Affected Area(s)
+      description: Check all areas where the issue occurs.
+      options:
+        - label: "Platform Portal — Dashboard"
+        - label: "Platform Portal — Service Providers (CA Firms)"
+        - label: "Platform Portal — Users"
+        - label: "Platform Portal — Admins"
+        - label: "Platform Portal — Masters (Acts / Financial Years / Assessment Years)"
+        - label: "Platform Portal — Documents"
+        - label: "Platform Portal — Audit Logs"
+        - label: "Platform Portal — Settings & Branding"
+        - label: "SP Portal — Dashboard"
+        - label: "SP Portal — Litigations / Appeals (List)"
+        - label: "SP Portal — Litigation Detail (Proceedings & Events)"
+        - label: "SP Portal — Demand Section"
+        - label: "SP Portal — Clients"
+        - label: "SP Portal — Team Users"
+        - label: "SP Portal — Client Users"
+        - label: "SP Portal — Documents (Forms / Templates / Resources)"
+        - label: "SP Portal — Masters"
+        - label: "SP Portal — Audit Logs"
+        - label: "SP Portal — Settings"
+        - label: "Authentication / Login / Invite / Password Reset"
+        - label: "Document Export (PDF / DOCX / XLSX)"
+        - label: "File Uploads / Storage"
+        - label: "Email Notifications"
+        - label: "Other"
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen instead?
+    validations:
+      required: false
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Critical (blocks core workflow / data loss)
+        - High (major feature broken)
+        - Medium (feature partially broken, workaround exists)
+        - Low (cosmetic / minor)
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Screenshots / logs / error messages
+      description: Paste any console errors, network tab errors, or attach screenshots. Very helpful for faster resolution.
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Anything else worth mentioning — which client/litigation it happened on, when it started, related issues, etc.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues to make sure this isn't a duplicate
+          required: false
+        - label: I can consistently reproduce this issue
+          required: false

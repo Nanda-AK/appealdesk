@@ -46,14 +46,27 @@ function useEscHandler(handler: () => void, active: boolean) {
 }
 
 import {
-  updateAppeal, updateProceeding, addProceeding, addEvent, updateEvent,
-  deleteEvent, deleteAppeal, deleteProceeding,
-  uploadProceedingDocument, deleteProceedingDocument,
-  uploadEventDocument, deleteEventDocument,
+  updateAppeal,
+  updateProceeding,
+  addProceeding,
+  addEvent,
+  updateEvent,
+  deleteEvent,
+  deleteAppeal,
+  deleteProceeding,
+  uploadProceedingDocument,
+  deleteProceedingDocument,
+  uploadEventDocument,
+  deleteEventDocument,
   getProceedingReport,
-  ProceedingInput, EventInput, ProceedingContact,
+  ProceedingInput,
+  EventInput,
+  ProceedingContact,
 } from "@/app/(sp)/litigations/actions";
-import { getDemandIssues, saveDemandIssues } from "@/app/(sp)/litigations/demand-actions";
+import {
+  getDemandIssues,
+  saveDemandIssues,
+} from "@/app/(sp)/litigations/demand-actions";
 import type { DemandIssue, DemandIssueInput } from "@/lib/types";
 import { PendingAttachments } from "@/components/sp/PendingAttachments";
 import { LITIGATION_TYPES } from "@/lib/constants";
@@ -173,25 +186,107 @@ const DEMAND_TYPES: { key: DemandTypeKey; label: string }[] = [
   { key: "penalty", label: "Penalty demand" },
 ];
 function blankDraftIssue(): DraftDemandIssue {
-  return { notice_no: "", notice_date: "", description: "", tax_demanded: "0", tax_acceptable: "0", tax_dropped: "0", interest_demanded: "0", interest_acceptable: "0", interest_dropped: "0", penalty_demanded: "0", penalty_acceptable: "0", penalty_dropped: "0" };
+  return {
+    notice_no: "",
+    notice_date: "",
+    description: "",
+    tax_demanded: "0",
+    tax_acceptable: "0",
+    tax_dropped: "0",
+    interest_demanded: "0",
+    interest_acceptable: "0",
+    interest_dropped: "0",
+    penalty_demanded: "0",
+    penalty_acceptable: "0",
+    penalty_dropped: "0",
+  };
 }
 function toDraftIssue(iss: DemandIssue): DraftDemandIssue {
-  return { notice_no: iss.notice_no, notice_date: iss.notice_date ?? "", description: iss.description, tax_demanded: iss.tax_demanded.toString(), tax_acceptable: iss.tax_acceptable.toString(), tax_dropped: (iss.tax_dropped ?? 0).toString(), interest_demanded: iss.interest_demanded.toString(), interest_acceptable: iss.interest_acceptable.toString(), interest_dropped: (iss.interest_dropped ?? 0).toString(), penalty_demanded: iss.penalty_demanded.toString(), penalty_acceptable: iss.penalty_acceptable.toString(), penalty_dropped: (iss.penalty_dropped ?? 0).toString() };
+  return {
+    notice_no: iss.notice_no,
+    notice_date: iss.notice_date ?? "",
+    description: iss.description,
+    tax_demanded: iss.tax_demanded.toString(),
+    tax_acceptable: iss.tax_acceptable.toString(),
+    tax_dropped: (iss.tax_dropped ?? 0).toString(),
+    interest_demanded: iss.interest_demanded.toString(),
+    interest_acceptable: iss.interest_acceptable.toString(),
+    interest_dropped: (iss.interest_dropped ?? 0).toString(),
+    penalty_demanded: iss.penalty_demanded.toString(),
+    penalty_acceptable: iss.penalty_acceptable.toString(),
+    penalty_dropped: (iss.penalty_dropped ?? 0).toString(),
+  };
 }
-function fromDraftIssue(draft: DraftDemandIssue, sortOrder: number): DemandIssueInput {
-  return { notice_no: draft.notice_no, notice_date: draft.notice_date || null, description: draft.description, tax_demanded: parseFloat(draft.tax_demanded) || 0, tax_acceptable: parseFloat(draft.tax_acceptable) || 0, tax_dropped: parseFloat(draft.tax_dropped) || 0, interest_demanded: parseFloat(draft.interest_demanded) || 0, interest_acceptable: parseFloat(draft.interest_acceptable) || 0, interest_dropped: parseFloat(draft.interest_dropped) || 0, penalty_demanded: parseFloat(draft.penalty_demanded) || 0, penalty_acceptable: parseFloat(draft.penalty_acceptable) || 0, penalty_dropped: parseFloat(draft.penalty_dropped) || 0, sort_order: sortOrder };
+function fromDraftIssue(
+  draft: DraftDemandIssue,
+  sortOrder: number,
+): DemandIssueInput {
+  return {
+    notice_no: draft.notice_no,
+    notice_date: draft.notice_date || null,
+    description: draft.description,
+    tax_demanded: parseFloat(draft.tax_demanded) || 0,
+    tax_acceptable: parseFloat(draft.tax_acceptable) || 0,
+    tax_dropped: parseFloat(draft.tax_dropped) || 0,
+    interest_demanded: parseFloat(draft.interest_demanded) || 0,
+    interest_acceptable: parseFloat(draft.interest_acceptable) || 0,
+    interest_dropped: parseFloat(draft.interest_dropped) || 0,
+    penalty_demanded: parseFloat(draft.penalty_demanded) || 0,
+    penalty_acceptable: parseFloat(draft.penalty_acceptable) || 0,
+    penalty_dropped: parseFloat(draft.penalty_dropped) || 0,
+    sort_order: sortOrder,
+  };
 }
-function getDraftAmount(iss: DraftDemandIssue, key: DemandTypeKey, field: "demanded" | "acceptable" | "dropped"): string {
-  if (key === "tax") return field === "demanded" ? iss.tax_demanded : field === "acceptable" ? iss.tax_acceptable : iss.tax_dropped;
-  if (key === "interest") return field === "demanded" ? iss.interest_demanded : field === "acceptable" ? iss.interest_acceptable : iss.interest_dropped;
-  return field === "demanded" ? iss.penalty_demanded : field === "acceptable" ? iss.penalty_acceptable : iss.penalty_dropped;
+function getDraftAmount(
+  iss: DraftDemandIssue,
+  key: DemandTypeKey,
+  field: "demanded" | "acceptable" | "dropped",
+): string {
+  if (key === "tax")
+    return field === "demanded"
+      ? iss.tax_demanded
+      : field === "acceptable"
+        ? iss.tax_acceptable
+        : iss.tax_dropped;
+  if (key === "interest")
+    return field === "demanded"
+      ? iss.interest_demanded
+      : field === "acceptable"
+        ? iss.interest_acceptable
+        : iss.interest_dropped;
+  return field === "demanded"
+    ? iss.penalty_demanded
+    : field === "acceptable"
+      ? iss.penalty_acceptable
+      : iss.penalty_dropped;
 }
-function setDraftAmount(iss: DraftDemandIssue, key: DemandTypeKey, field: "demanded" | "acceptable" | "dropped", val: string): DraftDemandIssue {
-  if (key === "tax") return field === "demanded" ? { ...iss, tax_demanded: val } : field === "acceptable" ? { ...iss, tax_acceptable: val } : { ...iss, tax_dropped: val };
-  if (key === "interest") return field === "demanded" ? { ...iss, interest_demanded: val } : field === "acceptable" ? { ...iss, interest_acceptable: val } : { ...iss, interest_dropped: val };
-  return field === "demanded" ? { ...iss, penalty_demanded: val } : field === "acceptable" ? { ...iss, penalty_acceptable: val } : { ...iss, penalty_dropped: val };
+function setDraftAmount(
+  iss: DraftDemandIssue,
+  key: DemandTypeKey,
+  field: "demanded" | "acceptable" | "dropped",
+  val: string,
+): DraftDemandIssue {
+  if (key === "tax")
+    return field === "demanded"
+      ? { ...iss, tax_demanded: val }
+      : field === "acceptable"
+        ? { ...iss, tax_acceptable: val }
+        : { ...iss, tax_dropped: val };
+  if (key === "interest")
+    return field === "demanded"
+      ? { ...iss, interest_demanded: val }
+      : field === "acceptable"
+        ? { ...iss, interest_acceptable: val }
+        : { ...iss, interest_dropped: val };
+  return field === "demanded"
+    ? { ...iss, penalty_demanded: val }
+    : field === "acceptable"
+      ? { ...iss, penalty_acceptable: val }
+      : { ...iss, penalty_dropped: val };
 }
-function fmtInr(n: number): string { return n.toLocaleString("en-IN", { maximumFractionDigits: 2 }); }
+function fmtInr(n: number): string {
+  return n.toLocaleString("en-IN", { maximumFractionDigits: 2 });
+}
 
 interface Props {
   appeal: Appeal;
@@ -242,16 +337,12 @@ const MAIN_CATEGORY_FIELDS: Record<string, FieldDef[]> = {
     },
   ],
   personal_hearing_notice: [
+    { key: "date_of_notice", label: "Notice Date", type: "date" },
     { key: "hearing_date", label: "Hearing Date", type: "datetime" },
   ],
   virtual_hearing_notice: [
+    { key: "date_of_notice", label: "Notice Date", type: "date" },
     { key: "hearing_date", label: "Hearing Date", type: "datetime" },
-    { key: "due_date", label: "Due Date", type: "datetime" },
-    {
-      key: "internal_target_date",
-      label: "Internal Target Date",
-      type: "datetime",
-    },
   ],
   assessment_order: [
     { key: "date_of_order", label: "Date of Order", type: "date" },
@@ -308,6 +399,7 @@ const MAIN_CATEGORY_FIELDS: Record<string, FieldDef[]> = {
         { value: "visit", label: "Visit" },
       ],
     },
+    { key: "request_date", label: "Request Date", type: "date" },
     { key: "due_date", label: "Due Date", type: "datetime" },
     {
       key: "internal_target_date",
@@ -327,6 +419,7 @@ const SUB_CATEGORY_FIELDS: Record<string, FieldDef[]> = {
     },
   ],
   adjournment_request: [
+    { key: "request_date", label: "Request Date", type: "date" },
     { key: "adjourned_to", label: "Adjourned To", type: "datetime" },
     {
       key: "internal_target_date",
@@ -362,8 +455,8 @@ const CATEGORY_FIELDS: Record<string, FieldDef[]> = {
 const PRIMARY_DATE: Record<string, string> = {
   notice_from_authority: "date_of_notice",
   show_cause_notice: "date_of_notice",
-  personal_hearing_notice: "hearing_date",
-  virtual_hearing_notice: "hearing_date",
+  personal_hearing_notice: "date_of_notice",
+  virtual_hearing_notice: "date_of_notice",
   assessment_order: "date_of_order",
   penalty_order: "date_of_order",
   filing_of_appeal: "order_date",
@@ -372,9 +465,9 @@ const PRIMARY_DATE: Record<string, string> = {
   high_court_order: "date_of_order",
   supreme_court_order: "date_of_order",
   others: "date",
-  additional_data_request: "due_date",
+  additional_data_request: "request_date",
   response_to_notice: "response_submitted_on",
-  adjournment_request: "adjourned_to",
+  adjournment_request: "request_date",
   hearing_proceedings: "attended_date",
   personal_follow_up: "internal_target_date",
   others_sub: "date",
@@ -383,7 +476,6 @@ const PRIMARY_DATE: Record<string, string> = {
 const DUE_DATE_KEY: Record<string, string> = {
   notice_from_authority: "due_date",
   show_cause_notice: "due_date",
-  virtual_hearing_notice: "due_date",
   penalty_order: "due_date",
   filing_of_appeal: "due_date",
   additional_data_request: "due_date",
@@ -394,8 +486,8 @@ const DUE_DATE_KEY: Record<string, string> = {
 const PARENT_DATE_FIELD: Record<string, { key: string; label: string }> = {
   notice_from_authority: { key: "date_of_notice", label: "Notice Date" },
   show_cause_notice: { key: "date_of_notice", label: "SCN Date" },
-  personal_hearing_notice: { key: "hearing_date", label: "Hearing Date" },
-  virtual_hearing_notice: { key: "hearing_date", label: "Hearing Date" },
+  personal_hearing_notice: { key: "date_of_notice", label: "Notice Date" },
+  virtual_hearing_notice: { key: "date_of_notice", label: "Notice Date" },
   assessment_order: { key: "date_of_order", label: "Date of Order" },
   penalty_order: { key: "date_of_order", label: "Date of Order" },
   filing_of_appeal: { key: "appeal_filed_on", label: "Appeal Filed On" },
@@ -404,7 +496,7 @@ const PARENT_DATE_FIELD: Record<string, { key: string; label: string }> = {
   high_court_order: { key: "date_of_order", label: "Date of Order" },
   supreme_court_order: { key: "date_of_order", label: "Date of Order" },
   others: { key: "date", label: "Date" },
-  additional_data_request: { key: "due_date", label: "Due Date" },
+  additional_data_request: { key: "request_date", label: "Request Date" },
 };
 
 const MAIN_EVENT_LABELS: Record<string, string> = {
@@ -584,14 +676,16 @@ function DetailRow({
   label,
   value,
   light,
+  truncate,
 }: {
   label: string;
   value: React.ReactNode;
   light?: boolean;
+  truncate?: boolean;
 }) {
   const shadow = !light ? { textShadow: "0 0 8px rgba(0,0,0,0.7)" } : undefined;
   return (
-    <div>
+    <div className={truncate ? "min-w-0" : undefined}>
       <p
         className={`text-xs mb-0.5 ${light ? "text-muted" : "text-white/70"}`}
         style={shadow}
@@ -599,7 +693,8 @@ function DetailRow({
         {label}
       </p>
       <p
-        className={`text-sm ${light ? "text-heading" : "text-white"}`}
+        className={`text-sm ${light ? "text-heading" : "text-white"}${truncate ? " truncate" : ""}`}
+        title={truncate && typeof value === "string" ? value : undefined}
         style={shadow}
       >
         {value || "—"}
@@ -1325,11 +1420,13 @@ function MultiSelect({
   selected,
   onChange,
   placeholder,
+  compact,
 }: {
   options: { value: string; label: string }[];
   selected: string[];
   onChange: (vals: string[]) => void;
   placeholder?: string;
+  compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useState(() => ({ current: null as HTMLDivElement | null }))[0];
@@ -1355,7 +1452,7 @@ function MultiSelect({
     >
       <div
         onClick={() => setOpen((o) => !o)}
-        className={`${inp} flex items-center justify-between gap-2 cursor-pointer min-h-10.5 flex-wrap`}
+        className={`${compact ? "w-full px-2.5 py-1.5 text-xs border border-accent rounded-lg focus:outline-none focus:ring-1 focus:ring-primary" : `${inp} min-h-10.5`} flex items-center justify-between gap-2 cursor-pointer flex-wrap`}
       >
         {selectedLabels.length === 0 ? (
           <span className="text-muted text-sm">{placeholder ?? "Select…"}</span>
@@ -1498,6 +1595,7 @@ function ProceedingFormFields({
         <input
           value={values.authority_type ?? ""}
           onChange={(e) => onChange("authority_type", e.target.value)}
+          placeholder="e.g. ACIT, Circle 1(1)"
           className={pInp}
         />
       </Field>
@@ -1505,7 +1603,6 @@ function ProceedingFormFields({
         <input
           value={values.authority_name ?? ""}
           onChange={(e) => onChange("authority_name", e.target.value)}
-          placeholder="e.g. ACIT, Circle 1(1)"
           className={pInp}
         />
       </Field>
@@ -1599,6 +1696,7 @@ function ProceedingFormFields({
       </Field>
       <Field label="Assigned To">
         <MultiSelect
+          compact
           options={[...teamMembers]
             .sort((a, b) =>
               `${a.first_name} ${a.last_name}`.localeCompare(
@@ -1616,6 +1714,7 @@ function ProceedingFormFields({
       </Field>
       <Field label="Client Staff">
         <MultiSelect
+          compact
           options={[...clientUsers]
             .sort((a, b) =>
               `${a.first_name} ${a.last_name}`.localeCompare(
@@ -1668,92 +1767,450 @@ function ProceedingFormFields({
 }
 
 // ─── Demand Issues Editor (Amount tab in modal) ────────────────────
-function DemandIssuesEditor({ issues, onChange }: {
+function DemandIssuesEditor({
+  issues,
+  onChange,
+  mainEvents,
+}: {
   issues: DraftDemandIssue[];
   onChange: (issues: DraftDemandIssue[]) => void;
+  mainEvents?: AppEvent[];
 }) {
-  const cInp = "w-full px-1.5 py-1 text-xs border border-accent rounded focus:outline-none focus:ring-1 focus:ring-primary";
+  const [deleteConfirmIdx, setDeleteConfirmIdx] = useState<number | null>(null);
+  const cInp =
+    "w-full px-1.5 py-1 text-xs border border-accent rounded focus:outline-none focus:ring-1 focus:ring-primary";
   const cNum = `${cInp} text-right`;
+  const cInpTall =
+    "w-full px-1.5 py-1.5 text-xs border border-accent rounded focus:outline-none focus:ring-1 focus:ring-primary";
+
+  const isEditMode = mainEvents !== undefined;
+  const activeMainEvents = (mainEvents ?? [])
+    .filter((e) => !e.deleted_at && e.event_type === "main")
+    .sort((a, b) => a.created_at.localeCompare(b.created_at));
+  const meOptions = activeMainEvents.map((ev, idx) => ({
+    id: ev.id,
+    label: `ME${idx + 1} — ${getEventLabel(ev.category, ev.details ?? {})}`,
+  }));
+
+  // Dynamic equal-width for all three amount columns
+  const maxAmtChars = issues.reduce((max, iss) => {
+    return Math.max(
+      max,
+      fmtInr(parseFloat(iss.tax_demanded) || 0).length,
+      fmtInr(parseFloat(iss.tax_acceptable) || 0).length,
+      fmtInr(parseFloat(iss.tax_dropped) || 0).length,
+      fmtInr(parseFloat(iss.interest_demanded) || 0).length,
+      fmtInr(parseFloat(iss.interest_acceptable) || 0).length,
+      fmtInr(parseFloat(iss.interest_dropped) || 0).length,
+      fmtInr(parseFloat(iss.penalty_demanded) || 0).length,
+      fmtInr(parseFloat(iss.penalty_acceptable) || 0).length,
+      fmtInr(parseFloat(iss.penalty_dropped) || 0).length,
+    );
+  }, 3);
+  const amtColPx = Math.max(100, maxAmtChars * 8 + 28);
+
   const totals = issues.reduce(
     (acc, iss) => {
-      acc.proposed += (parseFloat(iss.tax_demanded)||0)+(parseFloat(iss.interest_demanded)||0)+(parseFloat(iss.penalty_demanded)||0);
-      acc.accepted += (parseFloat(iss.tax_acceptable)||0)+(parseFloat(iss.interest_acceptable)||0)+(parseFloat(iss.penalty_acceptable)||0);
-      acc.dropped += (parseFloat(iss.tax_dropped)||0)+(parseFloat(iss.interest_dropped)||0)+(parseFloat(iss.penalty_dropped)||0);
+      acc.demanded +=
+        (parseFloat(iss.tax_demanded) || 0) +
+        (parseFloat(iss.interest_demanded) || 0) +
+        (parseFloat(iss.penalty_demanded) || 0);
+      acc.acceptable +=
+        (parseFloat(iss.tax_acceptable) || 0) +
+        (parseFloat(iss.interest_acceptable) || 0) +
+        (parseFloat(iss.penalty_acceptable) || 0);
+      acc.dropped +=
+        (parseFloat(iss.tax_dropped) || 0) +
+        (parseFloat(iss.interest_dropped) || 0) +
+        (parseFloat(iss.penalty_dropped) || 0);
       return acc;
     },
-    { proposed: 0, accepted: 0, dropped: 0 }
+    { demanded: 0, acceptable: 0, dropped: 0 },
   );
+  if (isEditMode && activeMainEvents.length === 0) {
+    return (
+      <div className="py-10 flex flex-col items-center gap-2 text-center">
+        <svg
+          className="w-8 h-8 text-muted"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={1.5}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
+          />
+        </svg>
+        <p className="text-sm font-medium text-heading">No main events found</p>
+        <p className="text-xs text-muted">
+          Add main events to this proceeding before entering demand amounts.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-4 gap-3">
         {[
-          { label: "Total Amount Proposed", value: totals.proposed },
+          { label: "Total Amount Demanded", value: totals.demanded },
           { label: "Total Amount Dropped", value: totals.dropped },
-          { label: "Total Amount Accepted", value: totals.accepted },
-          { label: "Total Amount Dispute", value: totals.proposed - totals.accepted - totals.dropped },
+          { label: "Total Amount Acceptable", value: totals.acceptable },
+          {
+            label: "Total Amount Disputed",
+            value: totals.demanded - totals.acceptable - totals.dropped,
+          },
         ].map(({ label, value }) => (
-          <div key={label} className="bg-accent-tint border border-border rounded-lg px-3 py-2.5">
+          <div
+            key={label}
+            className="bg-accent-tint border border-border rounded-lg px-3 py-2.5"
+          >
             <p className="text-xs text-muted mb-0.5">{label}</p>
-            <p className="text-sm font-semibold text-heading">₹{fmtInr(value)}</p>
+            <p className="text-sm font-semibold text-heading">
+              ₹{fmtInr(value)}
+            </p>
           </div>
         ))}
       </div>
       {issues.length > 0 && (
         <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full text-xs border-collapse">
+          <table
+            className="w-full text-xs border-collapse"
+            style={{ tableLayout: "fixed" }}
+          >
             <thead>
               <tr className="bg-table-header text-left">
                 <th className="px-2 py-2 font-semibold text-heading w-8">#</th>
-                <th className="px-2 py-2 font-semibold text-heading">Notice No</th>
-                <th className="px-2 py-2 font-semibold text-heading">Notice Date</th>
-                <th className="px-2 py-2 font-semibold text-heading">Description of Issue</th>
-                <th className="px-2 py-2 font-semibold text-heading">Type</th>
-                <th className="px-2 py-2 font-semibold text-heading text-right">Proposed (₹)</th>
-                <th className="px-2 py-2 font-semibold text-heading text-right">Dropped (₹)</th>
-                <th className="px-2 py-2 font-semibold text-heading text-right">Accepted (₹)</th>
-                <th className="px-2 py-2 font-semibold text-heading text-right">Dispute (₹)</th>
+                <th className="px-2 py-2 font-semibold text-heading w-[130px]">
+                  Notice No & Date
+                </th>
+                <th className="px-2 py-2 font-semibold text-heading min-w-[220px] ">
+                  Description of the Issue
+                </th>
+                <th className="px-2 py-2 font-semibold text-heading w-[110px]">
+                  Type
+                </th>
+                <th
+                  className="px-2 py-2 font-semibold text-heading text-right"
+                  style={{ width: amtColPx }}
+                >
+                  Demanded (₹)
+                </th>
+                <th
+                  className="px-2 py-2 font-semibold text-heading text-right"
+                  style={{ width: amtColPx }}
+                >
+                  Dropped (₹)
+                </th>
+                <th
+                  className="px-2 py-2 font-semibold text-heading text-right"
+                  style={{ width: amtColPx }}
+                >
+                  Acceptable (₹)
+                </th>
+                <th
+                  className="px-2 py-2 font-semibold text-heading text-right"
+                  style={{ width: amtColPx }}
+                >
+                  Disputed (₹)
+                </th>
                 <th className="w-7"></th>
               </tr>
             </thead>
             <tbody>
               {issues.map((iss, i) => {
                 const issueTotals = {
-                  proposed: (parseFloat(iss.tax_demanded)||0)+(parseFloat(iss.interest_demanded)||0)+(parseFloat(iss.penalty_demanded)||0),
-                  accepted: (parseFloat(iss.tax_acceptable)||0)+(parseFloat(iss.interest_acceptable)||0)+(parseFloat(iss.penalty_acceptable)||0),
-                  dropped: (parseFloat(iss.tax_dropped)||0)+(parseFloat(iss.interest_dropped)||0)+(parseFloat(iss.penalty_dropped)||0),
+                  demanded:
+                    (parseFloat(iss.tax_demanded) || 0) +
+                    (parseFloat(iss.interest_demanded) || 0) +
+                    (parseFloat(iss.penalty_demanded) || 0),
+                  acceptable:
+                    (parseFloat(iss.tax_acceptable) || 0) +
+                    (parseFloat(iss.interest_acceptable) || 0) +
+                    (parseFloat(iss.penalty_acceptable) || 0),
+                  dropped:
+                    (parseFloat(iss.tax_dropped) || 0) +
+                    (parseFloat(iss.interest_dropped) || 0) +
+                    (parseFloat(iss.penalty_dropped) || 0),
                 };
                 return (
                   <React.Fragment key={i}>
                     {DEMAND_TYPES.map((type, ti) => {
-                      const proposed = getDraftAmount(iss, type.key, "demanded");
-                      const accepted = getDraftAmount(iss, type.key, "acceptable");
-                      const dropped = getDraftAmount(iss, type.key, "dropped");
-                      const dispute = (parseFloat(proposed)||0)-(parseFloat(accepted)||0)-(parseFloat(dropped)||0);
+                      const demanded = getDraftAmount(
+                        iss,
+                        type.key,
+                        "demanded",
+                      );
+                      const acceptable = getDraftAmount(
+                        iss,
+                        type.key,
+                        "acceptable",
+                      );
+                      const dropped = getDraftAmount(
+                        iss,
+                        type.key,
+                        "dropped",
+                      );
+                      const disputed =
+                        (parseFloat(demanded) || 0) -
+                        (parseFloat(acceptable) || 0) -
+                        (parseFloat(dropped) || 0);
                       return (
-                        <tr key={`${i}-${type.key}`} className="border-t border-border">
+                        <tr
+                          key={`${i}-${type.key}`}
+                          className="border-t border-border"
+                        >
                           {ti === 0 && (
                             <>
-                              <td rowSpan={3} className="px-2 py-1.5 text-center text-muted align-top">{i+1}</td>
-                              <td rowSpan={3} className="px-2 py-1.5 align-top min-w-[100px]"><input value={iss.notice_no} onChange={e => onChange(issues.map((x,idx)=>idx===i?{...x,notice_no:e.target.value}:x))} className={cInp} placeholder="Notice No." /></td>
-                              <td rowSpan={3} className="px-2 py-1.5 align-top"><input type="date" value={iss.notice_date} onChange={e => onChange(issues.map((x,idx)=>idx===i?{...x,notice_date:e.target.value}:x))} className={cInp} /></td>
-                              <td rowSpan={3} className="px-2 py-1.5 align-top min-w-[140px]"><input value={iss.description} onChange={e => onChange(issues.map((x,idx)=>idx===i?{...x,description:e.target.value}:x))} className={cInp} placeholder="Description…" /></td>
+                              <td
+                                rowSpan={3}
+                                className="px-2 py-1.5 text-center text-muted align-top"
+                              >
+                                {i + 1}
+                              </td>
+                              <td rowSpan={3} className="relative">
+                                <div className="absolute inset-0 flex flex-col justify-start gap-6 px-2 py-1.5">
+                                  {isEditMode ? (
+                                    <select
+                                      value={iss.notice_no}
+                                      onChange={(e) =>
+                                        onChange(
+                                          issues.map((x, idx) =>
+                                            idx === i
+                                              ? {
+                                                  ...x,
+                                                  notice_no: e.target.value,
+                                                }
+                                              : x,
+                                          ),
+                                        )
+                                      }
+                                      className={cInpTall}
+                                    >
+                                      <option value="">— Select ME —</option>
+                                      {meOptions.map((opt) => (
+                                        <option key={opt.id} value={opt.label}>
+                                          {opt.label}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  ) : (
+                                    <input
+                                      value={iss.notice_no}
+                                      onChange={(e) =>
+                                        onChange(
+                                          issues.map((x, idx) =>
+                                            idx === i
+                                              ? {
+                                                  ...x,
+                                                  notice_no: e.target.value,
+                                                }
+                                              : x,
+                                          ),
+                                        )
+                                      }
+                                      className={cInpTall}
+                                      placeholder="Notice No."
+                                    />
+                                  )}
+                                  <input
+                                    type="date"
+                                    value={iss.notice_date}
+                                    onChange={(e) =>
+                                      onChange(
+                                        issues.map((x, idx) =>
+                                          idx === i
+                                            ? {
+                                                ...x,
+                                                notice_date: e.target.value,
+                                              }
+                                            : x,
+                                        ),
+                                      )
+                                    }
+                                    className={cInpTall}
+                                  />
+                                </div>
+                              </td>
+                              <td rowSpan={3} className="relative">
+                                <div className="absolute inset-0 px-2 py-1.5">
+                                  <textarea
+                                    value={iss.description}
+                                    onChange={(e) =>
+                                      onChange(
+                                        issues.map((x, idx) =>
+                                          idx === i
+                                            ? {
+                                                ...x,
+                                                description: e.target.value,
+                                              }
+                                            : x,
+                                        ),
+                                      )
+                                    }
+                                    className={`${cInp} resize-none w-full h-full`}
+                                    placeholder="Description…"
+                                  />
+                                </div>
+                              </td>
                             </>
                           )}
-                          <td className="px-2 py-1.5 text-secondary whitespace-nowrap">{type.label}</td>
-                          <td className="px-2 py-1.5"><input type="number" min="0" step="1" value={proposed} onChange={e => onChange(issues.map((x,idx)=>idx===i?setDraftAmount(x,type.key,"demanded",e.target.value):x))} className={cNum} /></td>
-                          <td className="px-2 py-1.5"><input type="number" min="0" step="1" value={dropped} onChange={e => onChange(issues.map((x,idx)=>idx===i?setDraftAmount(x,type.key,"dropped",e.target.value):x))} className={cNum} /></td>
-                          <td className="px-2 py-1.5"><input type="number" min="0" step="1" value={accepted} onChange={e => onChange(issues.map((x,idx)=>idx===i?setDraftAmount(x,type.key,"acceptable",e.target.value):x))} className={cNum} /></td>
-                          <td className="px-2 py-1.5 text-right text-secondary">{fmtInr(dispute)}</td>
-                          {ti === 0 && <td rowSpan={3} className="px-2 py-1.5 align-top text-center"><button type="button" onClick={() => onChange(issues.filter((_,idx)=>idx!==i))} title="Remove" className="text-red-400 hover:text-red-600 p-0.5 rounded transition-colors"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button></td>}
+                          <td className="px-2 py-1.5 text-secondary whitespace-nowrap">
+                            {type.label}
+                          </td>
+                          <td className="px-2 py-1.5 whitespace-nowrap">
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              value={
+                                demanded && demanded !== "0"
+                                  ? fmtInr(parseFloat(demanded) || 0)
+                                  : ""
+                              }
+                              placeholder="0"
+                              onChange={(e) => {
+                                const raw = e.target.value.replace(
+                                  /[^0-9]/g,
+                                  "",
+                                );
+                                onChange(
+                                  issues.map((x, idx) =>
+                                    idx === i
+                                      ? setDraftAmount(
+                                          x,
+                                          type.key,
+                                          "demanded",
+                                          raw,
+                                        )
+                                      : x,
+                                  ),
+                                );
+                              }}
+                              className={cNum}
+                            />
+                          </td>
+                          <td className="px-2 py-1.5 whitespace-nowrap">
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              value={
+                                dropped && dropped !== "0"
+                                  ? fmtInr(parseFloat(dropped) || 0)
+                                  : ""
+                              }
+                              placeholder="0"
+                              onChange={(e) => {
+                                const raw = e.target.value.replace(
+                                  /[^0-9]/g,
+                                  "",
+                                );
+                                onChange(
+                                  issues.map((x, idx) =>
+                                    idx === i
+                                      ? setDraftAmount(
+                                          x,
+                                          type.key,
+                                          "dropped",
+                                          raw,
+                                        )
+                                      : x,
+                                  ),
+                                );
+                              }}
+                              className={cNum}
+                            />
+                          </td>
+                          <td className="px-2 py-1.5 whitespace-nowrap">
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              value={
+                                acceptable && acceptable !== "0"
+                                  ? fmtInr(parseFloat(acceptable) || 0)
+                                  : ""
+                              }
+                              placeholder="0"
+                              onChange={(e) => {
+                                const raw = e.target.value.replace(
+                                  /[^0-9]/g,
+                                  "",
+                                );
+                                onChange(
+                                  issues.map((x, idx) =>
+                                    idx === i
+                                      ? setDraftAmount(
+                                          x,
+                                          type.key,
+                                          "acceptable",
+                                          raw,
+                                        )
+                                      : x,
+                                  ),
+                                );
+                              }}
+                              className={cNum}
+                            />
+                          </td>
+                          <td className="px-2 py-1.5 whitespace-nowrap">
+                            <div className="w-full px-1.5 py-1 text-xs text-right border border-accent rounded bg-surface-hover text-muted cursor-default select-none">
+                              {fmtInr(disputed)}
+                            </div>
+                          </td>
+                          {ti === 0 && (
+                            <td
+                              rowSpan={3}
+                              className="px-2 py-1.5 align-top text-center"
+                            >
+                              <button
+                                type="button"
+                                onClick={() => setDeleteConfirmIdx(i)}
+                                title="Remove"
+                                className="text-red-400 hover:text-red-600 p-0.5 rounded transition-colors"
+                              >
+                                <svg
+                                  className="w-3.5 h-3.5"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                  strokeWidth={2}
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                  />
+                                </svg>
+                              </button>
+                            </td>
+                          )}
                         </tr>
                       );
                     })}
                     <tr className="border-t border-border bg-surface-hover">
-                      <td colSpan={4} className="px-2 py-1 text-right font-semibold text-heading">Total</td>
-                      <td className="px-2 py-1 text-right font-semibold text-heading">{fmtInr(issueTotals.proposed)}</td>
-                      <td className="px-2 py-1 text-right font-semibold text-heading">{fmtInr(issueTotals.dropped)}</td>
-                      <td className="px-2 py-1 text-right font-semibold text-heading">{fmtInr(issueTotals.accepted)}</td>
-                      <td className="px-2 py-1 text-right font-semibold text-heading">{fmtInr(issueTotals.proposed-issueTotals.accepted-issueTotals.dropped)}</td>
+                      <td
+                        colSpan={4}
+                        className="px-2 py-1 text-right font-semibold text-heading"
+                      >
+                        Total
+                      </td>
+                      <td className="px-3 py-1 text-right font-semibold text-heading">
+                        {fmtInr(issueTotals.demanded)}
+                      </td>
+                      <td className="px-3 py-1 text-right font-semibold text-heading">
+                        {fmtInr(issueTotals.dropped)}
+                      </td>
+                      <td className="px-3 py-1 text-right font-semibold text-heading">
+                        {fmtInr(issueTotals.acceptable)}
+                      </td>
+                      <td className="px-3 py-1 text-right font-semibold text-heading">
+                        {fmtInr(
+                          issueTotals.demanded -
+                            issueTotals.acceptable -
+                            issueTotals.dropped,
+                        )}
+                      </td>
                       <td></td>
                     </tr>
                   </React.Fragment>
@@ -1763,11 +2220,24 @@ function DemandIssuesEditor({ issues, onChange }: {
             {issues.length > 1 && (
               <tfoot>
                 <tr className="border-t-2 border-border-strong bg-accent-tint">
-                  <td colSpan={4} className="px-2 py-1.5 text-right font-bold text-heading">Grand Total</td>
-                  <td className="px-2 py-1.5 text-right font-bold text-heading">{fmtInr(totals.proposed)}</td>
-                  <td className="px-2 py-1.5 text-right font-bold text-heading">{fmtInr(totals.dropped)}</td>
-                  <td className="px-2 py-1.5 text-right font-bold text-heading">{fmtInr(totals.accepted)}</td>
-                  <td className="px-2 py-1.5 text-right font-bold text-heading">{fmtInr(totals.proposed-totals.accepted-totals.dropped)}</td>
+                  <td
+                    colSpan={4}
+                    className="px-2 py-1.5 text-right font-bold text-heading"
+                  >
+                    Grand Total
+                  </td>
+                  <td className="px-3 py-1.5 text-right font-bold text-heading">
+                    {fmtInr(totals.demanded)}
+                  </td>
+                  <td className="px-3 py-1.5 text-right font-bold text-heading">
+                    {fmtInr(totals.dropped)}
+                  </td>
+                  <td className="px-3 py-1.5 text-right font-bold text-heading">
+                    {fmtInr(totals.acceptable)}
+                  </td>
+                  <td className="px-3 py-1.5 text-right font-bold text-heading">
+                    {fmtInr(totals.demanded - totals.acceptable - totals.dropped)}
+                  </td>
                   <td></td>
                 </tr>
               </tfoot>
@@ -1775,11 +2245,64 @@ function DemandIssuesEditor({ issues, onChange }: {
           </table>
         </div>
       )}
-      {issues.length === 0 && <p className="text-center text-xs text-muted py-6">No demand issues yet.</p>}
-      <button type="button" onClick={() => onChange([...issues, blankDraftIssue()])} className="flex items-center gap-1.5 text-xs px-3 py-1.5 border border-dashed border-accent text-accent rounded-lg hover:bg-accent-light transition-colors">
-        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+      {issues.length === 0 && (
+        <p className="text-center text-xs text-muted py-6">
+          No demand issues yet.
+        </p>
+      )}
+      <button
+        type="button"
+        onClick={() => onChange([...issues, blankDraftIssue()])}
+        className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition"
+      >
+        <svg
+          className="w-3.5 h-3.5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 4v16m8-8H4"
+          />
+        </svg>
         Add Issue
       </button>
+
+      {deleteConfirmIdx !== null && (
+        <div className="absolute inset-0 bg-black/30 flex items-center justify-center z-10 rounded-xl">
+          <div className="bg-white rounded-xl shadow-xl border border-border p-6 w-full max-w-sm mx-4">
+            <h3 className="text-base font-semibold text-heading mb-2">
+              Remove Demand Issue?
+            </h3>
+            <p className="text-sm text-secondary mb-5">
+              Issue #{deleteConfirmIdx + 1} will be removed. This cannot be
+              undone after saving.
+            </p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmIdx(null)}
+                className="flex-1 px-4 py-2 text-sm border border-border rounded-lg text-heading hover:bg-page transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onChange(issues.filter((_, idx) => idx !== deleteConfirmIdx));
+                  setDeleteConfirmIdx(null);
+                }}
+                className="flex-1 px-4 py-2 text-sm bg-danger hover:bg-red-700 text-white rounded-lg font-medium transition"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1788,26 +2311,42 @@ function DemandIssuesEditor({ issues, onChange }: {
 function DemandIssuesReadOnly({ issues }: { issues: DemandIssue[] }) {
   const totals = issues.reduce(
     (acc, iss) => {
-      acc.proposed += iss.tax_demanded+iss.interest_demanded+iss.penalty_demanded;
-      acc.accepted += iss.tax_acceptable+iss.interest_acceptable+iss.penalty_acceptable;
-      acc.dropped += (iss.tax_dropped??0)+(iss.interest_dropped??0)+(iss.penalty_dropped??0);
+      acc.demanded +=
+        iss.tax_demanded + iss.interest_demanded + iss.penalty_demanded;
+      acc.acceptable +=
+        iss.tax_acceptable + iss.interest_acceptable + iss.penalty_acceptable;
+      acc.dropped +=
+        (iss.tax_dropped ?? 0) +
+        (iss.interest_dropped ?? 0) +
+        (iss.penalty_dropped ?? 0);
       return acc;
     },
-    { proposed: 0, accepted: 0, dropped: 0 }
+    { demanded: 0, acceptable: 0, dropped: 0 },
   );
-  if (issues.length === 0) return <p className="text-xs text-muted py-2">No demand amounts recorded.</p>;
+  if (issues.length === 0)
+    return (
+      <p className="text-xs text-muted py-2">No demand amounts recorded.</p>
+    );
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-4 gap-3">
         {[
-          { label: "Total Amount Proposed", value: totals.proposed },
+          { label: "Total Amount Demanded", value: totals.demanded },
           { label: "Total Amount Dropped", value: totals.dropped },
-          { label: "Total Amount Accepted", value: totals.accepted },
-          { label: "Total Amount Dispute", value: totals.proposed-totals.accepted-totals.dropped },
+          { label: "Total Amount Acceptable", value: totals.acceptable },
+          {
+            label: "Total Amount Disputed",
+            value: totals.demanded - totals.acceptable - totals.dropped,
+          },
         ].map(({ label, value }) => (
-          <div key={label} className="bg-white border border-border rounded-lg px-3 py-2.5">
+          <div
+            key={label}
+            className="bg-white border border-border rounded-lg px-3 py-2.5"
+          >
             <p className="text-xs text-muted mb-0.5">{label}</p>
-            <p className="text-sm font-semibold text-heading">₹{fmtInr(value)}</p>
+            <p className="text-sm font-semibold text-heading">
+              ₹{fmtInr(value)}
+            </p>
           </div>
         ))}
       </div>
@@ -1816,42 +2355,132 @@ function DemandIssuesReadOnly({ issues }: { issues: DemandIssue[] }) {
           <thead>
             <tr className="bg-table-header text-left">
               <th className="px-2 py-2 font-semibold text-heading w-8">#</th>
-              <th className="px-2 py-2 font-semibold text-heading">Notice No</th>
-              <th className="px-2 py-2 font-semibold text-heading">Notice Date</th>
-              <th className="px-2 py-2 font-semibold text-heading">Description of Issue</th>
+              <th className="px-2 py-2 font-semibold text-heading w-[130px]">
+                Notice No / Date
+              </th>
+              <th className="px-2 py-2 font-semibold text-heading min-w-[220px]">
+                Description of the Issue
+              </th>
               <th className="px-2 py-2 font-semibold text-heading">Type</th>
-              <th className="px-2 py-2 font-semibold text-heading text-right">Proposed (₹)</th>
-              <th className="px-2 py-2 font-semibold text-heading text-right">Dropped (₹)</th>
-              <th className="px-2 py-2 font-semibold text-heading text-right">Accepted (₹)</th>
-              <th className="px-2 py-2 font-semibold text-heading text-right">Dispute (₹)</th>
+              <th className="px-2 py-2 font-semibold text-heading text-right">
+                Demanded (₹)
+              </th>
+              <th className="px-2 py-2 font-semibold text-heading text-right">
+                Dropped (₹)
+              </th>
+              <th className="px-2 py-2 font-semibold text-heading text-right">
+                Acceptable (₹)
+              </th>
+              <th className="px-2 py-2 font-semibold text-heading text-right">
+                Disputed (₹)
+              </th>
             </tr>
           </thead>
           <tbody>
             {issues.map((iss, i) => {
               const rows = [
-                { label: "Tax demand", proposed: iss.tax_demanded, accepted: iss.tax_acceptable, dropped: iss.tax_dropped??0 },
-                { label: "Interest demand", proposed: iss.interest_demanded, accepted: iss.interest_acceptable, dropped: iss.interest_dropped??0 },
-                { label: "Penalty demand", proposed: iss.penalty_demanded, accepted: iss.penalty_acceptable, dropped: iss.penalty_dropped??0 },
+                {
+                  label: "Tax demand",
+                  demanded: iss.tax_demanded,
+                  acceptable: iss.tax_acceptable,
+                  dropped: iss.tax_dropped ?? 0,
+                },
+                {
+                  label: "Interest demand",
+                  demanded: iss.interest_demanded,
+                  acceptable: iss.interest_acceptable,
+                  dropped: iss.interest_dropped ?? 0,
+                },
+                {
+                  label: "Penalty demand",
+                  demanded: iss.penalty_demanded,
+                  acceptable: iss.penalty_acceptable,
+                  dropped: iss.penalty_dropped ?? 0,
+                },
               ];
-              const issueTotals = rows.reduce((a, r) => ({ proposed: a.proposed+r.proposed, accepted: a.accepted+r.accepted, dropped: a.dropped+r.dropped }), { proposed: 0, accepted: 0, dropped: 0 });
+              const issueTotals = rows.reduce(
+                (a, r) => ({
+                  demanded: a.demanded + r.demanded,
+                  acceptable: a.acceptable + r.acceptable,
+                  dropped: a.dropped + r.dropped,
+                }),
+                { demanded: 0, acceptable: 0, dropped: 0 },
+              );
               return (
                 <React.Fragment key={iss.id}>
                   {rows.map((row, ri) => (
                     <tr key={`${i}-${ri}`} className="border-t border-border">
-                      {ri === 0 && (<><td rowSpan={3} className="px-2 py-1.5 text-center text-muted align-top">{i+1}</td><td rowSpan={3} className="px-2 py-1.5 align-top text-secondary">{iss.notice_no||"—"}</td><td rowSpan={3} className="px-2 py-1.5 align-top text-secondary whitespace-nowrap">{iss.notice_date?new Date(iss.notice_date).toLocaleDateString("en-IN"):"—"}</td><td rowSpan={3} className="px-2 py-1.5 align-top text-secondary">{iss.description||"—"}</td></>)}
-                      <td className="px-2 py-1.5 text-secondary whitespace-nowrap">{row.label}</td>
-                      <td className="px-2 py-1.5 text-right text-secondary">{fmtInr(row.proposed)}</td>
-                      <td className="px-2 py-1.5 text-right text-secondary">{fmtInr(row.dropped)}</td>
-                      <td className="px-2 py-1.5 text-right text-secondary">{fmtInr(row.accepted)}</td>
-                      <td className="px-2 py-1.5 text-right text-secondary">{fmtInr(row.proposed-row.accepted-row.dropped)}</td>
+                      {ri === 0 && (
+                        <>
+                          <td
+                            rowSpan={3}
+                            className="px-2 py-1.5 text-center text-muted align-top"
+                          >
+                            {i + 1}
+                          </td>
+                          <td
+                            rowSpan={3}
+                            className="px-2 py-1.5 align-top text-secondary"
+                          >
+                            <div className="flex flex-col gap-0.5">
+                              <span>{iss.notice_no || "—"}</span>
+                              <span className="text-muted text-xs">
+                                {iss.notice_date
+                                  ? new Date(
+                                      iss.notice_date,
+                                    ).toLocaleDateString("en-IN")
+                                  : "—"}
+                              </span>
+                            </div>
+                          </td>
+                          <td
+                            rowSpan={3}
+                            className="px-2 py-1.5 align-top text-secondary"
+                          >
+                            {iss.description || "—"}
+                          </td>
+                        </>
+                      )}
+                      <td className="px-2 py-1.5 text-secondary whitespace-nowrap">
+                        {row.label}
+                      </td>
+                      <td className="px-2 py-1.5 text-right text-secondary">
+                        {fmtInr(row.demanded)}
+                      </td>
+                      <td className="px-2 py-1.5 text-right text-secondary">
+                        {fmtInr(row.dropped)}
+                      </td>
+                      <td className="px-2 py-1.5 text-right text-secondary">
+                        {fmtInr(row.acceptable)}
+                      </td>
+                      <td className="px-2 py-1.5 text-right text-secondary">
+                        {fmtInr(row.demanded - row.acceptable - row.dropped)}
+                      </td>
                     </tr>
                   ))}
                   <tr className="border-t border-border bg-surface-hover">
-                    <td colSpan={4} className="px-2 py-1 text-right font-semibold text-heading">Total</td>
-                    <td className="px-2 py-1 text-right font-semibold text-heading">{fmtInr(issueTotals.proposed)}</td>
-                    <td className="px-2 py-1 text-right font-semibold text-heading">{fmtInr(issueTotals.dropped)}</td>
-                    <td className="px-2 py-1 text-right font-semibold text-heading">{fmtInr(issueTotals.accepted)}</td>
-                    <td className="px-2 py-1 text-right font-semibold text-heading">{fmtInr(issueTotals.proposed-issueTotals.accepted-issueTotals.dropped)}</td>
+                    <td
+                      colSpan={4}
+                      className="px-2 py-1 text-right font-semibold text-heading"
+                    >
+                      Total
+                    </td>
+                    <td className="px-2 py-1 text-right font-semibold text-heading">
+                      {fmtInr(issueTotals.demanded)}
+                    </td>
+                    <td className="px-2 py-1 text-right font-semibold text-heading">
+                      {fmtInr(issueTotals.dropped)}
+                    </td>
+                    <td className="px-2 py-1 text-right font-semibold text-heading">
+                      {fmtInr(issueTotals.acceptable)}
+                    </td>
+                    <td className="px-2 py-1 text-right font-semibold text-heading">
+                      {fmtInr(
+                        issueTotals.demanded -
+                          issueTotals.acceptable -
+                          issueTotals.dropped,
+                      )}
+                    </td>
                   </tr>
                 </React.Fragment>
               );
@@ -1860,11 +2489,24 @@ function DemandIssuesReadOnly({ issues }: { issues: DemandIssue[] }) {
           {issues.length > 1 && (
             <tfoot>
               <tr className="border-t-2 border-border-strong bg-accent-tint">
-                <td colSpan={4} className="px-2 py-1.5 text-right font-bold text-heading">Grand Total</td>
-                <td className="px-2 py-1.5 text-right font-bold text-heading">{fmtInr(totals.proposed)}</td>
-                <td className="px-2 py-1.5 text-right font-bold text-heading">{fmtInr(totals.dropped)}</td>
-                <td className="px-2 py-1.5 text-right font-bold text-heading">{fmtInr(totals.accepted)}</td>
-                <td className="px-2 py-1.5 text-right font-bold text-heading">{fmtInr(totals.proposed-totals.accepted-totals.dropped)}</td>
+                <td
+                  colSpan={4}
+                  className="px-2 py-1.5 text-right font-bold text-heading"
+                >
+                  Grand Total
+                </td>
+                <td className="px-2 py-1.5 text-right font-bold text-heading">
+                  {fmtInr(totals.demanded)}
+                </td>
+                <td className="px-2 py-1.5 text-right font-bold text-heading">
+                  {fmtInr(totals.dropped)}
+                </td>
+                <td className="px-2 py-1.5 text-right font-bold text-heading">
+                  {fmtInr(totals.acceptable)}
+                </td>
+                <td className="px-2 py-1.5 text-right font-bold text-heading">
+                  {fmtInr(totals.demanded - totals.acceptable - totals.dropped)}
+                </td>
               </tr>
             </tfoot>
           )}
@@ -1875,7 +2517,13 @@ function DemandIssuesReadOnly({ issues }: { issues: DemandIssue[] }) {
 }
 
 // ─── Modal wrapper ─────────────────────────────────────────────────
-function Modal({ title, onClose, isDirty, size = "md", children }: {
+function Modal({
+  title,
+  onClose,
+  isDirty,
+  size = "md",
+  children,
+}: {
   title: string;
   onClose: () => void;
   isDirty?: boolean;
@@ -1898,7 +2546,9 @@ function Modal({ title, onClose, isDirty, size = "md", children }: {
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-      <div className={`bg-white rounded-xl shadow-xl border border-border w-full ${size === "lg" ? "max-w-7xl h-[92vh]" : "max-w-2xl max-h-[90vh]"} flex flex-col`}>
+      <div
+        className={`bg-white rounded-xl shadow-xl border border-border w-full ${size === "lg" ? "max-w-5xl h-[88vh]" : "max-w-2xl max-h-[90vh]"} flex flex-col`}
+      >
         <div className="px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
           <h3 className="text-base font-semibold text-heading">{title}</h3>
           <button
@@ -1920,7 +2570,15 @@ function Modal({ title, onClose, isDirty, size = "md", children }: {
             </svg>
           </button>
         </div>
-        <div className="p-6 overflow-y-auto flex-1">{children}</div>
+        <div
+          className={
+            size === "lg"
+              ? "flex-1 overflow-hidden flex flex-col"
+              : "p-6 overflow-y-auto flex-1"
+          }
+        >
+          {children}
+        </div>
       </div>
       {showDiscard && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
@@ -2565,10 +3223,17 @@ export default function AppealDetailClient({
   const [editProcValues, setEditProcValues] = useState<ProceedingInput>({});
   const [editProcSaving, setEditProcSaving] = useState(false);
   const [editProcError, setEditProcError] = useState<string | null>(null);
-  const [editProcTab, setEditProcTab] = useState<"details" | "contacts" | "amount">("details");
-  const [editProcContacts, setEditProcContacts] = useState<ProceedingContact[]>([]);
-  const [editProcDemandIssues, setEditProcDemandIssues] = useState<DraftDemandIssue[]>([]);
+  const [editProcTab, setEditProcTab] = useState<
+    "details" | "contacts" | "amount"
+  >("details");
+  const [editProcContacts, setEditProcContacts] = useState<ProceedingContact[]>(
+    [],
+  );
+  const [editProcDemandIssues, setEditProcDemandIssues] = useState<
+    DraftDemandIssue[]
+  >([]);
   const editProcContactsInitRef = useRef<ProceedingContact[]>([]);
+  const editProcDemandInitRef = useRef<DraftDemandIssue[]>([]);
 
   async function openEditProc(proc: Proceeding) {
     const initValues: ProceedingInput = {
@@ -2590,6 +3255,8 @@ export default function AppealDetailClient({
     editProcInitRef.current = initValues;
     const initContacts = proc.contacts ?? [];
     editProcContactsInitRef.current = initContacts;
+    editProcDemandInitRef.current = [];
+    setEditProcDemandIssues([]);
     setEditProc(proc);
     setEditProcValues(initValues);
     setEditProcContacts(initContacts);
@@ -2597,8 +3264,13 @@ export default function AppealDetailClient({
     setEditProcError(null);
     try {
       const existing = await getDemandIssues(proc.id);
-      setEditProcDemandIssues(existing.map(toDraftIssue));
-    } catch { setEditProcDemandIssues([]); }
+      const drafts = existing.map(toDraftIssue);
+      editProcDemandInitRef.current = drafts;
+      setEditProcDemandIssues(drafts);
+    } catch {
+      editProcDemandInitRef.current = [];
+      setEditProcDemandIssues([]);
+    }
   }
 
   async function handleSaveProc(e: React.FormEvent) {
@@ -2607,12 +3279,27 @@ export default function AppealDetailClient({
     setEditProcSaving(true);
     setEditProcError(null);
     try {
-      await updateProceeding(editProc.id, { ...editProcValues, contacts: editProcContacts });
-      await saveDemandIssues(editProc.id, editProcDemandIssues.map((d, i) => fromDraftIssue(d, i)));
-      const saved = editProcDemandIssues.map((d, i) => ({ ...fromDraftIssue(d, i), id: "", proceeding_id: editProc.id, created_at: "" } as DemandIssue));
-      setDemandIssuesByProc(prev => ({ ...prev, [editProc.id]: saved }));
-      setDemandLoadedProcs(prev => new Set(prev).add(editProc.id));
-      setEditProc(null); router.refresh();
+      await updateProceeding(editProc.id, {
+        ...editProcValues,
+        contacts: editProcContacts,
+      });
+      await saveDemandIssues(
+        editProc.id,
+        editProcDemandIssues.map((d, i) => fromDraftIssue(d, i)),
+      );
+      const saved = editProcDemandIssues.map(
+        (d, i) =>
+          ({
+            ...fromDraftIssue(d, i),
+            id: "",
+            proceeding_id: editProc.id,
+            created_at: "",
+          }) as DemandIssue,
+      );
+      setDemandIssuesByProc((prev) => ({ ...prev, [editProc.id]: saved }));
+      setDemandLoadedProcs((prev) => new Set(prev).add(editProc.id));
+      setEditProc(null);
+      router.refresh();
     } catch (err) {
       setEditProcError(err instanceof Error ? err.message : "Failed to save.");
     } finally {
@@ -2625,9 +3312,15 @@ export default function AppealDetailClient({
   const [addProcValues, setAddProcValues] = useState<ProceedingInput>({});
   const [addProcSaving, setAddProcSaving] = useState(false);
   const [addProcError, setAddProcError] = useState<string | null>(null);
-  const [addProcTab, setAddProcTab] = useState<"details" | "contacts" | "amount">("details");
-  const [addProcContacts, setAddProcContacts] = useState<ProceedingContact[]>([]);
-  const [addProcDemandIssues, setAddProcDemandIssues] = useState<DraftDemandIssue[]>([]);
+  const [addProcTab, setAddProcTab] = useState<
+    "details" | "contacts" | "amount"
+  >("details");
+  const [addProcContacts, setAddProcContacts] = useState<ProceedingContact[]>(
+    [],
+  );
+  const [addProcDemandIssues, setAddProcDemandIssues] = useState<
+    DraftDemandIssue[]
+  >([]);
 
   const [addProcPendingFiles, setAddProcPendingFiles] = useState<
     { file: File; desc: string }[]
@@ -2666,9 +3359,18 @@ export default function AppealDetailClient({
         }
       }
       if (addProcDemandIssues.length > 0) {
-        await saveDemandIssues(procId, addProcDemandIssues.map((d, i) => fromDraftIssue(d, i)));
+        await saveDemandIssues(
+          procId,
+          addProcDemandIssues.map((d, i) => fromDraftIssue(d, i)),
+        );
       }
-      setShowAddProc(false); setAddProcValues({}); setAddProcPendingFiles([]); setAddProcContacts([]); setAddProcDemandIssues([]); setAddProcTab("details"); router.refresh();
+      setShowAddProc(false);
+      setAddProcValues({});
+      setAddProcPendingFiles([]);
+      setAddProcContacts([]);
+      setAddProcDemandIssues([]);
+      setAddProcTab("details");
+      router.refresh();
     } catch (err) {
       setAddProcError(
         err instanceof Error ? err.message : "Failed to add proceeding.",
@@ -3007,40 +3709,46 @@ export default function AppealDetailClient({
   }, confirmDeleteAppeal);
 
   // ── isDirty flags for each modal ──
-  const editAppealIsDirty = showEditAppeal && (
-    editClientId !== (clientOrg?.id ?? "") ||
-    editFY !== (appeal.financial_year?.id ?? "") ||
-    editAY !== (appeal.assessment_year?.id ?? "") ||
-    editAct !== (appeal.act_regulation?.id ?? "") ||
-    editAppealStatus !== (appeal.status ?? "open") ||
-    editLitigationType !== (appeal.litigation_type ?? "")
-  );
-  const editProcIsDirty = !!editProc && (
-    JSON.stringify(editProcValues) !== JSON.stringify(editProcInitRef.current) ||
-    JSON.stringify(editProcContacts) !== JSON.stringify(editProcContactsInitRef.current) ||
-    editProcDemandIssues.length > 0
-  );
-  const addProcIsDirty = showAddProc && (
-    addProcPendingFiles.length > 0 ||
-    addProcContacts.length > 0 ||
-    addProcDemandIssues.length > 0 ||
-    Object.values(addProcValues).some(v => Array.isArray(v) ? v.length > 0 : !!v)
-  );
-  const editEventIsDirty = !!editEvent && (
-    editEventCategory !== editEventInitRef.current.category ||
-    JSON.stringify(editEventDetails) !== JSON.stringify(editEventInitRef.current.details) ||
-    editEventDescription !== editEventInitRef.current.description ||
-    editEventStatus !== editEventInitRef.current.status ||
-    editEventNoticeNumber !== editEventInitRef.current.noticeNumber ||
-    editEventParentId !== editEventInitRef.current.parentId
-  );
-  const addEventIsDirty = !!addEventProcId && (
-    !!eventCategory ||
-    Object.values(eventDetails).some(v => !!v) ||
-    !!eventDescription ||
-    !!eventNoticeNumber ||
-    addEventPendingFiles.length > 0
-  );
+  const editAppealIsDirty =
+    showEditAppeal &&
+    (editClientId !== (clientOrg?.id ?? "") ||
+      editFY !== (appeal.financial_year?.id ?? "") ||
+      editAY !== (appeal.assessment_year?.id ?? "") ||
+      editAct !== (appeal.act_regulation?.id ?? "") ||
+      editAppealStatus !== (appeal.status ?? "open") ||
+      editLitigationType !== (appeal.litigation_type ?? ""));
+  const editProcIsDirty =
+    !!editProc &&
+    (JSON.stringify(editProcValues) !==
+      JSON.stringify(editProcInitRef.current) ||
+      JSON.stringify(editProcContacts) !==
+        JSON.stringify(editProcContactsInitRef.current) ||
+      JSON.stringify(editProcDemandIssues) !==
+        JSON.stringify(editProcDemandInitRef.current));
+  const addProcIsDirty =
+    showAddProc &&
+    (addProcPendingFiles.length > 0 ||
+      addProcContacts.length > 0 ||
+      addProcDemandIssues.length > 0 ||
+      Object.values(addProcValues).some((v) =>
+        Array.isArray(v) ? v.length > 0 : !!v,
+      ));
+  const editEventIsDirty =
+    !!editEvent &&
+    (editEventCategory !== editEventInitRef.current.category ||
+      JSON.stringify(editEventDetails) !==
+        JSON.stringify(editEventInitRef.current.details) ||
+      editEventDescription !== editEventInitRef.current.description ||
+      editEventStatus !== editEventInitRef.current.status ||
+      editEventNoticeNumber !== editEventInitRef.current.noticeNumber ||
+      editEventParentId !== editEventInitRef.current.parentId);
+  const addEventIsDirty =
+    !!addEventProcId &&
+    (!!eventCategory ||
+      Object.values(eventDetails).some((v) => !!v) ||
+      !!eventDescription ||
+      !!eventNoticeNumber ||
+      addEventPendingFiles.length > 0);
 
   const sortedProceedings = [...(appeal.proceedings ?? [])]
     .filter((p) => !p.deleted_at)
@@ -3051,16 +3759,22 @@ export default function AppealDetailClient({
 
   // Track which proceedings are expanded (collapsed by default)
   const [expandedProcs, setExpandedProcs] = useState<Set<string>>(new Set());
-  const [demandIssuesByProc, setDemandIssuesByProc] = useState<Record<string, DemandIssue[]>>({});
-  const [demandLoadedProcs, setDemandLoadedProcs] = useState<Set<string>>(new Set());
+  const [demandIssuesByProc, setDemandIssuesByProc] = useState<
+    Record<string, DemandIssue[]>
+  >({});
+  const [demandLoadedProcs, setDemandLoadedProcs] = useState<Set<string>>(
+    new Set(),
+  );
 
   async function loadDemandForProc(procId: string) {
     if (demandLoadedProcs.has(procId)) return;
     try {
       const issues = await getDemandIssues(procId);
-      setDemandIssuesByProc(prev => ({ ...prev, [procId]: issues }));
-      setDemandLoadedProcs(prev => new Set(prev).add(procId));
-    } catch { /* silently ignore */ }
+      setDemandIssuesByProc((prev) => ({ ...prev, [procId]: issues }));
+      setDemandLoadedProcs((prev) => new Set(prev).add(procId));
+    } catch {
+      /* silently ignore */
+    }
   }
 
   function toggleProc(id: string) {
@@ -3101,15 +3815,23 @@ export default function AppealDetailClient({
   );
 
   // Map: main event ID → count of live sub-events (used in delete confirmation dialog)
-  const liveSubCountByParent = (appeal.proceedings ?? []).reduce((acc, p) => {
-    (p.events ?? [])
-      .filter((e) => !(e as AppEvent).deleted_at && (e as AppEvent).event_type === "sub" && (e as AppEvent).parent_event_id)
-      .forEach((e) => {
-        const pid = (e as AppEvent).parent_event_id!;
-        acc[pid] = (acc[pid] ?? 0) + 1;
-      });
-    return acc;
-  }, {} as Record<string, number>);
+  const liveSubCountByParent = (appeal.proceedings ?? []).reduce(
+    (acc, p) => {
+      (p.events ?? [])
+        .filter(
+          (e) =>
+            !(e as AppEvent).deleted_at &&
+            (e as AppEvent).event_type === "sub" &&
+            (e as AppEvent).parent_event_id,
+        )
+        .forEach((e) => {
+          const pid = (e as AppEvent).parent_event_id!;
+          acc[pid] = (acc[pid] ?? 0) + 1;
+        });
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
 
   // ── Render ──
   return (
@@ -3123,7 +3845,7 @@ export default function AppealDetailClient({
         }}
       >
         <div
-          className={`grid ${detailHideAY ? "grid-cols-[2fr_3fr_1fr_auto]" : "grid-cols-[2fr_3fr_1fr_1fr_auto]"} items-center gap-4 px-6 py-5`}
+          className={`grid ${detailHideAY ? "grid-cols-[2fr_3fr_1fr_110px_200px_142px]" : "grid-cols-[2fr_3fr_1fr_1fr_110px_200px_142px]"} items-center gap-4 px-6 py-5`}
         >
           <DetailRow
             label="Client"
@@ -3143,171 +3865,174 @@ export default function AppealDetailClient({
               value={appeal.assessment_year?.name}
             />
           )}
-          <div className="flex items-center gap-6 shrink-0">
-            <div>
-              <p
-                className="text-xs mb-0.5 text-white/70"
-                style={{ textShadow: "0 0 8px rgba(0,0,0,0.7)" }}
+          {/* Status — own fixed column, aligns with proceeding Status column */}
+          <div className="ml-10">
+            <p
+              className="text-xs mb-0.5 text-white/70"
+              style={{ textShadow: "0 0 8px rgba(0,0,0,0.7)" }}
+            >
+              Status
+            </p>
+            {canEdit ? (
+              <div
+                className="relative inline-flex items-center"
+                onClick={(e) => e.stopPropagation()}
               >
-                Status
-              </p>
-              {canEdit ? (
-                <div
-                  className="relative inline-flex items-center"
-                  onClick={(e) => e.stopPropagation()}
+                <select
+                  value={appeal.status ?? "open"}
+                  disabled={inlineSaving.appeal_status}
+                  onChange={(e) => handleAppealStatusInline(e.target.value)}
+                  className={`appearance-none bg-transparent border border-white/30 rounded-full pl-2.5 pr-7 py-0.5 text-sm font-semibold cursor-pointer focus:outline-none focus:border-white/50 disabled:opacity-50 ${
+                    (appeal.status ?? "open") === "closed"
+                      ? "text-gray-400"
+                      : "text-blue-300"
+                  }`}
                 >
-                  <select
-                    value={appeal.status ?? "open"}
-                    disabled={inlineSaving.appeal_status}
-                    onChange={(e) => handleAppealStatusInline(e.target.value)}
-                    className={`appearance-none bg-transparent border border-white/30 rounded-full pl-2.5 pr-7 py-0.5 text-sm font-semibold cursor-pointer focus:outline-none focus:border-white/50 disabled:opacity-50 ${
-                      (appeal.status ?? "open") === "closed"
-                        ? "text-gray-400"
-                        : "text-blue-300"
-                    }`}
+                  <option
+                    value="open"
+                    className="text-blue-700 bg-white font-normal"
                   >
-                    <option
-                      value="open"
-                      className="text-blue-700 bg-white font-normal"
-                    >
-                      Open
-                    </option>
-                    <option
-                      value="closed"
-                      className="text-gray-500 bg-white font-normal"
-                    >
-                      Closed
-                    </option>
-                  </select>
-                  <svg
-                    className="pointer-events-none absolute right-2 w-3 h-3 text-white/40 shrink-0"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2.5}
+                    Open
+                  </option>
+                  <option
+                    value="closed"
+                    className="text-gray-500 bg-white font-normal"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
-              ) : (
-                (() => {
-                  const s = STATUS_CFG[appeal.status ?? "open"];
-                  const textCls =
-                    appeal.status === "in-progress"
-                      ? "text-amber-400"
-                      : (s?.cls.split(" ").find((c) => c.startsWith("text-")) ??
-                        "text-white");
-                  return s ? (
-                    <span className={`text-sm font-semibold ${textCls}`}>
-                      {s.label}
-                    </span>
-                  ) : null;
-                })()
-              )}
-            </div>
-            <div>
-              <p
-                className="text-xs mb-0.5 text-white/70"
-                style={{ textShadow: "0 0 8px rgba(0,0,0,0.7)" }}
-              >
-                Litigation Type
-              </p>
-              {canEdit ? (
-                <div
-                  className="relative inline-flex items-center"
-                  onClick={(e) => e.stopPropagation()}
+                    Closed
+                  </option>
+                </select>
+                <svg
+                  className="pointer-events-none absolute right-2 w-3 h-3 text-white/40 shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
                 >
-                  <select
-                    value={appeal.litigation_type ?? ""}
-                    disabled={inlineSaving.appeal_litigation_type}
-                    onChange={(e) => handleAppealLitigationTypeInline(e.target.value)}
-                    className="appearance-none bg-transparent border border-white/30 rounded-full pl-2.5 pr-7 py-0.5 text-sm font-semibold cursor-pointer focus:outline-none focus:border-white/50 disabled:opacity-50 text-white/90 max-w-52 truncate"
-                  >
-                    <option value="" className="text-secondary bg-white font-normal">
-                      — Not set —
-                    </option>
-                    {LITIGATION_TYPES.map((t) => (
-                      <option key={t} value={t} className="text-heading bg-white font-normal">
-                        {t}
-                      </option>
-                    ))}
-                  </select>
-                  <svg
-                    className="pointer-events-none absolute right-2 w-3 h-3 text-white/40 shrink-0"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2.5}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
-              ) : (
-                <span className="text-sm font-semibold text-white/90">
-                  {appeal.litigation_type ?? "—"}
-                </span>
-              )}
-            </div>
-            {canEdit && (
-              <div className="flex items-center gap-0.5">
-                <button
-                  onClick={() => {
-                    setEditClientId(clientOrg?.id ?? "");
-                    setEditFY(appeal.financial_year?.id ?? "");
-                    setEditAY(appeal.assessment_year?.id ?? "");
-                    setEditAct(appeal.act_regulation?.id ?? "");
-                    setEditAppealStatus(appeal.status ?? "open");
-                    setEditLitigationType(appeal.litigation_type ?? "");
-                    setAppealError(null);
-                    setShowEditAppeal(true);
-                  }}
-                  title="Edit Litigation"
-                  className="p-1.5 rounded hover:bg-white/10 transition-colors text-white/50 hover:text-white inline-flex"
-                >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                    />
-                  </svg>
-                </button>
-                <button
-                  onClick={() => setConfirmDeleteAppeal(true)}
-                  title="Delete Litigation"
-                  className="p-1.5 rounded hover:bg-red-900/20 transition-colors text-red-400 hover:text-red-300 inline-flex"
-                >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                  </svg>
-                </button>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
               </div>
+            ) : (
+              (() => {
+                const s = STATUS_CFG[appeal.status ?? "open"];
+                const textCls =
+                  appeal.status === "in-progress"
+                    ? "text-amber-400"
+                    : (s?.cls.split(" ").find((c) => c.startsWith("text-")) ??
+                      "text-white");
+                return s ? (
+                  <span className={`text-sm font-semibold ${textCls}`}>
+                    {s.label}
+                  </span>
+                ) : null;
+              })()
             )}
           </div>
+          {/* Litigation Type — own fixed column */}
+          <div>
+            <p
+              className="text-xs mb-0.5 text-white/70"
+              style={{ textShadow: "0 0 8px rgba(0,0,0,0.7)" }}
+            >
+              Litigation Type
+            </p>
+            {canEdit ? (
+              <div
+                className="relative inline-flex items-center"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <select
+                  value={appeal.litigation_type ?? ""}
+                  disabled={inlineSaving.appeal_litigation_type}
+                  onChange={(e) => handleAppealLitigationTypeInline(e.target.value)}
+                  className="appearance-none bg-transparent border border-white/30 rounded-full pl-2.5 pr-7 py-0.5 text-sm font-semibold cursor-pointer focus:outline-none focus:border-white/50 disabled:opacity-50 text-white/90 max-w-48 truncate"
+                >
+                  <option value="" className="text-secondary bg-white font-normal">
+                    — Not set —
+                  </option>
+                  {LITIGATION_TYPES.map((t) => (
+                    <option key={t} value={t} className="text-heading bg-white font-normal">
+                      {t}
+                    </option>
+                  ))}
+                </select>
+                <svg
+                  className="pointer-events-none absolute right-2 w-3 h-3 text-white/40 shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </div>
+            ) : (
+              <span className="text-sm font-semibold text-white/90">
+                {appeal.litigation_type ?? "—"}
+              </span>
+            )}
+          </div>
+          {/* Actions — own auto column, aligns with proceeding Actions column */}
+          {canEdit ? (
+            <div className="flex items-center justify-end gap-0.5 px-4">
+              <button
+                onClick={() => {
+                  setEditClientId(clientOrg?.id ?? "");
+                  setEditFY(appeal.financial_year?.id ?? "");
+                  setEditAY(appeal.assessment_year?.id ?? "");
+                  setEditAct(appeal.act_regulation?.id ?? "");
+                  setEditAppealStatus(appeal.status ?? "open");
+                  setEditLitigationType(appeal.litigation_type ?? "");
+                  setAppealError(null);
+                  setShowEditAppeal(true);
+                }}
+                title="Edit Litigation"
+                className="p-1.5 rounded hover:bg-white/10 transition-colors text-white/50 hover:text-white inline-flex"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                  />
+                </svg>
+              </button>
+              <button
+                onClick={() => setConfirmDeleteAppeal(true)}
+                title="Delete Litigation"
+                className="p-1.5 rounded hover:bg-red-900/20 transition-colors text-red-400 hover:text-red-300 inline-flex"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+              </button>
+            </div>
+          ) : (
+            <div />
+          )}
         </div>
       </div>
 
@@ -3403,6 +4128,7 @@ export default function AppealDetailClient({
                     <DetailRow
                       label="Jurisdiction"
                       value={proc.authority_type || null}
+                      truncate
                     />
                   </div>
 
@@ -3588,7 +4314,7 @@ export default function AppealDetailClient({
                   </div>
 
                   {/* COL 7 — Mode */}
-                  <div className="py-4 pl-2">
+                  <div className="py-4 pl-4">
                     <p
                       className="text-xs mb-0.5 text-white/70"
                       style={{ textShadow: "0 0 8px rgba(0,0,0,0.7)" }}
@@ -3698,6 +4424,33 @@ export default function AppealDetailClient({
                               strokeLinecap="round"
                               strokeLinejoin="round"
                               d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                            />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => {
+                            openEditProc(proc);
+                            setEditProcTab("amount");
+                          }}
+                          title="Demand Details"
+                          className="p-1.5 rounded hover:bg-white/10 transition-colors text-white/50 hover:text-white inline-flex"
+                        >
+                          <svg
+                            className="w-3.5 h-3.5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M6 3h12M6 8h12M6 13l8.5 8"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M6 13h3c3.866 0 7-3.134 7-7"
                             />
                           </svg>
                         </button>
@@ -3824,7 +4577,8 @@ export default function AppealDetailClient({
                         return ev.created_at;
                       }
                       function getSubEventSortDate(ev: AppEvent): string {
-                        const effectiveCat = ev.category === "others" ? "others_sub" : ev.category;
+                        const effectiveCat =
+                          ev.category === "others" ? "others_sub" : ev.category;
                         const pk = PRIMARY_DATE[effectiveCat];
                         if (pk && ev.details?.[pk]) return ev.details[pk];
                         const dk = DUE_DATE_KEY[effectiveCat];
@@ -3983,23 +4737,16 @@ export default function AppealDetailClient({
                               </span>
                             </div>
                             <div className="py-1.5">
-                              <span className="text-xs text-muted">
-                                Notice:{" "}
-                              </span>
                               <span className="text-xs text-secondary">
                                 {noticeDate}
                               </span>
                             </div>
                             <div className="py-1.5">
-                              <span className="text-xs text-muted">
-                                Target:{" "}
-                              </span>
                               <span className="text-xs text-secondary">
                                 {internalTargetDate}
                               </span>
                             </div>
                             <div className="py-1.5">
-                              <span className="text-xs text-muted">Due: </span>
                               <span className="text-xs text-secondary">
                                 {dueDate}
                               </span>
@@ -4130,7 +4877,7 @@ export default function AppealDetailClient({
                                 }}
                               >
                                 <div className="px-4 py-1.5">Event</div>
-                                <div className="py-1.5">Notice Date</div>
+                                <div className="py-1.5">Document Date</div>
                                 <div className="py-1.5">Target Date</div>
                                 <div className="py-1.5">Due Date</div>
                                 <div className="py-1.5">Status</div>
@@ -4214,7 +4961,7 @@ export default function AppealDetailClient({
                                               />
                                             </svg>
                                             <span className="inline-flex justify-center px-1.5 py-0.5 rounded text-xs font-semibold shrink-0 bg-accent-light text-accent">
-                                              ME{mIdx + 1}
+                                              ME{mainEvents.length - mIdx}
                                             </span>
                                             <span className="text-xs text-heading font-bold min-w-0 truncate">
                                               {getEventLabel(
@@ -4224,25 +4971,16 @@ export default function AppealDetailClient({
                                             </span>
                                           </div>
                                           <div className="py-2.5">
-                                            <span className="text-xs text-muted font-semibold">
-                                              Notice:{" "}
-                                            </span>
                                             <span className="text-xs text-secondary font-semibold">
                                               {noticeDate}
                                             </span>
                                           </div>
                                           <div className="py-2.5">
-                                            <span className="text-xs text-muted font-semibold">
-                                              Target:{" "}
-                                            </span>
                                             <span className="text-xs text-secondary font-semibold">
                                               {internalTargetDate}
                                             </span>
                                           </div>
                                           <div className="py-2.5">
-                                            <span className="text-xs text-muted font-semibold">
-                                              Due:{" "}
-                                            </span>
                                             <span className="text-xs text-secondary font-semibold">
                                               {dueDate}
                                             </span>
@@ -4472,7 +5210,6 @@ export default function AppealDetailClient({
                     })()}
                   </div>
                 )}
-
               </div>
             );
           })}
@@ -4481,10 +5218,28 @@ export default function AppealDetailClient({
 
       {/* Add Proceeding */}
       {canEdit && (
-        <button onClick={() => { setAddProcValues({}); setAddProcError(null); setAddProcDemandIssues([]); setAddProcTab("details"); setShowAddProc(true); }}
-          className="w-full py-3 cursor-pointer border-2 border-dashed border-border rounded-xl text-sm text-secondary hover:border-primary hover:text-primary transition flex items-center justify-center gap-2">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+        <button
+          onClick={() => {
+            setAddProcValues({});
+            setAddProcError(null);
+            setAddProcDemandIssues([]);
+            setAddProcTab("details");
+            setShowAddProc(true);
+          }}
+          className="w-full py-3 cursor-pointer border-2 border-dashed border-border rounded-xl text-sm text-secondary hover:border-primary hover:text-primary transition flex items-center justify-center gap-2"
+        >
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 4v16m8-8H4"
+            />
           </svg>
           Add Proceeding
         </button>
@@ -4614,15 +5369,42 @@ export default function AppealDetailClient({
 
       {/* ── Edit Proceeding Modal ── */}
       {editProc && (
-        <Modal title="Edit Proceeding" onClose={() => setEditProc(null)} isDirty={editProcIsDirty} size="lg">
-          <form onSubmit={handleSaveProc} className="space-y-4">
-            {/* Tab strip */}
-            <div className="flex border-b border-border -mx-6 px-6">
-              {(["details", "contacts", "amount"] as const).map(tab => (
-                <button key={tab} type="button" onClick={() => setEditProcTab(tab)}
-                  className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${editProcTab === tab ? "border-primary text-primary" : "border-transparent text-muted hover:text-heading"}`}>
-                  {tab === "details" ? "Proceeding Details" : tab === "contacts" ? (
+        <Modal
+          title="Edit Proceeding"
+          onClose={() => setEditProc(null)}
+          isDirty={editProcIsDirty}
+          size="lg"
+        >
+          <form
+            onSubmit={handleSaveProc}
+            className="flex flex-col flex-1 overflow-hidden"
+          >
+            {/* Tab strip — fixed, never scrolls */}
+            <div className="flex border-b border-border px-6 shrink-0">
+              {(["details", "contacts", "amount"] as const).map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setEditProcTab(tab)}
+                  className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${editProcTab === tab ? "border-primary text-primary" : "border-transparent text-muted hover:text-heading"}`}
+                >
+                  {tab === "details" ? (
+                    "Proceeding Details"
+                  ) : tab === "contacts" ? (
                     <span className="inline-flex items-center gap-1.5">
+                      <svg
+                        className="w-3.5 h-3.5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                        />
+                      </svg>
                       Contacts
                       {editProcContacts.length > 0 && (
                         <span className="inline-flex items-center justify-center w-4 h-4 text-xs bg-accent-light text-accent rounded-full font-semibold">
@@ -4630,49 +5412,83 @@ export default function AppealDetailClient({
                         </span>
                       )}
                     </span>
-                  ) : "Amount"}
+                  ) : (
+                    <span className="inline-flex items-center gap-1">
+                      <svg
+                        className="w-3.5 h-3.5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M6 3h12M6 8h12M6 13l8.5 8"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M6 13h3c3.866 0 7-3.134 7-7"
+                        />
+                      </svg>
+                      Demand
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
-            {/* Details tab */}
-            <div
-              className={
-                editProcTab === "details" ? "block space-y-4" : "hidden"
-              }
-            >
-              <ProceedingFormFields
-                values={editProcValues}
-                onChange={proceedingFormChange(setEditProcValues)}
-                onMultiChange={proceedingMultiChange(setEditProcValues)}
-                mastersByType={mastersByType}
-                teamMembers={teamMembers}
-                clientUsers={clientUsers}
-                actRegulationId={appeal.act_regulation?.id ?? undefined}
-                clientPan={clientPan}
-                clientGstNumbers={clientGstNumbers}
-              />
-              <div className="border-t border-border -mx-6 px-6 pt-4">
-                <ProceedingAttachments
-                  proceedingId={editProc.id}
-                  docs={editProc.proceeding_documents ?? []}
+            {/* Scrollable tab content */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {/* Details tab */}
+              <div
+                className={
+                  editProcTab === "details" ? "block space-y-4" : "hidden"
+                }
+              >
+                <ProceedingFormFields
+                  values={editProcValues}
+                  onChange={proceedingFormChange(setEditProcValues)}
+                  onMultiChange={proceedingMultiChange(setEditProcValues)}
+                  mastersByType={mastersByType}
+                  teamMembers={teamMembers}
+                  clientUsers={clientUsers}
+                  actRegulationId={appeal.act_regulation?.id ?? undefined}
+                  clientPan={clientPan}
+                  clientGstNumbers={clientGstNumbers}
+                />
+                <div className="border-t border-border -mx-6 px-6 pt-4">
+                  <ProceedingAttachments
+                    proceedingId={editProc.id}
+                    docs={editProc.proceeding_documents ?? []}
+                    canEdit={canEdit}
+                  />
+                </div>
+              </div>
+              {/* Contacts tab */}
+              <div className={editProcTab === "contacts" ? "block" : "hidden"}>
+                <ProceedingContactsTab
+                  contacts={editProcContacts}
+                  onChange={setEditProcContacts}
                   canEdit={canEdit}
                 />
               </div>
+              {/* Demand tab */}
+              <div className={editProcTab === "amount" ? "block" : "hidden"}>
+                <DemandIssuesEditor
+                  issues={editProcDemandIssues}
+                  onChange={setEditProcDemandIssues}
+                  mainEvents={editProc.events}
+                />
+              </div>
+              {editProcError && (
+                <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
+                  {editProcError}
+                </div>
+              )}
             </div>
-            {/* Contacts tab */}
-            <div className={editProcTab === "contacts" ? "block" : "hidden"}>
-              <ProceedingContactsTab
-                contacts={editProcContacts}
-                onChange={setEditProcContacts}
-                canEdit={canEdit}
-              />
-            </div>
-            {/* Amount tab */}
-            <div className={editProcTab === "amount" ? "block" : "hidden"}>
-              <DemandIssuesEditor issues={editProcDemandIssues} onChange={setEditProcDemandIssues} />
-            </div>
-            {editProcError && <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">{editProcError}</div>}
-            <div className="flex gap-3 justify-end pt-2">
+            {/* Footer — fixed, never scrolls */}
+            <div className="flex gap-3 justify-end px-6 py-4 border-t border-border shrink-0">
               <button
                 type="button"
                 onClick={() => setEditProc(null)}
@@ -4694,15 +5510,48 @@ export default function AppealDetailClient({
 
       {/* ── Add Proceeding Modal ── */}
       {showAddProc && (
-        <Modal title="Add Proceeding" onClose={() => { setShowAddProc(false); setAddProcPendingFiles([]); setAddProcContacts([]); setAddProcDemandIssues([]); setAddProcTab("details"); }} isDirty={addProcIsDirty} size="lg">
-          <form onSubmit={handleAddProc} className="space-y-4">
-            {/* Tab strip */}
-            <div className="flex border-b border-border -mx-6 px-6">
-              {(["details", "contacts", "amount"] as const).map(tab => (
-                <button key={tab} type="button" onClick={() => setAddProcTab(tab)}
-                  className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${addProcTab === tab ? "border-primary text-primary" : "border-transparent text-muted hover:text-heading"}`}>
-                  {tab === "details" ? "Proceeding Details" : tab === "contacts" ? (
+        <Modal
+          title="Add Proceeding"
+          onClose={() => {
+            setShowAddProc(false);
+            setAddProcPendingFiles([]);
+            setAddProcContacts([]);
+            setAddProcDemandIssues([]);
+            setAddProcTab("details");
+          }}
+          isDirty={addProcIsDirty}
+          size="lg"
+        >
+          <form
+            onSubmit={handleAddProc}
+            className="flex flex-col flex-1 overflow-hidden"
+          >
+            {/* Tab strip — fixed, never scrolls */}
+            <div className="flex border-b border-border px-6 shrink-0">
+              {(["details", "contacts", "amount"] as const).map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setAddProcTab(tab)}
+                  className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${addProcTab === tab ? "border-primary text-primary" : "border-transparent text-muted hover:text-heading"}`}
+                >
+                  {tab === "details" ? (
+                    "Proceeding Details"
+                  ) : tab === "contacts" ? (
                     <span className="inline-flex items-center gap-1.5">
+                      <svg
+                        className="w-3.5 h-3.5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                        />
+                      </svg>
                       Contacts
                       {addProcContacts.length > 0 && (
                         <span className="inline-flex items-center justify-center w-4 h-4 text-xs bg-accent-light text-accent rounded-full font-semibold">
@@ -4710,48 +5559,97 @@ export default function AppealDetailClient({
                         </span>
                       )}
                     </span>
-                  ) : "Amount"}
+                  ) : (
+                    <span className="inline-flex items-center gap-1">
+                      <svg
+                        className="w-3.5 h-3.5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M6 3h12M6 8h12M6 13l8.5 8"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M6 13h3c3.866 0 7-3.134 7-7"
+                        />
+                      </svg>
+                      Demand
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
-            {/* Details tab */}
-            <div
-              className={
-                addProcTab === "details" ? "block space-y-4" : "hidden"
-              }
-            >
-              <ProceedingFormFields
-                values={addProcValues}
-                onChange={proceedingFormChange(setAddProcValues)}
-                onMultiChange={proceedingMultiChange(setAddProcValues)}
-                mastersByType={mastersByType}
-                teamMembers={teamMembers}
-                clientUsers={clientUsers}
-                actRegulationId={appeal.act_regulation?.id ?? undefined}
-                clientPan={clientPan}
-                clientGstNumbers={clientGstNumbers}
-              />
-              <PendingAttachments
-                files={addProcPendingFiles}
-                onChange={setAddProcPendingFiles}
-              />
+            {/* Scrollable tab content */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {/* Details tab */}
+              <div
+                className={
+                  addProcTab === "details" ? "block space-y-4" : "hidden"
+                }
+              >
+                <ProceedingFormFields
+                  values={addProcValues}
+                  onChange={proceedingFormChange(setAddProcValues)}
+                  onMultiChange={proceedingMultiChange(setAddProcValues)}
+                  mastersByType={mastersByType}
+                  teamMembers={teamMembers}
+                  clientUsers={clientUsers}
+                  actRegulationId={appeal.act_regulation?.id ?? undefined}
+                  clientPan={clientPan}
+                  clientGstNumbers={clientGstNumbers}
+                />
+                <PendingAttachments
+                  files={addProcPendingFiles}
+                  onChange={setAddProcPendingFiles}
+                />
+              </div>
+              {/* Contacts tab */}
+              <div className={addProcTab === "contacts" ? "block" : "hidden"}>
+                <ProceedingContactsTab
+                  contacts={addProcContacts}
+                  onChange={setAddProcContacts}
+                  canEdit={canEdit}
+                />
+              </div>
+              {/* Demand tab */}
+              <div className={addProcTab === "amount" ? "block" : "hidden"}>
+                <DemandIssuesEditor
+                  issues={addProcDemandIssues}
+                  onChange={setAddProcDemandIssues}
+                />
+              </div>
+              {addProcError && (
+                <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
+                  {addProcError}
+                </div>
+              )}
             </div>
-            {/* Contacts tab */}
-            <div className={addProcTab === "contacts" ? "block" : "hidden"}>
-              <ProceedingContactsTab
-                contacts={addProcContacts}
-                onChange={setAddProcContacts}
-                canEdit={canEdit}
-              />
-            </div>
-            {/* Amount tab */}
-            <div className={addProcTab === "amount" ? "block" : "hidden"}>
-              <DemandIssuesEditor issues={addProcDemandIssues} onChange={setAddProcDemandIssues} />
-            </div>
-            {addProcError && <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">{addProcError}</div>}
-            <div className="flex gap-3 justify-end pt-2">
-              <button type="button" onClick={() => { setShowAddProc(false); setAddProcPendingFiles([]); setAddProcContacts([]); setAddProcDemandIssues([]); setAddProcTab("details"); }} className="px-4 py-2 text-sm border border-border rounded-lg text-heading hover:bg-page transition">Cancel</button>
-              <button type="submit" disabled={addProcSaving} className="px-4 py-2 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition disabled:opacity-60">
+            {/* Footer — fixed, never scrolls */}
+            <div className="flex gap-3 justify-end px-6 py-4 border-t border-border shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddProc(false);
+                  setAddProcPendingFiles([]);
+                  setAddProcContacts([]);
+                  setAddProcDemandIssues([]);
+                  setAddProcTab("details");
+                }}
+                className="px-4 py-2 text-sm border border-border rounded-lg text-heading hover:bg-page transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={addProcSaving}
+                className="px-4 py-2 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition disabled:opacity-60"
+              >
                 {addProcSaving ? "Adding…" : "Add Proceeding"}
               </button>
             </div>
@@ -4998,7 +5896,8 @@ export default function AppealDetailClient({
                         <option value="">— None (unlinked) —</option>
                         {mainEvents.map((m, mIdx) => (
                           <option key={m.id} value={m.id}>
-                            #{mIdx + 1} — {getEventLabel(m.category, m.details)}
+                            #ME{mainEvents.length - mIdx} —{" "}
+                            {getEventLabel(m.category, m.details)}
                             {m.event_notice_number
                               ? ` (Order #${m.event_notice_number})`
                               : ""}
@@ -5532,50 +6431,65 @@ export default function AppealDetailClient({
       )}
 
       {/* ── Confirm Delete Event ── */}
-      {confirmDeleteEvent && (() => {
-        const subCount = confirmDeleteEvent.event_type === "main"
-          ? (liveSubCountByParent[confirmDeleteEvent.id] ?? 0)
-          : 0;
-        return (
-          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-xl border border-border w-full max-w-sm p-6">
-              <h3 className="text-base font-semibold text-heading mb-2">Delete Event?</h3>
-              <p className="text-sm text-secondary mb-3">
-                This will permanently delete the{" "}
-                <strong>{EVENT_LABELS[confirmDeleteEvent.category] ?? confirmDeleteEvent.category}</strong>{" "}
-                event and all its documents.
-              </p>
-              {subCount > 0 && (
-                <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 mb-3">
-                  <p className="text-sm font-semibold text-amber-800 mb-0.5">
-                    This event has {subCount} sub-event{subCount !== 1 ? "s" : ""}
-                  </p>
-                  <p className="text-xs text-amber-700">
-                    All sub-events and their documents will also be permanently deleted.
-                  </p>
+      {confirmDeleteEvent &&
+        (() => {
+          const subCount =
+            confirmDeleteEvent.event_type === "main"
+              ? (liveSubCountByParent[confirmDeleteEvent.id] ?? 0)
+              : 0;
+          return (
+            <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-xl shadow-xl border border-border w-full max-w-sm p-6">
+                <h3 className="text-base font-semibold text-heading mb-2">
+                  Delete Event?
+                </h3>
+                <p className="text-sm text-secondary mb-3">
+                  This will permanently delete the{" "}
+                  <strong>
+                    {EVENT_LABELS[confirmDeleteEvent.category] ??
+                      confirmDeleteEvent.category}
+                  </strong>{" "}
+                  event and all its documents.
+                </p>
+                {subCount > 0 && (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 mb-3">
+                    <p className="text-sm font-semibold text-amber-800 mb-0.5">
+                      This event has {subCount} sub-event
+                      {subCount !== 1 ? "s" : ""}
+                    </p>
+                    <p className="text-xs text-amber-700">
+                      All sub-events and their documents will also be
+                      permanently deleted.
+                    </p>
+                  </div>
+                )}
+                <p className="text-xs text-red-600 font-medium mb-5">
+                  This action cannot be undone.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setConfirmDeleteEvent(null)}
+                    disabled={deletingEvent}
+                    className="flex-1 px-4 py-2 text-sm border border-border rounded-lg text-heading hover:bg-page transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDeleteEvent}
+                    disabled={deletingEvent}
+                    className="flex-1 px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition disabled:opacity-60"
+                  >
+                    {deletingEvent
+                      ? "Deleting…"
+                      : subCount > 0
+                        ? `Delete Event & ${subCount} Sub-event${subCount !== 1 ? "s" : ""}`
+                        : "Delete"}
+                  </button>
                 </div>
-              )}
-              <p className="text-xs text-red-600 font-medium mb-5">This action cannot be undone.</p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setConfirmDeleteEvent(null)}
-                  disabled={deletingEvent}
-                  className="flex-1 px-4 py-2 text-sm border border-border rounded-lg text-heading hover:bg-page transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDeleteEvent}
-                  disabled={deletingEvent}
-                  className="flex-1 px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition disabled:opacity-60"
-                >
-                  {deletingEvent ? "Deleting…" : subCount > 0 ? `Delete Event & ${subCount} Sub-event${subCount !== 1 ? "s" : ""}` : "Delete"}
-                </button>
               </div>
             </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
 
       {/* ── Confirm Delete Appeal ── */}
       {confirmDeleteAppeal && (

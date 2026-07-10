@@ -1,0 +1,71 @@
+name: 📋 Task
+description: A general task, chore, or piece of work to track (refactor, config change, cleanup, etc.)
+title: "[Task]: "
+labels: ["task"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What needs to be done?
+      description: Describe the task clearly.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: How do we know this task is complete?
+      placeholder: |
+        - [ ] RLS policy updated for litigation table
+        - [ ] Tested locally with two roles (SP + Platform admin)
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: module
+    attributes:
+      label: Affected Area(s)
+      description: Check all areas this task touches.
+      options:
+        - label: "Platform Portal — Dashboard"
+        - label: "Platform Portal — Service Providers (CA Firms)"
+        - label: "Platform Portal — Users"
+        - label: "Platform Portal — Admins"
+        - label: "Platform Portal — Masters (Acts / Financial Years / Assessment Years)"
+        - label: "Platform Portal — Documents"
+        - label: "Platform Portal — Audit Logs"
+        - label: "Platform Portal — Settings & Branding"
+        - label: "SP Portal — Dashboard"
+        - label: "SP Portal — Litigations / Appeals (List)"
+        - label: "SP Portal — Litigation Detail (Proceedings & Events)"
+        - label: "SP Portal — Demand Section"
+        - label: "SP Portal — Clients"
+        - label: "SP Portal — Team Users"
+        - label: "SP Portal — Client Users"
+        - label: "SP Portal — Documents (Forms / Templates / Resources)"
+        - label: "SP Portal — Masters"
+        - label: "SP Portal — Audit Logs"
+        - label: "SP Portal — Settings"
+        - label: "Authentication / Login / Invite / Password Reset"
+        - label: "Document Export (PDF / DOCX / XLSX)"
+        - label: "File Uploads / Storage"
+        - label: "Email Notifications"
+        - label: "DevOps / Config / Deployment"
+        - label: "Other"
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
