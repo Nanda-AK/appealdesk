@@ -53,7 +53,11 @@ const ALL_COLUMNS = [
 type ColKey = (typeof ALL_COLUMNS)[number]["key"];
 const ALL_COL_KEYS = ALL_COLUMNS.map(c => c.key) as ColKey[];
 
-function storageKey(userId: string) { return `appealdesk_col_vis_${userId}`; }
+// Stores which columns a user has explicitly HIDDEN (opt-out), not which are
+// visible (opt-in) — so newly-added columns show up for everyone by default
+// without needing a manual toggle/reset. Uses a new key (not appealdesk_col_vis_*)
+// so old "visible list" data isn't misinterpreted as a "hidden list".
+function storageKey(userId: string) { return `appealdesk_col_hidden_${userId}`; }
 
 interface Props {
   appeals: Appeal[];
@@ -126,11 +130,13 @@ export default function AppealsClient({
   const exportMenuRef = useRef<HTMLDivElement>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
-  // Column visibility — null until loaded from localStorage to avoid hydration mismatch
-  const [visibleCols, setVisibleCols] = useState<Set<ColKey> | null>(null);
-  const effectiveCols = visibleCols ?? new Set<ColKey>(ALL_COL_KEYS);
-  const col = (key: ColKey) => effectiveCols.has(key);
-  const visibleColCount = 1 + effectiveCols.size + 1; // Sl.No + visible + action
+  // Column visibility — null until loaded from localStorage to avoid hydration mismatch.
+  // Tracks HIDDEN columns (opt-out), so any column not explicitly hidden is
+  // visible by default — new columns added later show up automatically.
+  const [hiddenCols, setHiddenCols] = useState<Set<ColKey> | null>(null);
+  const effectiveHidden = hiddenCols ?? new Set<ColKey>();
+  const col = (key: ColKey) => !effectiveHidden.has(key);
+  const visibleColCount = 1 + (ALL_COL_KEYS.length - effectiveHidden.size) + 1; // Sl.No + visible + action
 
   const [colMenuOpen, setColMenuOpen] = useState(false);
   const colMenuRef = useRef<HTMLDivElement>(null);
@@ -141,16 +147,16 @@ export default function AppealsClient({
       const saved = localStorage.getItem(storageKey(userId));
       if (saved) {
         const parsed = JSON.parse(saved) as ColKey[];
-        setVisibleCols(new Set(parsed.filter(k => ALL_COL_KEYS.includes(k))));
+        setHiddenCols(new Set(parsed.filter(k => ALL_COL_KEYS.includes(k))));
       } else {
-        setVisibleCols(new Set(ALL_COL_KEYS));
+        setHiddenCols(new Set());
       }
-    } catch { setVisibleCols(new Set(ALL_COL_KEYS)); }
+    } catch { setHiddenCols(new Set()); }
   }, [userId]);
 
   function toggleCol(key: ColKey) {
-    setVisibleCols(prev => {
-      const base = prev ?? new Set(ALL_COL_KEYS);
+    setHiddenCols(prev => {
+      const base = prev ?? new Set<ColKey>();
       const next = new Set(base);
       if (next.has(key)) next.delete(key); else next.add(key);
       try { localStorage.setItem(storageKey(userId), JSON.stringify([...next])); } catch { /* */ }
@@ -159,8 +165,7 @@ export default function AppealsClient({
   }
 
   function resetCols() {
-    const full = new Set<ColKey>(ALL_COL_KEYS);
-    setVisibleCols(full);
+    setHiddenCols(new Set());
     try { localStorage.removeItem(storageKey(userId)); } catch { /* */ }
   }
 
@@ -440,7 +445,7 @@ export default function AppealsClient({
             <div className="absolute right-0 top-full mt-1 bg-white border border-border rounded-xl shadow-xl z-50 w-52 py-2">
               <p className="px-3 pb-2 text-xs font-semibold text-heading border-b border-border mb-1">Column Visibility</p>
               {ALL_COLUMNS.map(({ key, label }) => {
-                const checked = effectiveCols.has(key);
+                const checked = col(key);
                 return (
                   <label key={key} className="flex items-center gap-2.5 px-3 py-1.5 hover:bg-page cursor-pointer select-none">
                     <div
