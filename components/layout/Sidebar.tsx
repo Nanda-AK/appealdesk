@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { clearActiveSession } from "@/lib/session-actions";
 import { UserRole } from "@/lib/types";
 
 interface NavItem {
@@ -219,6 +220,11 @@ export default function Sidebar({
   const [pwLoading, setPwLoading] = useState(false);
 
   async function handleLogout() {
+    try {
+      await clearActiveSession();
+    } catch {
+      // best-effort — don't block logout on a bookkeeping failure
+    }
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push("/login");
