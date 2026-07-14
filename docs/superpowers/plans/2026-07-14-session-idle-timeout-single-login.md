@@ -574,6 +574,12 @@ Replace with:
       // best-effort
     }
     router.refresh();
+    // If refresh() results in navigation away from /login, this component
+    // unmounts and the call below is moot. If it doesn't (e.g. proxy.ts's
+    // transient-read-failure branch re-renders /login instead of
+    // redirecting), re-enable the buttons rather than leaving the dialog
+    // permanently disabled with no way out.
+    setConflictLoading(false);
   }
 
   async function handleCancelSession() {
