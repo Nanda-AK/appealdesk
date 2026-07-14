@@ -37,8 +37,15 @@ export default function SessionGuard() {
       } catch {
         // best-effort — don't block logout on a bookkeeping failure
       }
-      const supabase = createClient();
-      await supabase.auth.signOut();
+      try {
+        const supabase = createClient();
+        await supabase.auth.signOut();
+      } catch {
+        // best-effort — still redirect even if signOut() itself fails
+        // (e.g. a network hiccup); proxy.ts re-validates on the next
+        // request regardless, and hasLoggedOutRef must not get "stuck"
+        // permanently guarding against a redirect that never happened
+      }
       router.push(`/login?error=${reason}`);
     },
     [router],
