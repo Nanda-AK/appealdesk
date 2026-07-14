@@ -80,7 +80,12 @@ export default function LoginForm({ platformName, description, logoUrl, supportE
   async function handleContinueSession() {
     setConflictLoading(true);
     const supabase = createClient();
-    await supabase.auth.signOut({ scope: "others" });
+    try {
+      await supabase.auth.signOut({ scope: "others" });
+    } catch {
+      // best-effort — still proceed even if the kick itself fails; the
+      // dialog must never leave the user stuck on a dead-end modal
+    }
     try {
       await heartbeatSession();
     } catch {
@@ -92,7 +97,11 @@ export default function LoginForm({ platformName, description, logoUrl, supportE
   async function handleCancelSession() {
     setConflictLoading(true);
     const supabase = createClient();
-    await supabase.auth.signOut({ scope: "local" });
+    try {
+      await supabase.auth.signOut({ scope: "local" });
+    } catch {
+      // best-effort — still reset dialog state even if signOut fails
+    }
     setSessionConflict(false);
     setConflictLoading(false);
     setPassword("");
