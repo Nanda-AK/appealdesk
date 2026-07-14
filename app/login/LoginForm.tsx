@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { checkActiveSession, heartbeatSession } from "@/lib/session-actions";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 
@@ -25,6 +26,8 @@ export default function LoginForm({ platformName, description, logoUrl, supportE
   // Fall back to the branded mark if the configured logo URL fails to load
   // (e.g. a stale/dead storage URL) so we never show a broken-image icon.
   const [logoFailed, setLogoFailed] = useState(false);
+  const [sessionConflict, setSessionConflict] = useState(false);
+  const [conflictLoading, setConflictLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const errorCode = searchParams.get("error");
@@ -33,6 +36,8 @@ export default function LoginForm({ platformName, description, logoUrl, supportE
     deactivated: "Your account has been deactivated. Contact your administrator.",
     no_profile: "Your account isn't fully set up yet. Contact your administrator.",
     auth_callback_failed: "That sign-in link is invalid or has expired. Please try again.",
+    idle_timeout: "You were signed out due to 30 minutes of inactivity.",
+    session_replaced: "Your account was signed in from another device.",
   };
   const urlError = errorCode ? errorMessages[errorCode] ?? null : null;
 
@@ -50,7 +55,47 @@ export default function LoginForm({ platformName, description, logoUrl, supportE
       return;
     }
 
+    // Fail open: a bookkeeping-check failure shouldn't block a valid login.
+    let hasOtherSession = false;
+    try {
+      hasOtherSession = (await checkActiveSession()).hasOtherSession;
+    } catch {
+      hasOtherSession = false;
+    }
+
+    if (hasOtherSession) {
+      setSessionConflict(true);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      await heartbeatSession();
+    } catch {
+      // best-effort — a missed heartbeat isn't worth blocking login over
+    }
     router.refresh();
+  }
+
+  async function handleContinueSession() {
+    setConflictLoading(true);
+    const supabase = createClient();
+    await supabase.auth.signOut({ scope: "others" });
+    try {
+      await heartbeatSession();
+    } catch {
+      // best-effort
+    }
+    router.refresh();
+  }
+
+  async function handleCancelSession() {
+    setConflictLoading(true);
+    const supabase = createClient();
+    await supabase.auth.signOut({ scope: "local" });
+    setSessionConflict(false);
+    setConflictLoading(false);
+    setPassword("");
   }
 
   async function handleForgotPassword(e: React.FormEvent) {
@@ -253,6 +298,38 @@ export default function LoginForm({ platformName, description, logoUrl, supportE
           </p>
         )}
       </div>
+
+        {sessionConflict && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-xl border border-border p-6 w-full max-w-sm">
+              <h3 className="text-base font-semibold text-heading mb-2">
+                Already Signed In Elsewhere
+              </h3>
+              <p className="text-sm text-secondary mb-5">
+                Your account is currently signed in on another device or browser.
+                Continue here and sign out the other session, or cancel?
+              </p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={handleCancelSession}
+                  disabled={conflictLoading}
+                  className="flex-1 px-4 py-2 text-sm border border-border rounded-lg text-heading hover:bg-page transition disabled:opacity-60"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleContinueSession}
+                  disabled={conflictLoading}
+                  className="flex-1 px-4 py-2 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition disabled:opacity-60"
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
     </div>
   );
 }
