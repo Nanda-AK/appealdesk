@@ -69,9 +69,10 @@ body:
     attributes:
       label: Priority
       options:
-        - High (needed soon / blocking a workflow)
-        - Medium (would meaningfully improve things)
-        - Low (nice to have)
+        - High
+        - Medium
+        - Low
+      default: 1
     validations:
       required: false
 
