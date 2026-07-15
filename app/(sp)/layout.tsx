@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/user";
 import { createClient } from "@/lib/supabase/server";
 import Sidebar from "@/components/layout/Sidebar";
+import SessionGuard from "@/components/layout/SessionGuard";
 
 export default async function SpLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser();
@@ -24,6 +25,7 @@ export default async function SpLayout({ children }: { children: React.ReactNode
 
   return (
     <div className="flex h-screen overflow-hidden bg-page">
+      <SessionGuard />
       <Sidebar
         userName={`${user.first_name} ${user.last_name}`}
         userRole={user.role}
