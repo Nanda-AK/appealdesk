@@ -31,6 +31,16 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isLoginPage = pathname.startsWith("/login");
 
+  // Server Actions invoked from the login page itself (e.g.
+  // checkActiveSession()/heartbeatSession(), called right after a successful
+  // sign-in but before router.refresh() navigates away) POST back to this
+  // same /login pathname. They must pass through untouched — redirecting
+  // them here breaks Next's Server Action response format ("An unexpected
+  // response was received from the server") since the action's own request
+  // target is this same URL. Next.js always marks these with a
+  // `next-action` header.
+  const isServerAction = request.headers.has("next-action");
+
   // Not logged in → redirect to login
   if (!user && !isLoginPage) {
     const url = request.nextUrl.clone();
@@ -39,7 +49,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // Logged in + on login page → route to correct home by role
-  if (user && isLoginPage) {
+  if (user && isLoginPage && !isServerAction) {
     const { data: profile, error } = await supabase
       .from("users")
       .select("role, is_active, deleted_at")
