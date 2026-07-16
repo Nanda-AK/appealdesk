@@ -183,9 +183,9 @@ interface DraftDemandIssue {
 }
 type DemandTypeKey = "tax" | "interest" | "penalty";
 const DEMAND_TYPES: { key: DemandTypeKey; label: string }[] = [
-  { key: "tax", label: "Tax demand" },
-  { key: "interest", label: "Interest demand" },
-  { key: "penalty", label: "Penalty demand" },
+  { key: "tax", label: "Tax" },
+  { key: "interest", label: "Interest" },
+  { key: "penalty", label: "Penalty" },
 ];
 function blankDraftIssue(): DraftDemandIssue {
   return {
@@ -431,7 +431,6 @@ const MAIN_CATEGORY_FIELDS: Record<string, FieldDef[]> = {
       label: "Internal Target Date",
       type: "datetime",
     },
-    { key: "notes", label: "Notes", type: "textarea", fullWidth: true },
   ],
 };
 
@@ -522,6 +521,16 @@ const PARENT_DATE_FIELD: Record<string, { key: string; label: string }> = {
   supreme_court_order: { key: "date_of_order", label: "Date of Order" },
   others: { key: "date", label: "Date" },
   additional_data_request: { key: "request_date", label: "Request Date" },
+};
+
+// Label for the Order/Notice Number field, per main-event category. Falls back to "Order Number".
+const NOTICE_NUMBER_FIELD_LABEL: Record<string, string> = {
+  notice_from_authority: "Notice Number / Document Identification Number (DIN)",
+  show_cause_notice: "Notice Number/Document Identification Number",
+  personal_hearing_notice: "Document Identification Number",
+  virtual_hearing_notice: "Document Identification Number",
+  filing_of_appeal: "Document Number",
+  additional_data_request: "Document Number",
 };
 
 const MAIN_EVENT_LABELS: Record<string, string> = {
@@ -1817,22 +1826,12 @@ function DemandIssuesEditor({
     label: `ME${idx + 1} — ${getEventLabel(ev.category, ev.details ?? {})}`,
   }));
 
-  // Dynamic equal-width for all three amount columns
-  const maxAmtChars = issues.reduce((max, iss) => {
-    return Math.max(
-      max,
-      fmtInr(parseFloat(iss.tax_demanded) || 0).length,
-      fmtInr(parseFloat(iss.tax_acceptable) || 0).length,
-      fmtInr(parseFloat(iss.tax_dropped) || 0).length,
-      fmtInr(parseFloat(iss.interest_demanded) || 0).length,
-      fmtInr(parseFloat(iss.interest_acceptable) || 0).length,
-      fmtInr(parseFloat(iss.interest_dropped) || 0).length,
-      fmtInr(parseFloat(iss.penalty_demanded) || 0).length,
-      fmtInr(parseFloat(iss.penalty_acceptable) || 0).length,
-      fmtInr(parseFloat(iss.penalty_dropped) || 0).length,
-    );
-  }, 3);
-  const amtColPx = Math.max(100, maxAmtChars * 8 + 28);
+  // Fixed width for all three amount columns — box size never changes with content;
+  // overflow scrolls inside the input itself instead of resizing the column/table.
+  // Cap digits at 15 (within Number.MAX_SAFE_INTEGER) purely to keep sum arithmetic exact.
+  const MAX_AMOUNT_DIGITS = 15;
+  const amtColPx = 140;
+  const summaryAmtColPx = 140;
 
   const totals = issues.reduce(
     (acc, iss) => {
@@ -1907,22 +1906,37 @@ function DemandIssuesEditor({
           Grand Total Breakup
         </p>
         <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full text-xs border-collapse">
+          <table
+            className="w-full text-xs border-collapse"
+            style={{ tableLayout: "fixed" }}
+          >
             <thead>
               <tr className="bg-table-header text-left">
                 <th className="px-3 py-2 font-semibold text-heading">
                   Particulars
                 </th>
-                <th className="px-3 py-2 font-semibold text-heading text-right bg-info/10">
+                <th
+                  className="px-3 py-2 font-semibold text-heading text-right bg-info/10"
+                  style={{ width: summaryAmtColPx }}
+                >
                   Demanded (₹)
                 </th>
-                <th className="px-3 py-2 font-semibold text-heading text-right bg-warning/10">
+                <th
+                  className="px-3 py-2 font-semibold text-heading text-right bg-warning/10"
+                  style={{ width: summaryAmtColPx }}
+                >
                   Dropped (₹)
                 </th>
-                <th className="px-3 py-2 font-semibold text-heading text-right bg-success/10">
+                <th
+                  className="px-3 py-2 font-semibold text-heading text-right bg-success/10"
+                  style={{ width: summaryAmtColPx }}
+                >
                   Acceptable (₹)
                 </th>
-                <th className="px-3 py-2 font-semibold text-heading text-right bg-danger/10">
+                <th
+                  className="px-3 py-2 font-semibold text-heading text-right bg-danger/10"
+                  style={{ width: summaryAmtColPx }}
+                >
                   Disputed (₹)
                 </th>
               </tr>
@@ -1932,32 +1946,48 @@ function DemandIssuesEditor({
                 <tr key={type.key} className="border-t border-border">
                   <td className="px-3 py-1.5 text-secondary">{type.label}</td>
                   <td className="px-3 py-1.5 text-right text-secondary bg-info/10">
-                    {fmtInr(byType[type.key].demanded)}
+                    <div className="overflow-x-auto whitespace-nowrap">
+                      {fmtInr(byType[type.key].demanded)}
+                    </div>
                   </td>
                   <td className="px-3 py-1.5 text-right text-secondary bg-warning/10">
-                    {fmtInr(byType[type.key].dropped)}
+                    <div className="overflow-x-auto whitespace-nowrap">
+                      {fmtInr(byType[type.key].dropped)}
+                    </div>
                   </td>
                   <td className="px-3 py-1.5 text-right text-secondary bg-success/10">
-                    {fmtInr(byType[type.key].acceptable)}
+                    <div className="overflow-x-auto whitespace-nowrap">
+                      {fmtInr(byType[type.key].acceptable)}
+                    </div>
                   </td>
                   <td className="px-3 py-1.5 text-right text-secondary bg-danger/10">
-                    {fmtInr(byType[type.key].disputed)}
+                    <div className="overflow-x-auto whitespace-nowrap">
+                      {fmtInr(byType[type.key].disputed)}
+                    </div>
                   </td>
                 </tr>
               ))}
               <tr className="border-t-2 border-border-strong bg-accent-tint">
                 <td className="px-3 py-1.5 font-bold text-heading">Total</td>
                 <td className="px-3 py-1.5 text-right font-bold text-heading">
-                  {fmtInr(totals.demanded)}
+                  <div className="overflow-x-auto whitespace-nowrap">
+                    {fmtInr(totals.demanded)}
+                  </div>
                 </td>
                 <td className="px-3 py-1.5 text-right font-bold text-heading">
-                  {fmtInr(totals.dropped)}
+                  <div className="overflow-x-auto whitespace-nowrap">
+                    {fmtInr(totals.dropped)}
+                  </div>
                 </td>
                 <td className="px-3 py-1.5 text-right font-bold text-heading">
-                  {fmtInr(totals.acceptable)}
+                  <div className="overflow-x-auto whitespace-nowrap">
+                    {fmtInr(totals.acceptable)}
+                  </div>
                 </td>
                 <td className="px-3 py-1.5 text-right font-bold text-heading">
-                  {fmtInr(totals.demanded - totals.acceptable - totals.dropped)}
+                  <div className="overflow-x-auto whitespace-nowrap">
+                    {fmtInr(totals.demanded - totals.acceptable - totals.dropped)}
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -1977,7 +2007,7 @@ function DemandIssuesEditor({
                   Notice No & Date / Description of the Issue
                 </th>
                 <th className="px-2 py-2 font-semibold text-heading w-[110px]">
-                  Type
+                  Demand Type
                 </th>
                 <th
                   className="px-2 py-2 font-semibold text-heading text-right"
@@ -2141,7 +2171,7 @@ function DemandIssuesEditor({
                                       )
                                     }
                                     rows={2}
-                                    className={`${cInp} resize-none w-full`}
+                                    className={`${cInp} py-4 resize-none w-full`}
                                     placeholder="Description…"
                                   />
                                 </div>
@@ -2162,10 +2192,9 @@ function DemandIssuesEditor({
                               }
                               placeholder="0"
                               onChange={(e) => {
-                                const raw = e.target.value.replace(
-                                  /[^0-9]/g,
-                                  "",
-                                );
+                                const raw = e.target.value
+                                  .replace(/[^0-9]/g, "")
+                                  .slice(0, MAX_AMOUNT_DIGITS);
                                 onChange(
                                   issues.map((x, idx) =>
                                     idx === i
@@ -2193,10 +2222,9 @@ function DemandIssuesEditor({
                               }
                               placeholder="0"
                               onChange={(e) => {
-                                const raw = e.target.value.replace(
-                                  /[^0-9]/g,
-                                  "",
-                                );
+                                const raw = e.target.value
+                                  .replace(/[^0-9]/g, "")
+                                  .slice(0, MAX_AMOUNT_DIGITS);
                                 onChange(
                                   issues.map((x, idx) =>
                                     idx === i
@@ -2224,10 +2252,9 @@ function DemandIssuesEditor({
                               }
                               placeholder="0"
                               onChange={(e) => {
-                                const raw = e.target.value.replace(
-                                  /[^0-9]/g,
-                                  "",
-                                );
+                                const raw = e.target.value
+                                  .replace(/[^0-9]/g, "")
+                                  .slice(0, MAX_AMOUNT_DIGITS);
                                 onChange(
                                   issues.map((x, idx) =>
                                     idx === i
@@ -2447,6 +2474,8 @@ function DemandIssuesEditor({
 
 // ─── Demand Issues Read-Only (inline accordion Amount section) ──────
 function DemandIssuesReadOnly({ issues }: { issues: DemandIssue[] }) {
+  // Fixed width so the summary table's columns never reflow when totals grow.
+  const summaryAmtColPx = 140;
   const totals = issues.reduce(
     (acc, iss) => {
       acc.demanded +=
@@ -2508,22 +2537,37 @@ function DemandIssuesReadOnly({ issues }: { issues: DemandIssue[] }) {
           Grand Total Breakup
         </p>
         <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full text-xs border-collapse">
+          <table
+            className="w-full text-xs border-collapse"
+            style={{ tableLayout: "fixed" }}
+          >
             <thead>
               <tr className="bg-table-header text-left">
                 <th className="px-3 py-2 font-semibold text-heading">
                   Particulars
                 </th>
-                <th className="px-3 py-2 font-semibold text-heading text-right bg-info/10">
+                <th
+                  className="px-3 py-2 font-semibold text-heading text-right bg-info/10"
+                  style={{ width: summaryAmtColPx }}
+                >
                   Demanded (₹)
                 </th>
-                <th className="px-3 py-2 font-semibold text-heading text-right bg-warning/10">
+                <th
+                  className="px-3 py-2 font-semibold text-heading text-right bg-warning/10"
+                  style={{ width: summaryAmtColPx }}
+                >
                   Dropped (₹)
                 </th>
-                <th className="px-3 py-2 font-semibold text-heading text-right bg-success/10">
+                <th
+                  className="px-3 py-2 font-semibold text-heading text-right bg-success/10"
+                  style={{ width: summaryAmtColPx }}
+                >
                   Acceptable (₹)
                 </th>
-                <th className="px-3 py-2 font-semibold text-heading text-right bg-danger/10">
+                <th
+                  className="px-3 py-2 font-semibold text-heading text-right bg-danger/10"
+                  style={{ width: summaryAmtColPx }}
+                >
                   Disputed (₹)
                 </th>
               </tr>
@@ -2533,32 +2577,48 @@ function DemandIssuesReadOnly({ issues }: { issues: DemandIssue[] }) {
                 <tr key={type.key} className="border-t border-border">
                   <td className="px-3 py-1.5 text-secondary">{type.label}</td>
                   <td className="px-3 py-1.5 text-right text-secondary bg-info/10">
-                    {fmtInr(byType[type.key].demanded)}
+                    <div className="overflow-x-auto whitespace-nowrap">
+                      {fmtInr(byType[type.key].demanded)}
+                    </div>
                   </td>
                   <td className="px-3 py-1.5 text-right text-secondary bg-warning/10">
-                    {fmtInr(byType[type.key].dropped)}
+                    <div className="overflow-x-auto whitespace-nowrap">
+                      {fmtInr(byType[type.key].dropped)}
+                    </div>
                   </td>
                   <td className="px-3 py-1.5 text-right text-secondary bg-success/10">
-                    {fmtInr(byType[type.key].acceptable)}
+                    <div className="overflow-x-auto whitespace-nowrap">
+                      {fmtInr(byType[type.key].acceptable)}
+                    </div>
                   </td>
                   <td className="px-3 py-1.5 text-right text-secondary bg-danger/10">
-                    {fmtInr(byType[type.key].disputed)}
+                    <div className="overflow-x-auto whitespace-nowrap">
+                      {fmtInr(byType[type.key].disputed)}
+                    </div>
                   </td>
                 </tr>
               ))}
               <tr className="border-t-2 border-border-strong bg-accent-tint">
                 <td className="px-3 py-1.5 font-bold text-heading">Total</td>
                 <td className="px-3 py-1.5 text-right font-bold text-heading">
-                  {fmtInr(totals.demanded)}
+                  <div className="overflow-x-auto whitespace-nowrap">
+                    {fmtInr(totals.demanded)}
+                  </div>
                 </td>
                 <td className="px-3 py-1.5 text-right font-bold text-heading">
-                  {fmtInr(totals.dropped)}
+                  <div className="overflow-x-auto whitespace-nowrap">
+                    {fmtInr(totals.dropped)}
+                  </div>
                 </td>
                 <td className="px-3 py-1.5 text-right font-bold text-heading">
-                  {fmtInr(totals.acceptable)}
+                  <div className="overflow-x-auto whitespace-nowrap">
+                    {fmtInr(totals.acceptable)}
+                  </div>
                 </td>
                 <td className="px-3 py-1.5 text-right font-bold text-heading">
-                  {fmtInr(totals.demanded - totals.acceptable - totals.dropped)}
+                  <div className="overflow-x-auto whitespace-nowrap">
+                    {fmtInr(totals.demanded - totals.acceptable - totals.dropped)}
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -2573,7 +2633,7 @@ function DemandIssuesReadOnly({ issues }: { issues: DemandIssue[] }) {
               <th className="px-2 py-2 font-semibold text-heading min-w-[260px]">
                 Notice No & Date / Description of the Issue
               </th>
-              <th className="px-2 py-2 font-semibold text-heading">Type</th>
+              <th className="px-2 py-2 font-semibold text-heading">Demand Type</th>
               <th className="px-2 py-2 font-semibold text-heading text-right">
                 Demanded (₹)
               </th>
@@ -2595,21 +2655,21 @@ function DemandIssuesReadOnly({ issues }: { issues: DemandIssue[] }) {
             {issues.map((iss, i) => {
               const rows = [
                 {
-                  label: "Tax demand",
+                  label: "Tax",
                   demanded: iss.tax_demanded,
                   acceptable: iss.tax_acceptable,
                   dropped: iss.tax_dropped ?? 0,
                   remarks: iss.tax_remarks ?? "",
                 },
                 {
-                  label: "Interest demand",
+                  label: "Interest",
                   demanded: iss.interest_demanded,
                   acceptable: iss.interest_acceptable,
                   dropped: iss.interest_dropped ?? 0,
                   remarks: iss.interest_remarks ?? "",
                 },
                 {
-                  label: "Penalty demand",
+                  label: "Penalty",
                   demanded: iss.penalty_demanded,
                   acceptable: iss.penalty_acceptable,
                   dropped: iss.penalty_dropped ?? 0,
@@ -2747,7 +2807,7 @@ function Modal({
   title: string;
   onClose: () => void;
   isDirty?: boolean;
-  size?: "md" | "lg";
+  size?: "md" | "lg" | "xl";
   children: React.ReactNode;
 }) {
   const [showDiscard, setShowDiscard] = useState(false);
@@ -2767,7 +2827,7 @@ function Modal({
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
       <div
-        className={`bg-white rounded-xl shadow-xl border border-border w-full ${size === "lg" ? "max-w-5xl h-[88vh]" : "max-w-2xl max-h-[90vh]"} flex flex-col`}
+        className={`bg-white rounded-xl shadow-xl border border-border w-full ${size === "xl" ? "max-w-[84.48rem] h-[88vh]" : size === "lg" ? "max-w-5xl h-[88vh]" : "max-w-2xl max-h-[90vh]"} flex flex-col`}
       >
         <div className="px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
           <h3 className="text-base font-semibold text-heading">{title}</h3>
@@ -2792,7 +2852,7 @@ function Modal({
         </div>
         <div
           className={
-            size === "lg"
+            size === "lg" || size === "xl"
               ? "flex-1 overflow-hidden flex flex-col"
               : "p-6 overflow-y-auto flex-1"
           }
@@ -5606,7 +5666,7 @@ export default function AppealDetailClient({
           title="Edit Proceeding"
           onClose={() => setEditProc(null)}
           isDirty={editProcIsDirty}
-          size="lg"
+          size="xl"
         >
           <form
             onSubmit={handleSaveProc}
@@ -5622,7 +5682,7 @@ export default function AppealDetailClient({
                   className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${editProcTab === tab ? "border-primary text-primary" : "border-transparent text-muted hover:text-heading"}`}
                 >
                   {tab === "details" ? (
-                    "Proceeding Details"
+                    "Proceeding"
                   ) : tab === "contacts" ? (
                     <span className="inline-flex items-center gap-1.5">
                       <svg
@@ -6079,9 +6139,7 @@ export default function AppealDetailClient({
             {editEventType === "main" && editEventCategory !== "others" && (
               <Field
                 label={
-                  editEventCategory === "notice_from_authority"
-                    ? "Notice Number / Document Identification Number (DIN)"
-                    : "Order Number"
+                  NOTICE_NUMBER_FIELD_LABEL[editEventCategory] ?? "Order Number"
                 }
               >
                 <input
@@ -6443,11 +6501,7 @@ export default function AppealDetailClient({
             {/* Order Number / Notice Number — main events only, not shown for Others */}
             {!addEventParentId && eventCategory !== "others" && (
               <Field
-                label={
-                  eventCategory === "notice_from_authority"
-                    ? "Notice Number / Document Identification Number (DIN)"
-                    : "Order Number"
-                }
+                label={NOTICE_NUMBER_FIELD_LABEL[eventCategory] ?? "Order Number"}
               >
                 <input
                   type="text"
