@@ -74,8 +74,8 @@ export function CalendarWeekGrid({ events, visibleTypes, currentDate, selectedDa
                   <p className="font-semibold text-heading mb-0.5 leading-tight">
                     {EVENT_SOURCE_LABELS[event.sourceType]}
                   </p>
-                  <p className="text-secondary truncate">{event.clientName}</p>
-                  <p className="text-muted truncate">{event.proceedingType}</p>
+                  <p className="text-secondary truncate" title={event.clientName}>{event.clientName}</p>
+                  <p className="text-muted truncate" title={event.proceedingType}>{event.proceedingType}</p>
                   {event.financialYear && (
                     <p className="text-muted">FY: {event.financialYear}</p>
                   )}

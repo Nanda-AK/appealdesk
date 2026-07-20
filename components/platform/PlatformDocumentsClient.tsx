@@ -1060,7 +1060,7 @@ export default function PlatformDocumentsClient({
                   <label className="block text-xs font-medium text-secondary mb-1">
                     File
                   </label>
-                  <p className="text-xs text-secondary bg-page rounded-lg px-3 py-2 truncate">
+                  <p className="text-xs text-secondary bg-page rounded-lg px-3 py-2 truncate" title={editingTemplate.file_url.split("/").pop()}>
                     {editingTemplate.file_url.split("/").pop()}
                   </p>
                   <p className="text-xs text-muted mt-1">

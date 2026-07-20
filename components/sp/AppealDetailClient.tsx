@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -165,6 +165,7 @@ type MasterItem = {
 
 // Draft demand issue — string fields for form input compatibility
 interface DraftDemandIssue {
+  linked_event_id: string;
   notice_no: string;
   notice_date: string;
   description: string;
@@ -189,6 +190,7 @@ const DEMAND_TYPES: { key: DemandTypeKey; label: string }[] = [
 ];
 function blankDraftIssue(): DraftDemandIssue {
   return {
+    linked_event_id: "",
     notice_no: "",
     notice_date: "",
     description: "",
@@ -208,6 +210,7 @@ function blankDraftIssue(): DraftDemandIssue {
 }
 function toDraftIssue(iss: DemandIssue): DraftDemandIssue {
   return {
+    linked_event_id: iss.linked_event_id ?? "",
     notice_no: iss.notice_no,
     notice_date: iss.notice_date ?? "",
     description: iss.description,
@@ -230,6 +233,7 @@ function fromDraftIssue(
   sortOrder: number,
 ): DemandIssueInput {
   return {
+    linked_event_id: draft.linked_event_id || null,
     notice_no: draft.notice_no,
     notice_date: draft.notice_date || null,
     description: draft.description,
@@ -768,11 +772,11 @@ function AttachmentRow({
           />
         </svg>
         <div className="min-w-0">
-          <span className="text-xs font-medium text-heading block truncate">
+          <span className="text-xs font-medium text-heading block truncate" title={doc.file_name}>
             {doc.file_name}
           </span>
           {doc.description && (
-            <p className="text-xs text-secondary mt-0.5 truncate">
+            <p className="text-xs text-secondary mt-0.5 truncate" title={doc.description}>
               {doc.description}
             </p>
           )}
@@ -1066,7 +1070,7 @@ function ProceedingAttachments({
                   d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
               </svg>
-              <span className="text-xs text-heading font-medium truncate w-32 shrink-0">
+              <span className="text-xs text-heading font-medium truncate w-32 shrink-0" title={file.name}>
                 {file.name}
               </span>
               <input
@@ -1357,7 +1361,7 @@ function EventAttachments({
                     d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                   />
                 </svg>
-                <span className="text-xs text-heading font-medium truncate w-32 shrink-0">
+                <span className="text-xs text-heading font-medium truncate w-32 shrink-0" title={file.name}>
                   {file.name}
                 </span>
                 <input
@@ -1492,7 +1496,7 @@ function MultiSelect({
           <span className="text-muted text-sm">{placeholder ?? "Select…"}</span>
         ) : (
           <div className="flex items-center gap-1.5 flex-1 min-w-0">
-            <span className="text-sm text-heading truncate">
+            <span className="text-sm text-heading truncate" title={selectedLabels.join(", ")}>
               {selectedLabels.slice(0, 2).join(", ")}
             </span>
             {selectedLabels.length > 2 && (
@@ -1818,13 +1822,42 @@ function DemandIssuesEditor({
     "w-full px-1.5 py-1.5 text-xs border border-accent rounded focus:outline-none focus:ring-1 focus:ring-primary";
 
   const isEditMode = mainEvents !== undefined;
-  const activeMainEvents = (mainEvents ?? [])
-    .filter((e) => !e.deleted_at && e.event_type === "main")
-    .sort((a, b) => a.created_at.localeCompare(b.created_at));
+  const activeMainEvents = useMemo(
+    () =>
+      (mainEvents ?? [])
+        .filter((e) => !e.deleted_at && e.event_type === "main")
+        .sort((a, b) => a.created_at.localeCompare(b.created_at)),
+    [mainEvents],
+  );
   const meOptions = activeMainEvents.map((ev, idx) => ({
     id: ev.id,
     label: `ME${idx + 1} — ${getEventLabel(ev.category, ev.details ?? {})}`,
   }));
+
+  // The ME link is persisted as linked_event_id (a stable event id), so it survives
+  // DB round-trips regardless of whether the linked event's DIN changes later. Whenever
+  // the linked event's live data (DIN/date) drifts from what's stored on the draft —
+  // because someone edited that Main Event after this issue was linked to it — resync
+  // notice_no/notice_date here so both the display and the next save reflect the
+  // current event, not a stale snapshot taken at selection time.
+  useEffect(() => {
+    if (!isEditMode) return;
+    let changed = false;
+    const next = issues.map((iss) => {
+      if (!iss.linked_event_id) return iss;
+      const ev = activeMainEvents.find((e) => e.id === iss.linked_event_id);
+      if (!ev) return iss;
+      const freshNoticeNo = ev.event_notice_number ?? "";
+      const freshNoticeDate = ev.event_date ? ev.event_date.slice(0, 10) : "";
+      if (iss.notice_no !== freshNoticeNo || iss.notice_date !== freshNoticeDate) {
+        changed = true;
+        return { ...iss, notice_no: freshNoticeNo, notice_date: freshNoticeDate };
+      }
+      return iss;
+    });
+    if (changed) onChange(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeMainEvents, isEditMode]);
 
   // Fixed width for all three amount columns — box size never changes with content;
   // overflow scrolls inside the input itself instead of resizing the column/table.
@@ -2057,6 +2090,11 @@ function DemandIssuesEditor({
                     (parseFloat(iss.interest_dropped) || 0) +
                     (parseFloat(iss.penalty_dropped) || 0),
                 };
+                const selectedEvent = iss.linked_event_id
+                  ? (activeMainEvents.find(
+                      (ev) => ev.id === iss.linked_event_id,
+                    ) ?? null)
+                  : null;
                 return (
                   <React.Fragment key={i}>
                     {DEMAND_TYPES.map((type, ti) => {
@@ -2097,24 +2135,40 @@ function DemandIssuesEditor({
                                   <div className="flex gap-1.5">
                                     {isEditMode ? (
                                       <select
-                                        value={iss.notice_no}
-                                        onChange={(e) =>
+                                        value={selectedEvent?.id ?? ""}
+                                        onChange={(e) => {
+                                          const evId = e.target.value;
+                                          const ev = activeMainEvents.find(
+                                            (x) => x.id === evId,
+                                          );
                                           onChange(
                                             issues.map((x, idx) =>
                                               idx === i
                                                 ? {
                                                     ...x,
-                                                    notice_no: e.target.value,
+                                                    linked_event_id: evId,
+                                                    notice_no:
+                                                      ev?.event_notice_number ?? "",
+                                                    notice_date: ev?.event_date
+                                                      ? ev.event_date.slice(0, 10)
+                                                      : "",
                                                   }
                                                 : x,
                                             ),
-                                          )
-                                        }
+                                          );
+                                        }}
                                         className={cInpTall}
+                                        title={
+                                          selectedEvent
+                                            ? meOptions.find(
+                                                (o) => o.id === selectedEvent.id,
+                                              )?.label
+                                            : undefined
+                                        }
                                       >
                                         <option value="">— Select ME —</option>
                                         {meOptions.map((opt) => (
-                                          <option key={opt.id} value={opt.label}>
+                                          <option key={opt.id} value={opt.id}>
                                             {opt.label}
                                           </option>
                                         ))}
@@ -2136,6 +2190,7 @@ function DemandIssuesEditor({
                                         }
                                         className={cInpTall}
                                         placeholder="Notice No."
+                                        title={iss.notice_no || undefined}
                                       />
                                     )}
                                     <input
@@ -2154,8 +2209,19 @@ function DemandIssuesEditor({
                                         )
                                       }
                                       className={cInpTall}
+                                      required
                                     />
                                   </div>
+                                  {isEditMode && selectedEvent && (
+                                    <p
+                                      className="text-[11px] text-secondary truncate"
+                                      title={
+                                        selectedEvent.event_notice_number || undefined
+                                      }
+                                    >
+                                      DIN: {selectedEvent.event_notice_number || "—"}
+                                    </p>
+                                  )}
                                   <textarea
                                     value={iss.description}
                                     onChange={(e) =>
@@ -2702,7 +2768,9 @@ function DemandIssuesReadOnly({ issues }: { issues: DemandIssue[] }) {
                           >
                             <div className="flex flex-col gap-1">
                               <div className="flex flex-col gap-0.5">
-                                <span>{iss.notice_no || "—"}</span>
+                                <span title={iss.notice_no || undefined}>
+                                  {iss.notice_no || "—"}
+                                </span>
                                 <span className="text-muted text-xs">
                                   {iss.notice_date
                                     ? new Date(
@@ -3094,16 +3162,16 @@ function ProceedingContactsTab({
                 </>
               ) : (
                 <>
-                  <div className="px-3 py-2.5 text-xs text-heading truncate">
+                  <div className="px-3 py-2.5 text-xs text-heading truncate" title={contact.designation || undefined}>
                     {contact.designation || "—"}
                   </div>
-                  <div className="px-3 py-2.5 text-xs text-secondary truncate">
+                  <div className="px-3 py-2.5 text-xs text-secondary truncate" title={contact.name || undefined}>
                     {contact.name || "—"}
                   </div>
                   <div className="px-3 py-2.5 text-xs text-secondary">
                     {contact.mobile || "—"}
                   </div>
-                  <div className="px-3 py-2.5 text-xs text-secondary truncate">
+                  <div className="px-3 py-2.5 text-xs text-secondary truncate" title={contact.email || undefined}>
                     {contact.email || "—"}
                   </div>
                   {canEdit && (
@@ -3881,11 +3949,27 @@ export default function AppealDetailClient({
   function handleEventCategoryChange(cat: string) {
     setEventCategory(cat);
     const baseDetails: Record<string, string> = {};
-    if (cat === "response_to_notice" && addEventParentId) {
+    if (addEventParentId) {
       const parent = allEventsById[addEventParentId];
-      const parentDueDate = parent?.details?.due_date as string | undefined;
-      if (parentDueDate) {
-        baseDetails["due_date"] = parentDueDate;
+      if (parent) {
+        // Default the sub-event's primary date to the parent main event's
+        // DIN/notice date, so the user doesn't have to re-enter it — still editable.
+        const parentDateField = PARENT_DATE_FIELD[parent.category];
+        const parentDinDate =
+          (parentDateField ? parent.details?.[parentDateField.key] : null) ||
+          parent.event_date ||
+          undefined;
+        if (parentDinDate) {
+          const effectiveCat = cat === "others" ? "others_sub" : cat;
+          const primaryKey = PRIMARY_DATE[effectiveCat];
+          if (primaryKey) {
+            baseDetails[primaryKey] = parentDinDate;
+          }
+        }
+        const parentDueDate = parent.details?.due_date;
+        if (cat === "response_to_notice" && parentDueDate) {
+          baseDetails["due_date"] = parentDueDate;
+        }
       }
     }
     setEventDetails(baseDetails);
@@ -4233,6 +4317,7 @@ export default function AppealDetailClient({
                   disabled={inlineSaving.appeal_litigation_type}
                   onChange={(e) => handleAppealLitigationTypeInline(e.target.value)}
                   className="appearance-none bg-transparent border border-white/30 rounded-full pl-2.5 pr-7 py-0.5 text-sm font-semibold cursor-pointer focus:outline-none focus:border-white/50 disabled:opacity-50 text-white/90 max-w-48 truncate"
+                  title={appeal.litigation_type?.name || undefined}
                 >
                   <option value="" className="text-secondary bg-white font-normal">
                     — Not set —
@@ -4382,7 +4467,7 @@ export default function AppealDetailClient({
                     <span className="text-xs text-white/70 font-medium bg-white/10 px-2 py-0.5 rounded shrink-0">
                       #{idx + 1}
                     </span>
-                    <span className="font-semibold text-white text-sm truncate">
+                    <span className="font-semibold text-white text-sm truncate" title={proc.proceeding_type?.name ?? undefined}>
                       {proc.proceeding_type?.name ?? "—"}
                     </span>
                   </div>
@@ -5018,7 +5103,7 @@ export default function AppealDetailClient({
                               <span className="inline-flex justify-center px-1.5 py-0.5 rounded text-xs font-semibold shrink-0 bg-accent-light text-accent">
                                 SE{(subIdx ?? 0) + 1}
                               </span>
-                              <span className="text-xs text-heading font-medium min-w-0 truncate">
+                              <span className="text-xs text-heading font-medium min-w-0 truncate" title={getEventLabel(ev.category, ev.details)}>
                                 {getEventLabel(ev.category, ev.details)}
                               </span>
                             </div>
@@ -5249,7 +5334,13 @@ export default function AppealDetailClient({
                                             <span className="inline-flex justify-center px-1.5 py-0.5 rounded text-xs font-semibold shrink-0 bg-accent-light text-accent">
                                               ME{mainEvents.length - mIdx}
                                             </span>
-                                            <span className="text-xs text-heading font-bold min-w-0 truncate">
+                                            <span
+                                              className="text-xs text-heading font-bold min-w-0 truncate"
+                                              title={getEventLabel(
+                                                master.category,
+                                                master.details,
+                                              )}
+                                            >
                                               {getEventLabel(
                                                 master.category,
                                                 master.details,

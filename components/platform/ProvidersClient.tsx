@@ -108,6 +108,7 @@ function MultiSelect({
           className={`flex-1 truncate ${
             !hasValue ? "text-muted" : isMulti ? "font-medium text-primary" : "text-heading"
           }`}
+          title={triggerText}
         >
           {triggerText}
         </span>
@@ -176,7 +177,7 @@ function MultiSelect({
                         </svg>
                       )}
                     </div>
-                    <span className={`text-sm flex-1 truncate ${isChecked ? "font-medium text-heading" : "text-secondary"}`}>
+                    <span className={`text-sm flex-1 truncate ${isChecked ? "font-medium text-heading" : "text-secondary"}`} title={o.name}>
                       {o.name}
                     </span>
                   </button>

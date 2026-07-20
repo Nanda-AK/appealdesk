@@ -291,7 +291,7 @@ export default function Sidebar({
           )}
           {isExpanded && (
             <div className="overflow-hidden min-w-0">
-              <p className="text-white font-semibold text-sm leading-tight truncate">
+              <p className="text-white font-semibold text-sm leading-tight truncate" title={orgName ?? "AppealDesk"}>
                 {orgName ?? "AppealDesk"}
               </p>
               <p className="text-white/50 text-xs whitespace-nowrap">
@@ -352,7 +352,7 @@ export default function Sidebar({
               </div>
             )}
             <div className="overflow-hidden min-w-0">
-              <p className="text-white text-sm font-medium truncate">{userName}</p>
+              <p className="text-white text-sm font-medium truncate" title={userName}>{userName}</p>
               <p className="text-white/50 text-xs capitalize mt-0.5">{userRole.replace(/_/g, " ")}</p>
             </div>
           </div>

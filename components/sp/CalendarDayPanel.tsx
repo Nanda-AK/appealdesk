@@ -62,12 +62,12 @@ export function CalendarDayPanel({ events, visibleTypes, selectedDate }: Props) 
             <p className="text-xs font-semibold text-heading leading-tight mb-0.5">
               {EVENT_SOURCE_LABELS[event.sourceType]}
             </p>
-            <p className="text-xs text-secondary truncate">{event.clientName}</p>
+            <p className="text-xs text-secondary truncate" title={event.clientName}>{event.clientName}</p>
             {event.proceedingType && (
-              <p className="text-xs text-muted truncate">{event.proceedingType}</p>
+              <p className="text-xs text-muted truncate" title={event.proceedingType}>{event.proceedingType}</p>
             )}
             {event.actName && (
-              <p className="text-xs text-muted truncate">{event.actName}</p>
+              <p className="text-xs text-muted truncate" title={event.actName}>{event.actName}</p>
             )}
             {event.financialYear && (
               <p className="text-xs text-muted">FY: {event.financialYear}</p>
