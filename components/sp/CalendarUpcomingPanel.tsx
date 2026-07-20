@@ -59,10 +59,13 @@ export function CalendarUpcomingPanel({ events, visibleTypes }: Props) {
               />
               <div className="min-w-0">
                 <p className="text-xs text-muted">{fmtDate(event.date)}</p>
-                <p className="text-sm font-semibold text-heading truncate group-hover:text-accent">
+                <p
+                  className="text-sm font-semibold text-heading truncate group-hover:text-accent"
+                  title={EVENT_SOURCE_LABELS[event.sourceType]}
+                >
                   {EVENT_SOURCE_LABELS[event.sourceType]}
                 </p>
-                <p className="text-xs text-secondary truncate">
+                <p className="text-xs text-secondary truncate" title={`${event.clientName} · ${event.actName}`}>
                   {event.clientName} · {event.actName}
                 </p>
               </div>

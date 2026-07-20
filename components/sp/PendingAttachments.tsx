@@ -87,7 +87,7 @@ export function PendingAttachments({
                 </svg>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-heading truncate">{file.name}</span>
+                    <span className="text-xs font-medium text-heading truncate" title={file.name}>{file.name}</span>
                     {file.size > 0 && <span className="text-xs text-muted shrink-0">{(file.size / 1024).toFixed(0)} KB</span>}
                   </div>
                   {desc && <p className="text-xs text-secondary mt-0.5">{desc}</p>}
@@ -112,7 +112,7 @@ export function PendingAttachments({
               <svg className="w-3.5 h-3.5 text-accent shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <span className="text-xs text-heading font-medium truncate w-32 shrink-0">{file.name}</span>
+              <span className="text-xs text-heading font-medium truncate w-32 shrink-0" title={file.name}>{file.name}</span>
               <input
                 type="text"
                 placeholder="Description (optional)"

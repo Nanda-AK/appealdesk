@@ -353,7 +353,7 @@ function FormAttachments({ formId, files, canEdit, canDelete }: { formId: string
                 <div className={`w-7 h-7 rounded ${badge.bg} flex items-center justify-center flex-shrink-0`}>
                   <span className={`text-xs font-bold ${badge.text}`}>{badge.label}</span>
                 </div>
-                <span className="text-xs text-heading flex-1 min-w-0 truncate">{file.name}</span>
+                <span className="text-xs text-heading flex-1 min-w-0 truncate" title={file.name}>{file.name}</span>
                 <span className="text-xs text-muted flex-shrink-0">{fmtSize(file.size)}</span>
                 <button type="button" onClick={() => removePending(idx)}
                   className="p-1 rounded hover:bg-surface-hover text-red-400 hover:text-red-600 flex-shrink-0">
@@ -390,7 +390,7 @@ function FormAttachments({ formId, files, canEdit, canDelete }: { formId: string
                 <div className={`w-7 h-7 rounded ${badge.bg} flex items-center justify-center flex-shrink-0`}>
                   <span className={`text-xs font-bold ${badge.text}`}>{badge.label}</span>
                 </div>
-                <span className="text-xs font-medium text-heading flex-1 min-w-0 truncate">{f.file_name}</span>
+                <span className="text-xs font-medium text-heading flex-1 min-w-0 truncate" title={f.file_name}>{f.file_name}</span>
                 {f.file_size && <span className="text-xs text-muted flex-shrink-0">{fmtSize(f.file_size)}</span>}
                 <div className="flex items-center gap-0.5 flex-shrink-0">
                   <a href={f.file_url} target="_blank" rel="noopener noreferrer" title="View"
@@ -426,7 +426,7 @@ function FormAttachments({ formId, files, canEdit, canDelete }: { formId: string
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl shadow-xl border border-border p-5 w-full max-w-xs mx-4">
             <h3 className="text-sm font-semibold text-heading mb-1">Delete file?</h3>
-            <p className="text-xs text-secondary mb-2 truncate">This will permanently delete &quot;{confirmDelete.file_name}&quot;.</p>
+            <p className="text-xs text-secondary mb-2 truncate" title={confirmDelete.file_name}>This will permanently delete &quot;{confirmDelete.file_name}&quot;.</p>
             <p className="text-xs text-red-600 font-medium mb-4">This action cannot be undone.</p>
             <div className="flex gap-2">
               <button type="button" onClick={() => setConfirmDelete(null)}
@@ -1254,7 +1254,7 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
                             <div className={`w-7 h-7 rounded ${badge.bg} flex items-center justify-center flex-shrink-0`}>
                               <span className={`text-xs font-bold ${badge.text}`}>{badge.label}</span>
                             </div>
-                            <span className="text-xs text-heading flex-1 min-w-0 truncate">{file.name}</span>
+                            <span className="text-xs text-heading flex-1 min-w-0 truncate" title={file.name}>{file.name}</span>
                             <span className="text-xs text-muted flex-shrink-0">{fmtSize(file.size)}</span>
                             <button type="button" onClick={() => setFormNewFiles((prev) => prev.filter((_, i) => i !== idx))}
                               className="p-1 rounded hover:bg-surface-hover text-red-400 hover:text-red-600 flex-shrink-0">
@@ -1348,7 +1348,7 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
               ) : (
                 <div>
                   <label className="block text-xs font-medium text-secondary mb-1">File</label>
-                  <p className="text-xs text-secondary bg-page rounded-lg px-3 py-2 truncate">{editingTemplate.file_url.split("/").pop()}</p>
+                  <p className="text-xs text-secondary bg-page rounded-lg px-3 py-2 truncate" title={editingTemplate.file_url.split("/").pop()}>{editingTemplate.file_url.split("/").pop()}</p>
                   <p className="text-xs text-muted mt-1">To replace the file, delete this template and upload a new one.</p>
                 </div>
               )}
@@ -1463,7 +1463,7 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
                             <div className={`w-8 h-8 rounded-lg ${badge.bg} flex items-center justify-center flex-shrink-0`}>
                               <span className={`text-xs font-bold ${badge.text}`}>{badge.label}</span>
                             </div>
-                            <span className="text-xs font-medium text-heading truncate">{f.file_name}</span>
+                            <span className="text-xs font-medium text-heading truncate" title={f.file_name}>{f.file_name}</span>
                             {f.file_size && <span className="text-xs text-muted flex-shrink-0">{(f.file_size / 1024).toFixed(0)} KB</span>}
                           </div>
                           <div className="flex items-center gap-0.5 flex-shrink-0">
@@ -1501,7 +1501,7 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
                       const badge = fileTypeBadge(f.name);
                       return (
                         <span key={i} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${badge.bg} ${badge.text}`}>
-                          {badge.label} <span className="text-xs opacity-70 truncate max-w-[100px]">{f.name}</span>
+                          {badge.label} <span className="text-xs opacity-70 truncate max-w-[100px]" title={f.name}>{f.name}</span>
                         </span>
                       );
                     })}

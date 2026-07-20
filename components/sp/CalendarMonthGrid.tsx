@@ -111,7 +111,7 @@ export function CalendarMonthGrid({ events, visibleTypes, currentDate, selectedD
                       className="flex items-center justify-between rounded px-1 leading-none"
                       style={{ background: IMPORTANCE_COLORS[level], minHeight: MONTH_BADGE_MIN_HEIGHT }}
                     >
-                      <span className="text-white font-semibold truncate" style={{ fontSize: MONTH_BADGE_FONT_SIZE }}>
+                      <span className="text-white font-semibold truncate" style={{ fontSize: MONTH_BADGE_FONT_SIZE }} title={IMPORTANCE_LABELS[level]}>
                         {IMPORTANCE_LABELS[level][0]}
                       </span>
                       <span className="text-white font-bold ml-0.5" style={{ fontSize: MONTH_BADGE_FONT_SIZE }}>

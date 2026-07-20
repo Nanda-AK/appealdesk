@@ -22,6 +22,7 @@
 // ============================================================
 
 import type { ImportanceLevel } from "@/lib/calendarUtils";
+import type { PossibleOutcome } from "@/lib/types";
 
 // ─── GREETING (page heading above the calendar) ────────────
 
@@ -185,6 +186,21 @@ export const FILTER_INACTIVE_CLS =
 // Width of filter dropdown panels
 export const FILTER_DROPDOWN_WIDTH = "w-64";
 
+// ─── DASHBOARD SIDE COLUMN (right of the calendar) ──────────
+// Holds Due Date Tracker, Priority Distribution, Outcome Forecast,
+// and Team Workload stacked vertically. Scrolls internally if the
+// stacked cards exceed the calendar row's height.
+
+export const SIDE_COLUMN_WIDTH = "w-72";
+
+// ─── DUE DATE TRACKER PANEL ──────────────────────────────────
+
+export const DUE_TRACKER_BUCKETS = [
+  { key: "today", label: "Due Today", dotCls: "bg-danger" },
+  { key: "week", label: "Due in 7 Days", dotCls: "bg-warning" },
+  { key: "month", label: "Due in 30 days", dotCls: "bg-success" },
+] as const;
+
 // ─── SHARED ────────────────────────────────────────────────
 
 // Ordering of importance levels used in stats bar, month legend,
@@ -195,3 +211,50 @@ export const IMPORTANCE_ORDER: ImportanceLevel[] = [
   "medium",
   "low",
 ];
+
+// ─── OUTCOME FORECAST PANEL (bottom row) ────────────────────
+
+// Ordering of outcome levels used in the Outcome Forecast panel
+export const OUTCOME_ORDER: PossibleOutcome[] = [
+  "favourable",
+  "doubtful",
+  "unfavourable",
+];
+
+export const OUTCOME_LABELS: Record<PossibleOutcome, string> = {
+  favourable: "Favourable",
+  doubtful: "Doubtful",
+  unfavourable: "Unfavourable",
+};
+
+// ─── TEAM WORKLOAD PANEL (bottom row) ───────────────────────
+
+// Max number of staff rows shown, sorted by workload descending
+export const TEAM_WORKLOAD_MAX_ROWS = 5;
+
+// ─── NOTICE STATUS SUMMARY PANEL (right sidebar) ────────────
+// Simplified to the 2 statuses the app actually tracks on proceedings
+// (open/closed). The 5-state version from the original mock (In Progress /
+// Awaiting Information / Response Submitted) needs new schema fields we're
+// not adding right now.
+export const NOTICE_STATUS_ORDER = ["open", "closed"] as const;
+export type NoticeStatus = (typeof NOTICE_STATUS_ORDER)[number];
+
+export const NOTICE_STATUS_LABELS: Record<NoticeStatus, string> = {
+  open: "Open",
+  closed: "Closed",
+};
+
+// ─── AUTHORITY-WISE NOTICES PANEL (bottom row) ──────────────
+// Open proceedings grouped by the appeal's Act/Regulation.
+
+// Max number of act rows shown, sorted by count descending
+export const AUTHORITY_NOTICES_MAX_ROWS = 5;
+
+// ─── DASHBOARD ROW LAYOUT ────────────────────────────────────
+// The dashboard is a fixed-height, non-scrolling 2-row layout:
+//   Row 1 (fills remaining space) — Calendar + Day Events + right sidebar
+//     (Due Date Tracker, Notice Status Summary, Priority Distribution)
+//   Row 2 (fixed height)          — Outcome Forecast, Team Workload,
+//     Authority-wise Notices
+export const DASHBOARD_BOTTOM_ROW_HEIGHT = "h-44";

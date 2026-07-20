@@ -297,6 +297,7 @@ export interface SessionUser {
 export interface DemandIssue {
   id: string;
   proceeding_id: string;
+  linked_event_id: string | null;
   notice_no: string;
   notice_date: string | null;
   description: string;

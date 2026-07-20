@@ -2,14 +2,29 @@ import { createClient } from '@/lib/supabase/server'
 import { getCurrentUser } from '@/lib/user'
 import { redirect } from 'next/navigation'
 import { DashboardCalendar } from '@/components/sp/DashboardCalendar'
-import type { CalendarEvent } from '@/lib/calendarUtils'
-import { EVENT_SOURCE_LABELS } from '@/lib/calendarUtils'
+import { DashboardDonut } from '@/components/sp/DashboardDonut'
+import { DashboardBarList } from '@/components/sp/DashboardBarList'
+import { DueDateTrackerPanel } from '@/components/sp/DueDateTrackerPanel'
+import type { CalendarEvent, ImportanceLevel } from '@/lib/calendarUtils'
+import { EVENT_SOURCE_LABELS, IMPORTANCE_COLORS, IMPORTANCE_LABELS } from '@/lib/calendarUtils'
+import type { PossibleOutcome } from '@/lib/types'
+import { BRAND } from '@/lib/theme'
 import {
   GREETING_PREFIX,
   GREETING_SUBTITLE_ADMIN,
   GREETING_SUBTITLE_STAFF,
   GREETING_HEADING_CLS,
   GREETING_SUBTITLE_CLS,
+  IMPORTANCE_ORDER,
+  OUTCOME_ORDER,
+  OUTCOME_LABELS,
+  TEAM_WORKLOAD_MAX_ROWS,
+  SIDE_COLUMN_WIDTH,
+  NOTICE_STATUS_ORDER,
+  NOTICE_STATUS_LABELS,
+  AUTHORITY_NOTICES_MAX_ROWS,
+  DASHBOARD_BOTTOM_ROW_HEIGHT,
+  type NoticeStatus,
 } from '@/lib/dashboardConfig'
 
 function extractDate(val: string | null | undefined): string | null {
@@ -37,7 +52,13 @@ export default async function DashboardPage() {
   const yearStart = `${year}-01-01`
   const yearEnd = `${year}-12-31`
 
-  const [{ data: procData, error: procError }, { data: evtData, error: evtError }] = await Promise.all([
+  const [
+    { data: procData, error: procError },
+    { data: evtData, error: evtError },
+    { data: openProcData, error: openProcError },
+    { data: teamMembers, error: teamError },
+    { data: allProcStatusData, error: allProcStatusError },
+  ] = await Promise.all([
     supabase
       .from('proceedings')
       .select(`
@@ -84,10 +105,46 @@ export default async function DashboardPage() {
       .not('event_date', 'is', null)
       .gte('event_date', yearStart)
       .lte('event_date', yearEnd),
+
+    // Due Date Tracker / Priority / Outcome / Workload / Authority-wise widgets — all currently open proceedings
+    supabase
+      .from('proceedings')
+      .select(`
+        id,
+        importance,
+        possible_outcome,
+        assigned_to_ids,
+        to_be_completed_by,
+        appeal:appeals!proceedings_appeal_id_fkey (
+          act_regulation:master_records!appeals_act_regulation_id_fkey ( name )
+        )
+      `)
+      .eq('service_provider_id', spId)
+      .eq('status', 'open')
+      .is('deleted_at', null),
+
+    supabase
+      .from('users')
+      .select('id, first_name, last_name')
+      .eq('org_id', spId)
+      .in('role', ['sp_admin', 'sp_staff'])
+      .eq('is_active', true)
+      .is('deleted_at', null)
+      .order('first_name'),
+
+    // Notice Status Summary — every proceeding regardless of status (open vs closed)
+    supabase
+      .from('proceedings')
+      .select('id, status')
+      .eq('service_provider_id', spId)
+      .is('deleted_at', null),
   ])
 
   if (procError) console.error('[dashboard] proceedings error:', procError.message)
   if (evtError) console.error('[dashboard] events error:', evtError.message)
+  if (openProcError) console.error('[dashboard] open proceedings error:', openProcError.message)
+  if (teamError) console.error('[dashboard] team members error:', teamError.message)
+  if (allProcStatusError) console.error('[dashboard] proceeding status error:', allProcStatusError.message)
 
   function pick<T>(rel: T | T[] | null | undefined): T | null {
     if (!rel) return null
@@ -140,14 +197,161 @@ export default async function DashboardPage() {
     ? GREETING_SUBTITLE_ADMIN
     : GREETING_SUBTITLE_STAFF
 
+  const openProcs = openProcData ?? []
+
+  // Due Date Tracker — open proceedings bucketed by days remaining until deadline.
+  // Overdue and due-today both land in "Due Today"; anything past 30 days out is
+  // not shown in this widget at all.
+  function daysUntil(dateStr: string): number {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const [y, m, d] = dateStr.split('-').map(Number)
+    const due = new Date(y, m - 1, d)
+    return Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+  }
+  let dueToday = 0
+  let dueIn7 = 0
+  let dueIn30 = 0
+  for (const p of openProcs) {
+    const deadline = extractDate(p.to_be_completed_by as string | null)
+    if (!deadline) continue
+    const days = daysUntil(deadline)
+    if (days <= 0) dueToday++
+    else if (days <= 7) dueIn7++
+    else if (days <= 30) dueIn30++
+  }
+
+  // Priority Distribution — open proceedings by importance
+  const priorityCounts = IMPORTANCE_ORDER.reduce((acc, level) => {
+    acc[level] = openProcs.filter((p) => p.importance === level).length
+    return acc
+  }, {} as Record<ImportanceLevel, number>)
+
+  // Outcome Forecast — open proceedings by possible outcome
+  const outcomeCounts = OUTCOME_ORDER.reduce((acc, outcome) => {
+    acc[outcome] = openProcs.filter((p) => p.possible_outcome === outcome).length
+    return acc
+  }, {} as Record<PossibleOutcome, number>)
+  const OUTCOME_COLORS: Record<PossibleOutcome, string> = {
+    favourable: BRAND.success,
+    doubtful: BRAND.warning,
+    unfavourable: BRAND.danger,
+  }
+
+  // Team Workload — open proceedings assigned per SP staff member
+  const workloadByStaff = new Map<string, number>()
+  for (const p of openProcs) {
+    for (const staffId of (p.assigned_to_ids as string[] | null) ?? []) {
+      workloadByStaff.set(staffId, (workloadByStaff.get(staffId) ?? 0) + 1)
+    }
+  }
+  const teamWorkload = (teamMembers ?? [])
+    .map((u) => ({
+      id: u.id,
+      name: `${u.first_name} ${u.last_name}`.trim(),
+      count: workloadByStaff.get(u.id) ?? 0,
+    }))
+    .filter((w) => w.count > 0)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, TEAM_WORKLOAD_MAX_ROWS)
+
+  // Notice Status Summary — all proceedings (any status), bucketed open vs closed
+  const allProcs = allProcStatusData ?? []
+  const noticeStatusCounts = NOTICE_STATUS_ORDER.reduce((acc, status) => {
+    acc[status] = allProcs.filter((p) => p.status === status).length
+    return acc
+  }, {} as Record<NoticeStatus, number>)
+  const NOTICE_STATUS_COLORS: Record<NoticeStatus, string> = {
+    open: BRAND.info,
+    closed: BRAND.success,
+  }
+
+  // Authority-wise Notices — open proceedings grouped by the appeal's Act/Regulation
+  const authorityCounts = new Map<string, number>()
+  for (const p of openProcs) {
+    const appeal = pick((p as any).appeal)
+    const actName: string | null = pick((appeal as any)?.act_regulation)?.name ?? null
+    if (!actName) continue
+    authorityCounts.set(actName, (authorityCounts.get(actName) ?? 0) + 1)
+  }
+  const authorityWiseNotices = Array.from(authorityCounts.entries())
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, AUTHORITY_NOTICES_MAX_ROWS)
+
   return (
-    <div className="p-6 flex flex-col gap-4" style={{ height: 'calc(100vh - 64px)' }}>
+    <div className="h-full p-6 flex flex-col gap-4 overflow-hidden">
       <div className="flex-shrink-0">
         <h1 className={GREETING_HEADING_CLS}>{GREETING_PREFIX}, {firstName}</h1>
         <p className={GREETING_SUBTITLE_CLS}>{subtitle}</p>
       </div>
-      <div className="flex-1 min-h-0">
-        <DashboardCalendar events={events} />
+
+      <div className="flex-1 flex flex-col gap-4 min-h-0">
+        {/* Row 1 — Calendar + Day Events, and right sidebar */}
+        <div className="flex-1 flex gap-4 min-h-0">
+          <div className="flex-1 min-w-0 min-h-0">
+            <DashboardCalendar events={events} />
+          </div>
+          <div className={`${SIDE_COLUMN_WIDTH} flex-shrink-0 flex flex-col gap-2 min-h-0`}>
+            <div className="flex-1 min-h-0">
+              <DueDateTrackerPanel dueToday={dueToday} dueIn7={dueIn7} dueIn30={dueIn30} />
+            </div>
+            <div className="flex-1 min-h-0">
+              <DashboardDonut
+                title="Notice Status Summary"
+                data={NOTICE_STATUS_ORDER.map((status) => ({
+                  label: NOTICE_STATUS_LABELS[status],
+                  value: noticeStatusCounts[status],
+                  color: NOTICE_STATUS_COLORS[status],
+                }))}
+              />
+            </div>
+            <div className="flex-1 min-h-0">
+              <DashboardDonut
+                title="Priority Distribution"
+                data={IMPORTANCE_ORDER.map((level) => ({
+                  label: IMPORTANCE_LABELS[level],
+                  value: priorityCounts[level],
+                  color: IMPORTANCE_COLORS[level],
+                }))}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Row 2 — Outcome Forecast, Team Workload, Authority-wise Notices */}
+        <div className={`${DASHBOARD_BOTTOM_ROW_HEIGHT} flex-shrink-0 flex gap-4`}>
+          <div className="flex-1 flex gap-4 min-w-0">
+            <div className="flex-1 min-w-0">
+              <DashboardBarList
+                title="Outcome Forecast"
+                data={OUTCOME_ORDER.map((outcome) => ({
+                  label: OUTCOME_LABELS[outcome],
+                  value: outcomeCounts[outcome],
+                  color: OUTCOME_COLORS[outcome],
+                }))}
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <DashboardBarList
+                title="Team Workload"
+                subtitle="(open proceedings)"
+                data={teamWorkload.map((w) => ({ label: w.name, value: w.count }))}
+                barColorCls="bg-primary"
+                emptyLabel="No open proceedings assigned yet."
+              />
+            </div>
+          </div>
+          <div className={`${SIDE_COLUMN_WIDTH} flex-shrink-0`}>
+            <DashboardBarList
+              title="Authority-wise Notices"
+              subtitle="(open proceedings)"
+              data={authorityWiseNotices}
+              barColorCls="bg-primary"
+              emptyLabel="No open proceedings with an act on file yet."
+            />
+          </div>
+        </div>
       </div>
     </div>
   )

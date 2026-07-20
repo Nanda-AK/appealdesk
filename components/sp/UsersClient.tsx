@@ -166,7 +166,7 @@ function MultiSelect({
         className="flex items-center gap-1.5 px-3 py-2 text-sm border border-border rounded-lg bg-white cursor-pointer min-w-[144px] max-w-[200px] h-[38px] select-none"
         onClick={() => (open ? applyAndClose() : openDropdown())}
       >
-        <span className={`flex-1 truncate ${!hasValue ? "text-muted" : isMulti ? "font-medium text-primary" : "text-heading"}`}>{triggerText}</span>
+        <span className={`flex-1 truncate ${!hasValue ? "text-muted" : isMulti ? "font-medium text-primary" : "text-heading"}`} title={triggerText}>{triggerText}</span>
         {hasValue ? (
           <button onMouseDown={(e) => { e.stopPropagation(); onChange([]); }} className="text-muted hover:text-heading shrink-0 text-base leading-none">×</button>
         ) : (
@@ -197,7 +197,7 @@ function MultiSelect({
                     <div className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors ${isChecked ? "bg-primary border-primary" : "border-border-strong"}`}>
                       {isChecked && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
                     </div>
-                    <span className={`text-sm flex-1 truncate ${isChecked ? "font-medium text-heading" : "text-secondary"}`}>{o.name}</span>
+                    <span className={`text-sm flex-1 truncate ${isChecked ? "font-medium text-heading" : "text-secondary"}`} title={o.name}>{o.name}</span>
                   </button>
                 );
               })

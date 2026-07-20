@@ -163,7 +163,7 @@ function MultiSelect({
         className="flex items-center gap-1.5 px-3 py-2 text-sm border border-accent rounded-lg bg-white cursor-pointer min-w-36 max-w-50 h-9.5 select-none"
         onClick={() => (open ? applyAndClose() : openDropdown())}
       >
-        <span className={`flex-1 truncate ${!hasValue ? "text-muted" : isMulti ? "font-medium text-primary" : "text-heading"}`}>
+        <span className={`flex-1 truncate ${!hasValue ? "text-muted" : isMulti ? "font-medium text-primary" : "text-heading"}`} title={triggerText}>
           {triggerText}
         </span>
         {hasValue ? (
@@ -219,7 +219,7 @@ function MultiSelect({
                         </svg>
                       )}
                     </div>
-                    <span className={`text-sm flex-1 truncate ${isChecked ? "font-medium text-heading" : "text-secondary"}`}>
+                    <span className={`text-sm flex-1 truncate ${isChecked ? "font-medium text-heading" : "text-secondary"}`} title={o.name}>
                       {o.name}
                     </span>
                   </button>
