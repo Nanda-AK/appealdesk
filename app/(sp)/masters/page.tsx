@@ -26,7 +26,7 @@ export default async function SpMastersPage() {
       </div>
       <SpMastersClient
         records={records ?? []}
-        isAdmin={user?.role === "sp_admin"}
+        isAdmin={user?.role === "sp_admin" || user?.role === "director"}
       />
     </div>
   );
