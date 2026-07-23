@@ -27,6 +27,47 @@ import {
   type NoticeStatus,
 } from '@/lib/dashboardConfig'
 
+interface NameRel {
+  name: string
+}
+
+interface AppealRel {
+  id: string
+  client_org: NameRel | NameRel[] | null
+  act_regulation: NameRel | NameRel[] | null
+  financial_year: NameRel | NameRel[] | null
+}
+
+interface ProcRow {
+  id: string
+  to_be_completed_by: string | null
+  initiated_on: string | null
+  importance: string | null
+  assigned_to_ids: string[] | null
+  appeal: AppealRel | AppealRel[] | null
+  proceeding_type: NameRel | NameRel[] | null
+}
+
+interface EvtRow {
+  id: string
+  event_date: string | null
+  category: string
+  proceeding: (ProcRow & { appeal: AppealRel | AppealRel[] | null }) | (ProcRow & { appeal: AppealRel | AppealRel[] | null })[] | null
+}
+
+interface OpenProcAppealRel {
+  act_regulation: NameRel | NameRel[] | null
+}
+
+interface OpenProcRow {
+  id: string
+  importance: string | null
+  possible_outcome: string | null
+  assigned_to_ids: string[] | null
+  to_be_completed_by: string | null
+  appeal: OpenProcAppealRel | OpenProcAppealRel[] | null
+}
+
 function extractDate(val: string | null | undefined): string | null {
   if (!val) return null
   if (val.includes('T')) {
@@ -152,14 +193,14 @@ export default async function DashboardPage() {
 
   const events: CalendarEvent[] = []
 
-  for (const p of procData ?? []) {
-    const appeal = pick(p.appeal as any)
+  for (const p of (procData ?? []) as unknown as ProcRow[]) {
+    const appeal = pick(p.appeal)
     if (!appeal) continue
-    const clientName: string = pick((appeal as any).client_org)?.name ?? ''
-    const actName: string = pick((appeal as any).act_regulation)?.name ?? ''
-    const fy: string = pick((appeal as any).financial_year)?.name ?? ''
-    const pt: string = pick(p.proceeding_type as any)?.name ?? ''
-    const appealId: string = (appeal as any).id
+    const clientName: string = pick(appeal.client_org)?.name ?? ''
+    const actName: string = pick(appeal.act_regulation)?.name ?? ''
+    const fy: string = pick(appeal.financial_year)?.name ?? ''
+    const pt: string = pick(p.proceeding_type)?.name ?? ''
+    const appealId: string = appeal.id
     const importance = (p.importance ?? null) as CalendarEvent['importance']
     const assignedToIds = (p.assigned_to_ids as string[] | null) ?? []
 
@@ -173,21 +214,21 @@ export default async function DashboardPage() {
     }
   }
 
-  for (const e of evtData ?? []) {
-    const date = extractDate(e.event_date as string | null)
+  for (const e of (evtData ?? []) as unknown as EvtRow[]) {
+    const date = extractDate(e.event_date)
     if (!date) continue
-    const proc = pick(e.proceeding as any)
+    const proc = pick(e.proceeding)
     if (!proc) continue
-    const appeal = pick((proc as any).appeal)
+    const appeal = pick(proc.appeal)
     if (!appeal) continue
-    const clientName: string = pick((appeal as any).client_org)?.name ?? ''
-    const actName: string = pick((appeal as any).act_regulation)?.name ?? ''
-    const fy: string = pick((appeal as any).financial_year)?.name ?? ''
-    const pt: string = pick((proc as any).proceeding_type)?.name ?? ''
-    const appealId: string = (appeal as any).id
+    const clientName: string = pick(appeal.client_org)?.name ?? ''
+    const actName: string = pick(appeal.act_regulation)?.name ?? ''
+    const fy: string = pick(appeal.financial_year)?.name ?? ''
+    const pt: string = pick(proc.proceeding_type)?.name ?? ''
+    const appealId: string = appeal.id
     const sourceType = e.category as CalendarEvent['sourceType']
-    const importance = ((proc as any).importance ?? null) as CalendarEvent['importance']
-    const assignedToIds = ((proc as any).assigned_to_ids as string[] | null) ?? []
+    const importance = (proc.importance ?? null) as CalendarEvent['importance']
+    const assignedToIds = proc.assigned_to_ids ?? []
     events.push({ id: e.id, appealId, date, sourceType, label: EVENT_SOURCE_LABELS[sourceType] ?? String(e.category), clientName, proceedingType: pt, actName, financialYear: fy, importance, assignedToIds })
   }
 
@@ -196,7 +237,7 @@ export default async function DashboardPage() {
     ? GREETING_SUBTITLE_ADMIN
     : GREETING_SUBTITLE_STAFF
 
-  const openProcs = openProcData ?? []
+  const openProcs = (openProcData ?? []) as unknown as OpenProcRow[]
 
   // Due Date Tracker — open proceedings bucketed by days remaining until deadline.
   // Overdue and due-today both land in "Due Today"; anything past 30 days out is
@@ -268,8 +309,8 @@ export default async function DashboardPage() {
   // Authority-wise Notices — open proceedings grouped by the appeal's Act/Regulation
   const authorityCounts = new Map<string, number>()
   for (const p of openProcs) {
-    const appeal = pick((p as any).appeal)
-    const actName: string | null = pick((appeal as any)?.act_regulation)?.name ?? null
+    const appeal = pick(p.appeal)
+    const actName: string | null = pick(appeal?.act_regulation ?? null)?.name ?? null
     if (!actName) continue
     authorityCounts.set(actName, (authorityCounts.get(actName) ?? 0) + 1)
   }
@@ -334,7 +375,6 @@ export default async function DashboardPage() {
             <div className="flex-1 min-w-0">
               <DashboardBarList
                 title="Team Workload"
-                subtitle="(open proceedings)"
                 data={teamWorkload.map((w) => ({ label: w.name, value: w.count }))}
                 barColorCls="bg-primary"
                 emptyLabel="No open proceedings assigned yet."
@@ -343,8 +383,7 @@ export default async function DashboardPage() {
           </div>
           <div className={`${SIDE_COLUMN_WIDTH} flex-shrink-0`}>
             <DashboardBarList
-              title="Authority-wise Notices"
-              subtitle="(open proceedings)"
+              title="Authority wise Notices"
               data={authorityWiseNotices}
               barColorCls="bg-primary"
               emptyLabel="No open proceedings with an act on file yet."

@@ -1,9 +1,9 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import type { CalendarEvent, CalendarEventSourceType, ImportanceLevel } from '@/lib/calendarUtils'
+import type { CalendarEvent, CalendarEventSourceType } from '@/lib/calendarUtils'
 import {
   loadVisibleTypes, saveVisibleTypes, getWeekDays,
-  getViewDateRange, IMPORTANCE_COLORS, IMPORTANCE_LABELS, toDateStr,
+  toDateStr,
   DEFAULT_VISIBLE_TYPES,
 } from '@/lib/calendarUtils'
 import {
@@ -11,9 +11,6 @@ import {
   FILTER_ACTIVE_CLS,
   FILTER_INACTIVE_CLS,
   FILTER_DROPDOWN_WIDTH,
-  STATS_CHIP_PADDING,
-  STATS_CHIP_BG,
-  IMPORTANCE_ORDER,
   DEFAULT_VIEW_MODE,
   getDefaultDate,
   NAV_DATE_LOCALE,
@@ -129,24 +126,6 @@ export function DashboardCalendar({ events }: Props) {
     if (selectedActs.length > 0 && !selectedActs.includes(e.actName)) return false
     return true
   })
-
-  // Stats: events in current view range that match visible types
-  const { start: viewStart, end: viewEnd } = getViewDateRange(viewMode, currentDate)
-  const viewEvents = filteredEvents.filter(e =>
-    e.date >= viewStart && e.date <= viewEnd && visibleTypes.includes(e.sourceType)
-  )
-
-  const totalCount = viewEvents.length
-  const importanceCounts = IMPORTANCE_ORDER.reduce((acc, level) => {
-    acc[level] = viewEvents.filter(e => e.importance === level).length
-    return acc
-  }, {} as Record<ImportanceLevel, number>)
-
-  const litigationCount = new Set(viewEvents.map(e => e.appealId)).size
-  const uniqueClients = new Set(viewEvents.map(e => e.clientName).filter(Boolean)).size
-  const assignedStaffCount = new Set(
-    viewEvents.flatMap(e => e.assignedToIds ?? [])
-  ).size
 
   return (
     <div className="flex gap-4 h-full min-h-0">
@@ -331,34 +310,6 @@ export function DashboardCalendar({ events }: Props) {
             onDayClick={setSelectedDay}
           />
         )}
-
-        {/* Stats bar — below calendar */}
-        <div className="flex items-center gap-2 mt-3 flex-shrink-0 flex-wrap border-t border-border pt-3">
-          <div className={`flex items-center gap-1.5 ${STATS_CHIP_PADDING} ${STATS_CHIP_BG} rounded-lg select-none`}>
-            <span className="text-xs font-bold text-heading">{totalCount}</span>
-            <span className="text-xs text-muted">Events</span>
-          </div>
-          <div className={`flex items-center gap-1.5 ${STATS_CHIP_PADDING} ${STATS_CHIP_BG} rounded-lg select-none`}>
-            <span className="text-xs font-bold text-heading">{litigationCount}</span>
-            <span className="text-xs text-muted">Litigations</span>
-          </div>
-          <div className={`flex items-center gap-1.5 ${STATS_CHIP_PADDING} ${STATS_CHIP_BG} rounded-lg select-none`}>
-            <span className="text-xs font-bold text-heading">{uniqueClients}</span>
-            <span className="text-xs text-muted">Clients</span>
-          </div>
-          <div className={`flex items-center gap-1.5 ${STATS_CHIP_PADDING} ${STATS_CHIP_BG} rounded-lg select-none`}>
-            <span className="text-xs font-bold text-heading">{assignedStaffCount}</span>
-            <span className="text-xs text-muted">Staff</span>
-          </div>
-          <div className="w-px h-4 bg-border mx-1" />
-          {IMPORTANCE_ORDER.map(level => (
-            <div key={level} className={`flex items-center gap-1.5 ${STATS_CHIP_PADDING} rounded-lg ${STATS_CHIP_BG} select-none`}>
-              <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ background: IMPORTANCE_COLORS[level] }} />
-              <span className="text-xs font-bold text-heading">{importanceCounts[level]}</span>
-              <span className="text-xs text-muted">{IMPORTANCE_LABELS[level]}</span>
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* Day Events panel */}
