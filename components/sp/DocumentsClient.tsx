@@ -43,7 +43,7 @@ interface Template {
   id: string;
   name: string;
   description: string | null;
-  file_url: string;
+  file_url: string | null;
   file_type: string | null;
   file_size: number | null;
   created_at: string;
@@ -1297,12 +1297,6 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
             {/* Edit mode footer — below attachments */}
             {editingForm && (
               <div className="border-t border-border px-6 py-4 flex gap-3">
-                {canDelete && (
-                  <button type="button" onClick={() => { setShowFormModal(false); setConfirmDeleteForm(editingForm); }}
-                    className="px-4 py-2 text-sm border border-red-200 text-red-600 hover:bg-red-50 rounded-lg transition">
-                    Delete
-                  </button>
-                )}
                 <button type="button" onClick={() => setShowFormModal(false)} className="flex-1 px-4 py-2 text-sm border border-border rounded-lg text-heading hover:bg-page transition">Cancel</button>
                 <button type="button" onClick={() => handleFormSubmit()} disabled={formSaving}
                   className="flex-1 px-4 py-2 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition disabled:opacity-60">
@@ -1348,17 +1342,11 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
               ) : (
                 <div>
                   <label className="block text-xs font-medium text-secondary mb-1">File</label>
-                  <p className="text-xs text-secondary bg-page rounded-lg px-3 py-2 truncate" title={editingTemplate.file_url.split("/").pop()}>{editingTemplate.file_url.split("/").pop()}</p>
+                  <p className="text-xs text-secondary bg-page rounded-lg px-3 py-2 truncate" title={editingTemplate.file_url?.split("/").pop() ?? "—"}>{editingTemplate.file_url?.split("/").pop() ?? "No file on this template"}</p>
                   <p className="text-xs text-muted mt-1">To replace the file, delete this template and upload a new one.</p>
                 </div>
               )}
               <div className="flex gap-3 pt-2">
-                {editingTemplate && canDelete && (
-                  <button type="button" onClick={() => { setShowTemplateModal(false); setConfirmDeleteTpl(editingTemplate); }}
-                    className="px-4 py-2 text-sm border border-red-200 text-red-600 hover:bg-red-50 rounded-lg transition">
-                    Delete
-                  </button>
-                )}
                 <button type="button" onClick={() => setShowTemplateModal(false)} className="flex-1 px-4 py-2 text-sm border border-border rounded-lg text-heading hover:bg-page transition">Cancel</button>
                 <button type="submit" disabled={tplUploading} className="flex-1 px-4 py-2 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition disabled:opacity-60">
                   {tplUploading ? (editingTemplate ? "Saving…" : "Uploading…") : editingTemplate ? "Save Changes" : "Upload"}
@@ -1511,12 +1499,6 @@ export default function DocumentsClient({ forms, templates, resources, acts, can
               </div>
 
               <div className="flex gap-3 pt-2 pb-2">
-                {editingResource && canDelete && (
-                  <button type="button" onClick={() => { setShowResourceModal(false); setConfirmDeleteRes(editingResource); }}
-                    className="px-4 py-2 text-sm border border-red-200 text-red-600 hover:bg-red-50 rounded-lg transition">
-                    Delete
-                  </button>
-                )}
                 <button type="button" onClick={() => setShowResourceModal(false)} className="flex-1 px-4 py-2 text-sm border border-border rounded-lg text-heading hover:bg-page transition">Cancel</button>
                 <button type="submit" disabled={resSaving} className="flex-1 px-4 py-2 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition disabled:opacity-60">
                   {resSaving ? (editingResource ? "Saving…" : "Uploading…") : editingResource ? "Save Changes" : "Add Resource"}
